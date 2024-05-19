@@ -327,12 +327,21 @@ class InteractiveShell(object):
 
         # Get a file
         elif command == "get":
-            path = ' '.join(arguments).replace('/',r'\\')
+            # Get files recursively
+            if arguments[0] == "-r":
+                path = ' '.join(arguments[1:]).replace('/',r'\\')
+                try:
+                    self.smbSession.get_file_recursively(path=path)
+                except impacket.smbconnection.SessionError as e:
+                    print("[!] SMB Error: %s" % e)
 
-            try:
-                self.smbSession.get_file(shareName=self.smb_share, path=path)
-            except impacket.smbconnection.SessionError as e:
-                print("[!] SMB Error: %s" % e)
+            # Get a single file
+            else:
+                path = ' '.join(arguments).replace('/',r'\\')
+                try:
+                    self.smbSession.get_file(path=path)
+                except impacket.smbconnection.SessionError as e:
+                    print("[!] SMB Error: %s" % e)
 
         else:
             pass
@@ -354,12 +363,20 @@ class FileWriter(object):
         super(FileWriter, self).__init__()
 
         self.path = path
+        self.path = self.path.replace('\\', '/')
+
+        self.dir = None
+        if '/' in self.path:
+            self.dir = os.path.dirname(self.path)
+            if not os.path.exists(self.dir):
+                os.makedirs(self.dir)
+
         self.debug = debug
         self.expected_size = expected_size
 
         if self.debug:
-            print("[debug] Openning '%s'" % path)
-        self.f = open(path, "wb")
+            print("[debug] Openning '%s'" % self.path)
+        self.f = open(self.path, "wb")
 
         if self.expected_size is not None:
             self.__progress = Progress(
@@ -375,7 +392,7 @@ class FileWriter(object):
             )
             self.__progress.start()
             self.__task = self.__progress.add_task(
-                description="Downloading '%s'" % self.path,
+                description="'%s'" % os.path.basename(self.path),
                 start=True,
                 total=self.expected_size,
                 visible=True
@@ -386,11 +403,26 @@ class FileWriter(object):
             self.__progress.update(self.__task, advance=len(data))
         self.f.write(data)
     
-    def close(self):
+    def close(self, remove=False):
         self.f.close()
+
+        if remove:
+            os.remove(path=self.path)
+
         if self.expected_size is not None:
             self.__progress.stop()
+
         del self
+
+    def set_error(self, message):
+        self.__progress.tasks[0].description = message
+        self.__progress.columns = [
+            TextColumn("[bold blue]{task.description}", justify="right"),
+            BarColumn(bar_width=None),
+            "•",
+            DownloadColumn(),
+        ]
+        self.__progress.update(self.__task, advance=0)
 
 
 class SMBSession(object):
@@ -504,17 +536,64 @@ class SMBSession(object):
 
         return contents
 
-    def get_file(self, shareName=None, path=None):
+    def get_file(self, path=None):
         matches = self.smbClient.listPath(shareName=self.smb_share, path=path)
         for entry in matches:
-            f = FileWriter(path=entry.get_longname(), expected_size=entry.get_filesize())
-            self.smbClient.getFile(
-                shareName=shareName, 
-                pathName=entry.get_longname(), 
-                callback=f.write
-            )
-            f.close()
+            if entry.is_directory():
+                print("[>] Skipping '%s' because it is a directory." % path)
+            else:
+                f = FileWriter(path=entry.get_longname(), expected_size=entry.get_filesize())
+                self.smbClient.getFile(
+                    shareName=self.smb_share, 
+                    pathName=entry.get_longname(), 
+                    callback=f.write
+                )
+                f.close()
         return None
+
+    def get_file_recursively(self, path=None):
+
+        def recurse_action(base_dir="", path=[]):
+            remote_smb_path = base_dir + '\\'.join(path)
+            entries = self.smbClient.listPath(shareName=self.smb_share, path=remote_smb_path+'\\*')
+
+            if len(entries) != 0:
+                files = [entry for entry in entries if not entry.is_directory()]
+                directories = [entry for entry in entries if entry.is_directory() and entry.get_longname() not in [".", ".."]]
+
+                # Files
+                if len(files) != 0:
+                    print("[>] Getting files of '%s'" % remote_smb_path)
+                for entry_file in files:
+                    if not entry_file.is_directory():
+                        f = FileWriter(
+                            path=remote_smb_path + '\\' + entry_file.get_longname(), 
+                            expected_size=entry_file.get_filesize()
+                        )
+                        try:
+                            self.smbClient.getFile(
+                                shareName=self.smb_share, 
+                                pathName=remote_smb_path + '\\' + entry_file.get_longname(), 
+                                callback=f.write
+                            )
+                            f.close()
+                        except Exception as err:
+                            f.set_error(message="[bold red]Failed downloading '%s': %s" % (f.path, err))
+                            f.close(remove=True)
+                
+                # Directories
+                for entry_directory in directories:
+                    if entry_directory.is_directory():
+                        recurse_action(
+                            base_dir=self.smb_path, 
+                            path=path+[entry_directory.get_longname()]
+                        )                   
+        # Entrypoint
+        recurse_action(
+            base_dir=self.smb_path, 
+            path=[path]
+        )
+
 
 
 def parseArgs():
