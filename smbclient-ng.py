@@ -12,9 +12,11 @@ import readline
 from sectools.windows.crypto import parse_lm_nt_hashes
 import re
 import sys
+import time
 import traceback
 import impacket
 from impacket.smbconnection import SMBConnection as impacketSMBConnection
+from rich.progress import BarColumn, DownloadColumn, Progress, TaskID, TextColumn, TimeRemainingColumn, TransferSpeedColumn
 
 
 VERSION = "2.1.0"
@@ -31,12 +33,20 @@ class CommandCompleter(object):
                 "description": ["Change the current working directory."], 
                 "subcommands": []
             },
+            "close": {
+                "description": ["Closes the SMB connection to the remote machine."], 
+                "subcommands": []
+            },
             "dir": {
                 "description": ["List the contents of the current working directory."], 
                 "subcommands": []
             },
             "exit": {
                 "description": ["Exits the smbclient-ng script."], 
+                "subcommands": []
+            },
+            "get": {
+                "description": ["Get a remote file."], 
                 "subcommands": []
             },
             "help": {
@@ -97,11 +107,7 @@ class CommandCompleter(object):
                             self.matches = [command + " " + s for s in self.smbSession.list_shares().keys() if s and s.startswith(remainder)]
                         elif command == "cd":
                             # Choose folder
-                            print(self.smbSession.list_contents().keys())
                             folder_contents = list(self.smbSession.list_contents().keys())
-                            print(folder_contents)
-                            folder_contents = folder_contents.remove('.')
-                            folder_contents = folder_contents.remove('..')
                             self.matches = [command + " " + s for s in folder_contents if s and s.startswith(remainder)]
                         else:
                             # Generic case for subcommands
@@ -242,8 +248,12 @@ class InteractiveShell(object):
             pass
         
         #
-        elif command == "reconnect":
+        elif command in ["reconnect", "connect"]:
             self.smbSession.init_smb_session()
+
+        #
+        elif command == "close":
+            self.smbSession.close_smb_session()
 
         # List shares
         elif command == "shares":
@@ -258,15 +268,19 @@ class InteractiveShell(object):
 
         # Use a share
         elif command == "use":
-            sharename = arguments[0]
-
-            # Reload the list of shares
-            self.smbSession.list_shares()
-
-            if sharename in self.smbSession.shares.keys():
-                self.smb_share = sharename
+            if len(arguments) == 0:
+                self.commandCompleterObject.print_help(command="use")
             else:
-                print("[!] No share named '%s' on '%s'" % (sharename, self.smbSession.address))
+                sharename = arguments[0]
+
+                # Reload the list of shares
+                self.smbSession.list_shares()
+
+                if sharename in self.smbSession.shares.keys():
+                    self.smb_share = sharename
+                    self.smbSession.smb_share = sharename
+                else:
+                    print("[!] No share named '%s' on '%s'" % (sharename, self.smbSession.address))
 
         # Change directory to a share
         elif command == "cd":
@@ -311,6 +325,15 @@ class InteractiveShell(object):
                 else:
                     print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (meta_string, size_str, date_str, longname))
 
+        # Get a file
+        elif command == "get":
+            path = ' '.join(arguments).replace('/',r'\\')
+
+            try:
+                self.smbSession.get_file(shareName=self.smb_share, path=path)
+            except impacket.smbconnection.SessionError as e:
+                print("[!] SMB Error: %s" % e)
+
         else:
             pass
 
@@ -324,6 +347,50 @@ class InteractiveShell(object):
             str_prompt = "[\x1b[1;94m%s\x1b[0m]> " % str_path
 
         return str_prompt
+
+
+class FileWriter(object):
+    def __init__(self, path=None, expected_size=None, debug=False):
+        super(FileWriter, self).__init__()
+
+        self.path = path
+        self.debug = debug
+        self.expected_size = expected_size
+
+        if self.debug:
+            print("[debug] Openning '%s'" % path)
+        self.f = open(path, "wb")
+
+        if self.expected_size is not None:
+            self.__progress = Progress(
+                TextColumn("[bold blue]{task.description}", justify="right"),
+                BarColumn(bar_width=None),
+                "[progress.percentage]{task.percentage:>3.1f}%",
+                "•",
+                DownloadColumn(),
+                "•",
+                TransferSpeedColumn(),
+                "•",
+                TimeRemainingColumn(),
+            )
+            self.__progress.start()
+            self.__task = self.__progress.add_task(
+                description="Downloading '%s'" % self.path,
+                start=True,
+                total=self.expected_size,
+                visible=True
+            )
+
+    def write(self, data):
+        if self.expected_size is not None:
+            self.__progress.update(self.__task, advance=len(data))
+        self.f.write(data)
+    
+    def close(self):
+        self.f.close()
+        if self.expected_size is not None:
+            self.__progress.stop()
+        del self
 
 
 class SMBSession(object):
@@ -358,8 +425,8 @@ class SMBSession(object):
         if self.debug:
             print("[debug] [>] Connecting to remote SMB server '%s' ... " % self.address)
         self.smbClient = impacketSMBConnection(
-            remoteName=self.address, 
-            remoteHost=self.address, 
+            remoteName=self.address,
+            remoteHost=self.address,
             sess_port=int(445)
         )
 
@@ -395,19 +462,27 @@ class SMBSession(object):
 
         return self.connected
 
+    def close_smb_session(self):
+        print("[>] Closing the current SMB connection ...")
+        self.smbClient.close()
+
     def list_shares(self):
-        resp = self.smbClient.listShares()
-
         self.shares = {}
-        for share in resp:
-            # SHARE_INFO_1 structure (lmshare.h)
-            # https://docs.microsoft.com/en-us/windows/win32/api/lmshare/ns-lmshare-share_info_1
-            sharename = share["shi1_netname"][:-1]
-            sharecomment = share["shi1_remark"][:-1]
-            sharetype = share["shi1_type"]
-
-            self.shares[sharename] = {"name": sharename, "type": sharetype, "comment": sharecomment}
         
+        if self.smbClient is not None:
+            resp = self.smbClient.listShares()
+
+            for share in resp:
+                # SHARE_INFO_1 structure (lmshare.h)
+                # https://learn.microsoft.com/en-us/windows/win32/api/lmshare/ns-lmshare-share_info_1
+                sharename = share["shi1_netname"][:-1]
+                sharecomment = share["shi1_remark"][:-1]
+                sharetype = share["shi1_type"]
+
+                self.shares[sharename] = {"name": sharename, "type": sharetype, "comment": sharecomment}
+        else:
+            print("")
+
         return self.shares
 
     def list_contents(self, shareName=None, path=None):
@@ -428,6 +503,18 @@ class SMBSession(object):
             contents[entry.get_longname()] = entry
 
         return contents
+
+    def get_file(self, shareName=None, path=None):
+        matches = self.smbClient.listPath(shareName=self.smb_share, path=path)
+        for entry in matches:
+            f = FileWriter(path=entry.get_longname(), expected_size=entry.get_filesize())
+            self.smbClient.getFile(
+                shareName=shareName, 
+                pathName=entry.get_longname(), 
+                callback=f.write
+            )
+            f.close()
+        return None
 
 
 def parseArgs():
