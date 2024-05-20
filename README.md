@@ -16,7 +16,7 @@
 - [x] `close`: Closes the SMB connection to the remote machine. 
 - [x] `dir`: List the contents of the current working directory. 
 - [x] `exit`: Exits the smbclient-ng script. 
-- [x] `get`: Get a remote file. 
+- [x] `get`: Get a remote file to a local directory. (`get -r` to recursively download a remote directory to local).
 - [x] `help`: Displays this help message. 
 - [x] `info`: Get information about the server and or the share. 
 - [x] `lcd`: Changes the current local directory. 
@@ -24,6 +24,8 @@
 - [x] `lmkdir`: Creates a new local directory. 
 - [x] `lpwd`: Shows the current local directory. 
 - [x] `ls`: List the contents of the current remote working directory. 
+- [x] `mkdir`: Creates a new remote directory. 
+- [x] `put`: Put a local file to a remote directory. (`put -r` to recursively upload a local directory to remote).
 - [x] `reconnect`: Reconnect to the remote machine (useful if connection timed out). 
 - [x] `shares`: Lists the SMB shares served by the remote machine. 
 - [x] `use`: Use a SMB share.
