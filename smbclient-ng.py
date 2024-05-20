@@ -32,59 +32,59 @@ class CommandCompleter(object):
         self.smbSession = smbSession
         self.commands = {
             "cd": {
-                "description": ["Change the current working directory."], 
+                "description": ["Change the current working directory.", "Syntax: 'cd <directory>'"], 
                 "subcommands": []
             },
             "close": {
-                "description": ["Closes the SMB connection to the remote machine."], 
+                "description": ["Closes the SMB connection to the remote machine.", "Syntax: 'close'"], 
                 "subcommands": []
             },
             "dir": {
-                "description": ["List the contents of the current working directory."], 
+                "description": ["List the contents of the current working directory.", "Syntax: 'dir'"], 
                 "subcommands": []
             },
             "exit": {
-                "description": ["Exits the smbclient-ng script."], 
+                "description": ["Exits the smbclient-ng script.", "Syntax: 'exit'"], 
                 "subcommands": []
             },
             "get": {
-                "description": ["Get a remote file."], 
+                "description": ["Get a remote file.", "Syntax: 'get [-r] <directory or file>'"], 
                 "subcommands": []
             },
             "help": {
-                "description": ["Displays this help message."], 
+                "description": ["Displays this help message.", "Syntax: 'help'"], 
                 "subcommands": ["format"]
             },
             "info": {
-                "description": ["Get information about the server and or the share."], 
+                "description": ["Get information about the server and or the share.", "Syntax: 'info [server|share]'"], 
                 "subcommands": ["server", "share"]
             },
             "lcd": {
-                "description": ["Changes the current local directory."], 
+                "description": ["Changes the current local directory.", "Syntax: 'lcd <directory>'"], 
                 "subcommands": []
             },
             "lls": {
-                "description": ["Changes the current local directory."], 
+                "description": ["Changes the current local directory.", "Syntax: 'lls'"], 
                 "subcommands": []
             },
             "lmkdir": {
-                "description": [""], 
+                "description": ["Creates a new local directory.", "Syntax: 'lmkdir <directory>'"], 
                 "subcommands": []
             },
             "lpwd": {
-                "description": ["Shows the current local directory."], 
+                "description": ["Shows the current local directory.", "Syntax: 'lpwd'"], 
                 "subcommands": []
             },
             "ls": {
-                "description": ["List the contents of the current working directory."], 
+                "description": ["List the contents of the current remote working directory.", "Syntax: 'ls'"], 
                 "subcommands": []
             },
             "reconnect": {
-                "description": ["Reconnect to the remote machine (useful if connection timed out)."], 
+                "description": ["Reconnect to the remote machine (useful if connection timed out).", "Syntax: 'reconnect'"], 
                 "subcommands": []
             },
             "shares": {
-                "description": ["Lists the SMB shares served by the remote machine."], 
+                "description": ["Lists the SMB shares served by the remote machine.", "Syntax: 'shares'"], 
                 "subcommands": []
             },
             "use": {
