@@ -422,25 +422,21 @@ class InteractiveShell(object):
         # Get a file
         elif command == "get":
             if self.smb_share is not None:
-                try:
-                    # Get files recursively
-                    if arguments[0] == "-r":
-                        path = ' '.join(arguments[1:]).replace('/',r'\\')
-                        try:
-                            self.smbSession.get_file_recursively(path=path)
-                        except impacket.smbconnection.SessionError as e:
-                            print("[!] SMB Error: %s" % e)
+                # Get files recursively
+                if arguments[0] == "-r":
+                    path = ' '.join(arguments[1:]).replace('/',r'\\')
+                    try:
+                        self.smbSession.get_file_recursively(path=path)
+                    except impacket.smbconnection.SessionError as e:
+                        print("[!] SMB Error: %s" % e)
 
-                    # Get a single file
-                    else:
-                        path = ' '.join(arguments).replace('/',r'\\')
-                        try:
-                            self.smbSession.get_file(path=path)
-                        except impacket.smbconnection.SessionError as e:
-                            print("[!] SMB Error: %s" % e)
-
-                except KeyboardInterrupt as e:
-                    print("[!] Interrupted.")
+                # Get a single file
+                else:
+                    path = ' '.join(arguments).replace('/',r'\\')
+                    try:
+                        self.smbSession.get_file(path=path)
+                    except impacket.smbconnection.SessionError as e:
+                        print("[!] SMB Error: %s" % e)
             else:
                 print("[!] You must open a share first, try the 'use <share>' command.")
 
@@ -702,18 +698,28 @@ class SMBSession(object):
         return contents
 
     def get_file(self, path=None):
-        matches = self.smbClient.listPath(shareName=self.smb_share, path=path)
-        for entry in matches:
-            if entry.is_directory():
-                print("[>] Skipping '%s' because it is a directory." % path)
-            else:
-                f = FileWriter(path=entry.get_longname(), expected_size=entry.get_filesize())
-                self.smbClient.getFile(
-                    shareName=self.smb_share, 
-                    pathName=entry.get_longname(), 
-                    callback=f.write
-                )
-                f.close()
+        try:
+            matches = self.smbClient.listPath(shareName=self.smb_share, path=path)
+            for entry in matches:
+                if entry.is_directory():
+                    print("[>] Skipping '%s' because it is a directory." % path)
+                else:
+                    f = FileWriter(path=entry.get_longname(), expected_size=entry.get_filesize())
+                    self.smbClient.getFile(
+                        shareName=self.smb_share, 
+                        pathName=entry.get_longname(), 
+                        callback=f.write
+                    )
+                    f.close()
+        
+        except KeyboardInterrupt as e:
+            print("[!] Interrupted.")
+
+        except BrokenPipeError as e:
+            print("[!] Interrupted.")
+            self.close_smb_session()
+            self.init_smb_session()
+                
         return None
 
     def get_file_recursively(self, path=None):
@@ -754,10 +760,18 @@ class SMBSession(object):
                             path=path+[entry_directory.get_longname()]
                         )                   
         # Entrypoint
-        recurse_action(
-            base_dir=self.smb_path, 
-            path=[path]
-        )
+        try:
+            recurse_action(
+                base_dir=self.smb_path, 
+                path=[path]
+            )
+        except KeyboardInterrupt as e:
+            print("[!] Interrupted.")
+
+        except BrokenPipeError as e:
+            print("[!] Interrupted.")
+            self.close_smb_session()
+            self.init_smb_session()
 
     def put_file(self, path=None):
         pass
