@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# File name          : ldapsearch.py
+# File name          : smbclient-ng.py
 # Author             : Podalirius (@podalirius_)
-# Date created       : 29 Jul 2021
+# Date created       : 20 may 2024
 
 import argparse
 import datetime
@@ -13,7 +13,6 @@ from sectools.windows.crypto import parse_lm_nt_hashes
 import re
 import stat
 import sys
-import time
 import traceback
 import impacket
 from impacket.smbconnection import SMBConnection as impacketSMBConnection
@@ -78,6 +77,10 @@ class CommandCompleter(object):
             },
             "ls": {
                 "description": ["List the contents of the current remote working directory.", "Syntax: 'ls'"], 
+                "subcommands": []
+            },
+            "put": {
+                "description": ["Put a local file or directory in a remote directory.", "Syntax: 'put [-r] <directory or file>'"], 
                 "subcommands": []
             },
             "reconnect": {
@@ -344,6 +347,25 @@ class InteractiveShell(object):
             else:
                 print("[!] You must open a share first, try the 'use <share>' command.")
 
+        # SMB server info
+        elif command == "info":
+            print_server_info = False
+            print_share_info = False
+            if len(arguments) != 0:
+                print_server_info = (arguments[0].lower() == "server")
+                print_share_info = (arguments[0].lower() == "share")
+            else:
+                print_server_info = True
+                print_share_info = True
+
+            try:
+                self.smbSession.info(
+                    share=print_share_info,
+                    server=print_server_info
+                )
+            except impacket.smbconnection.SessionError as e:
+                print("[!] SMB Error: %s" % e)
+
         # Changes the current local directory.
         elif command == "lcd":
             if len(arguments) != 0:
@@ -417,24 +439,26 @@ class InteractiveShell(object):
             else:
                 print("[!] You must open a share first, try the 'use <share>' command.")
 
-        # SMB server info
-        elif command == "info":
-            print_server_info = False
-            print_share_info = False
-            if len(arguments) != 0:
-                print_server_info = (arguments[0].lower() == "server")
-                print_share_info = (arguments[0].lower() == "share")
-            else:
-                print_server_info = True
-                print_share_info = True
+        # Put a file
+        elif command == "put":
+            if self.smb_share is not None:
+                # Put files recursively
+                if arguments[0] == "-r":
+                    localpath = ' '.join(arguments[1:])
+                    try:
+                        self.smbSession.put_file_recursively(localpath=localpath)
+                    except impacket.smbconnection.SessionError as e:
+                        print("[!] SMB Error: %s" % e)
 
-            try:
-                self.smbSession.info(
-                    share=print_share_info,
-                    server=print_server_info
-                )
-            except impacket.smbconnection.SessionError as e:
-                print("[!] SMB Error: %s" % e)
+                # Put a single file
+                else:
+                    localpath = ' '.join(arguments)
+                    try:
+                        self.smbSession.put_file(localpath=localpath)
+                    except impacket.smbconnection.SessionError as e:
+                        print("[!] SMB Error: %s" % e)
+            else:
+                print("[!] You must open a share first, try the 'use <share>' command.")
 
         # List shares
         elif command == "shares":
@@ -542,26 +566,61 @@ def STYPE_MASK(stype_value):
     return flags
 
 
-class FileWriter(object):
-    def __init__(self, path=None, expected_size=None, debug=False):
-        super(FileWriter, self).__init__()
+class LocalFileIO(object):
+    """
+    Class LocalFileIO is designed to handle local file input/output operations within the smbclient-ng tool.
+    It provides functionalities to open, read, write, and manage progress of file operations based on the expected size of the file.
 
-        self.path = path
-        self.path = self.path.replace('\\', '/')
+    Attributes:
+        mode (str): The mode in which the file should be opened (e.g., 'rb', 'wb').
+        path (str): The path to the file that needs to be handled.
+        expected_size (int, optional): The expected size of the file in bytes. This is used to display progress.
+        debug (bool): Flag to enable debug mode which provides additional output during operations.
 
+    Methods:
+        __init__(self, mode, path=None, expected_size=None, debug=False): Initializes the LocalFileIO instance.
+        write(self, data): Writes data to the file and updates the progress bar if expected size is provided.
+        read(self, size): Reads data from the file up to the specified size and updates the progress bar if expected size is provided.
+    """
+
+    def __init__(self, mode, path=None, expected_size=None, debug=False):
+        super(LocalFileIO, self).__init__()
+
+        self.mode = mode
+        self.path = path.replace('\\', '/')
         self.dir = None
-        if '/' in self.path:
-            self.dir = os.path.dirname(self.path)
-            if not os.path.exists(self.dir):
-                os.makedirs(self.dir)
-
-        self.debug = debug
+        self.debug = False
         self.expected_size = expected_size
 
-        if self.debug:
-            print("[debug] Openning '%s'" % self.path)
-        self.f = open(self.path, "wb")
+        # Write to local (read remote)
+        if self.mode in ["wb"]:
+            if os.path.sep in self.path:
+                self.dir = os.path.dirname(self.path)
 
+            if not os.path.exists(self.dir):
+                if self.debug:
+                    print("[debug] Creating local directory '%s'" % self.dir)
+                os.makedirs(self.dir)
+
+            if self.debug:
+                print("[debug] Openning local '%s' with mode '%s'" % (self.path, self.mode))
+
+            self.fd = open(self.path, self.mode)
+
+        # Write to remote (read local)
+        elif self.mode in ["rb"]:
+            if '\\' in self.path:
+                self.dir = os.path.dirname(self.path)
+
+            if self.debug:
+                print("[debug] Openning local '%s' with mode '%s'" % (self.path, self.mode))
+
+            self.fd = open(self.path, self.mode)
+
+            if self.expected_size is None:
+                self.expected_size = os.path.getsize(filename=self.path)
+
+        # Create progress bar
         if self.expected_size is not None:
             self.__progress = Progress(
                 TextColumn("[bold blue]{task.description}", justify="right"),
@@ -585,10 +644,16 @@ class FileWriter(object):
     def write(self, data):
         if self.expected_size is not None:
             self.__progress.update(self.__task, advance=len(data))
-        self.f.write(data)
+        return self.fd.write(data)
     
+    def read(self, size):
+        read_data = self.fd.read(size)
+        if self.expected_size is not None:
+            self.__progress.update(self.__task, advance=len(read_data))
+        return read_data
+
     def close(self, remove=False):
-        self.f.close()
+        self.fd.close()
 
         if remove:
             os.remove(path=self.path)
@@ -733,18 +798,19 @@ class SMBSession(object):
                 if entry.is_directory():
                     print("[>] Skipping '%s' because it is a directory." % path)
                 else:
-                    f = FileWriter(path=entry.get_longname(), expected_size=entry.get_filesize())
+                    f = LocalFileIO(
+                        mode="wb", 
+                        path=entry.get_longname(),
+                        expected_size=entry.get_filesize(), 
+                        debug=self.debug
+                    )
                     self.smbClient.getFile(
                         shareName=self.smb_share, 
                         pathName=entry.get_longname(), 
                         callback=f.write
                     )
                     f.close()
-        
-        except KeyboardInterrupt as e:
-            print("[!] Interrupted.")
-
-        except BrokenPipeError as e:
+        except (BrokenPipeError, KeyboardInterrupt) as e:
             print("[!] Interrupted.")
             self.close_smb_session()
             self.init_smb_session()
@@ -766,9 +832,11 @@ class SMBSession(object):
                     print("[>] Getting files of '%s'" % remote_smb_path)
                 for entry_file in files:
                     if not entry_file.is_directory():
-                        f = FileWriter(
+                        f = LocalFileIO(
+                            mode="wb",
                             path=remote_smb_path + '\\' + entry_file.get_longname(), 
-                            expected_size=entry_file.get_filesize()
+                            expected_size=entry_file.get_filesize(),
+                            debug=self.debug
                         )
                         try:
                             self.smbClient.getFile(
@@ -794,19 +862,100 @@ class SMBSession(object):
                 base_dir=self.smb_path, 
                 path=[path]
             )
-        except KeyboardInterrupt as e:
-            print("[!] Interrupted.")
-
-        except BrokenPipeError as e:
+        except (BrokenPipeError, KeyboardInterrupt) as e:
             print("[!] Interrupted.")
             self.close_smb_session()
             self.init_smb_session()
 
-    def put_file(self, path=None):
-        pass
+    def mkdir(self, path=None):
+        if path is not None:
+            # Prepare path
+            if '\\' in path:
+                path = path.strip('\\').split('\\')
+            else:
+                path = [path]
+            # Create each dir in the path
+            for depth in range(1, len(path)+1):
+                tmp_path = '\\'.join(path[:depth])
+                try:
+                    self.smbClient.createDirectory(
+                        shareName=self.smb_share, 
+                        pathName=ntpath.normpath(self.smb_path + '\\' + tmp_path + '\\')
+                    )
+                except impacket.smbconnection.SessionError as err:
+                    if err.getErrorCode() == 0xc0000035:
+                        # STATUS_OBJECT_NAME_COLLISION
+                        # Remote directory already created, this is normal
+                        # Src: https://github.com/fortra/impacket/blob/269ce69872f0e8f2188a80addb0c39fedfa6dcb8/impacket/nt_errors.py#L268C9-L268C19
+                        pass
+                    else:
+                        print("[!] Failed to create directory '%s': %s" % (tmp_path, err))
+                        if self.debug:
+                            traceback.print_exc()
+        else:
+            pass
 
-    def put_file_recursively(self, path=None):
-        pass
+    def put_file(self, localpath=None):
+        try:
+            localfile = os.path.basename(localpath)
+            f = LocalFileIO(
+                mode="rb", 
+                path=localpath, 
+                debug=self.debug
+            )
+            self.smbClient.putFile(
+                shareName=self.smb_share, 
+                pathName=self.smb_path + '\\' + localfile, 
+                callback=f.read
+            )
+            f.close()
+        except (BrokenPipeError, KeyboardInterrupt) as err:
+            print("[!] Interrupted.")
+            self.close_smb_session()
+            self.init_smb_session()
+        except Exception as err:
+            print("[!] Failed to upload '%s': %s" % (localfile, err))
+            if self.debug:
+                traceback.print_exc()
+
+    def put_file_recursively(self, localpath=None):
+        # Check if the path is a directory
+        if os.path.isdir(localpath):
+            # Iterate over all files and directories within the local path
+            local_files = {}
+            for root, dirs, files in os.walk(localpath):
+                if len(files) != 0:
+                    local_files[root] = files
+
+            # Iterate over the found files
+            for local_dir_path in sorted(local_files.keys()):
+                print("[>] Putting files of '%s'" % local_dir_path)
+
+                # Create remote directory
+                remote_dir_path = local_dir_path.replace(os.path.sep, '\\')
+                self.mkdir(
+                    path=ntpath.normpath(self.smb_path + '\\' + remote_dir_path + '\\')
+                )
+
+                for local_file_path in local_files[local_dir_path]:
+                    try:
+                        f = LocalFileIO(
+                            mode="rb", 
+                            path=local_dir_path + os.path.sep + local_file_path, 
+                            debug=self.debug
+                        )
+                        self.smbClient.putFile(
+                            shareName=self.smb_share, 
+                            pathName=ntpath.normpath(self.smb_path + '\\' + remote_dir_path + '\\' + local_file_path), 
+                            callback=f.read
+                        )
+                        f.close()
+                    except Exception as err:
+                        print("[!] Failed to upload '%s': %s" % (local_file_path, err))
+                        if self.debug:
+                            traceback.print_exc()
+        else:
+            print("[!] The specified localpath is not a directory.")
 
     def info(self, share=True, server=True):
         if server:
