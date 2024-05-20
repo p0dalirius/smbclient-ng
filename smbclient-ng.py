@@ -17,7 +17,7 @@ import time
 import traceback
 import impacket
 from impacket.smbconnection import SMBConnection as impacketSMBConnection
-from rich.progress import BarColumn, DownloadColumn, Progress, TaskID, TextColumn, TimeRemainingColumn, TransferSpeedColumn
+from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn, TimeRemainingColumn, TransferSpeedColumn
 from rich.console import Console
 from rich.table import Table
 
@@ -289,69 +289,6 @@ class InteractiveShell(object):
         if command == "":
             pass
         
-        #
-        elif command in ["reconnect", "connect"]:
-            self.smbSession.init_smb_session()
-
-        #
-        elif command == "close":
-            self.smbSession.close_smb_session()
-
-        # List shares
-        elif command == "shares":
-            shares = self.smbSession.list_shares()
-            if len(shares.keys()) != 0:
-
-                table = Table(title=None)
-                table.add_column("Share")
-                table.add_column("Hidden")
-                table.add_column("Type")
-                table.add_column("Description", justify="left")
-
-                for sharename in sorted(shares.keys()):
-                    is_hidden = bool(sharename.endswith('$'))
-                    types = ', '.join([s.replace("STYPE_","") for s in shares[sharename]["type"]])
-                    if is_hidden:
-                        table.add_row(
-                            sharename,
-                            str(is_hidden),
-                            types,
-                            shares[sharename]["comment"]
-                        )
-                    else:
-                        table.add_row(
-                            sharename,
-                            str(is_hidden),
-                            types,
-                            shares[sharename]["comment"]
-                        )
-
-                console = Console()
-                console.print(table)
-
-                # max_sharename_len = max([len(sharename) for sharename, sharedata in shares.items()]) + 1
-
-                # for sharename in sorted(shares.keys()):
-                #     print("- \x1b[1;93m%s\x1b[0m | %s" % (sharename.ljust(max_sharename_len), shares[sharename]["comment"]))
-            else:
-                print("[!] No share served on '%s'" % self.smbSession.address)
-
-        # Use a share
-        elif command == "use":
-            if len(arguments) != 0:
-                sharename = arguments[0]
-
-                # Reload the list of shares
-                self.smbSession.list_shares()
-
-                if sharename in self.smbSession.shares.keys():
-                    self.smb_share = sharename
-                    self.smbSession.smb_share = sharename
-                else:
-                    print("[!] No share named '%s' on '%s'" % (sharename, self.smbSession.address))
-            else:
-                self.commandCompleterObject.print_help(command=command)   
-
         # Change directory to a share
         elif command == "cd":
             if self.smb_share is not None:
@@ -375,6 +312,35 @@ class InteractiveShell(object):
                         print("[!] SMB Error: %s" % e)
                 else:
                     print("[!] Syntax: 'cd <path>'")
+            else:
+                print("[!] You must open a share first, try the 'use <share>' command.")
+
+        # Reconnects the current SMB session
+        elif command in ["reconnect", "connect"]:
+            self.smbSession.init_smb_session()
+
+        # Closes the current SMB session
+        elif command == "close":
+            self.smbSession.close_smb_session()
+
+        # Get a file
+        elif command == "get":
+            if self.smb_share is not None:
+                # Get files recursively
+                if arguments[0] == "-r":
+                    path = ' '.join(arguments[1:]).replace('/',r'\\')
+                    try:
+                        self.smbSession.get_file_recursively(path=path)
+                    except impacket.smbconnection.SessionError as e:
+                        print("[!] SMB Error: %s" % e)
+
+                # Get a single file
+                else:
+                    path = ' '.join(arguments).replace('/',r'\\')
+                    try:
+                        self.smbSession.get_file(path=path)
+                    except impacket.smbconnection.SessionError as e:
+                        print("[!] SMB Error: %s" % e)
             else:
                 print("[!] You must open a share first, try the 'use <share>' command.")
 
@@ -451,27 +417,6 @@ class InteractiveShell(object):
             else:
                 print("[!] You must open a share first, try the 'use <share>' command.")
 
-        # Get a file
-        elif command == "get":
-            if self.smb_share is not None:
-                # Get files recursively
-                if arguments[0] == "-r":
-                    path = ' '.join(arguments[1:]).replace('/',r'\\')
-                    try:
-                        self.smbSession.get_file_recursively(path=path)
-                    except impacket.smbconnection.SessionError as e:
-                        print("[!] SMB Error: %s" % e)
-
-                # Get a single file
-                else:
-                    path = ' '.join(arguments).replace('/',r'\\')
-                    try:
-                        self.smbSession.get_file(path=path)
-                    except impacket.smbconnection.SessionError as e:
-                        print("[!] SMB Error: %s" % e)
-            else:
-                print("[!] You must open a share first, try the 'use <share>' command.")
-
         # SMB server info
         elif command == "info":
             print_server_info = False
@@ -490,6 +435,61 @@ class InteractiveShell(object):
                 )
             except impacket.smbconnection.SessionError as e:
                 print("[!] SMB Error: %s" % e)
+
+        # List shares
+        elif command == "shares":
+            shares = self.smbSession.list_shares()
+            if len(shares.keys()) != 0:
+
+                table = Table(title=None)
+                table.add_column("Share")
+                table.add_column("Hidden")
+                table.add_column("Type")
+                table.add_column("Description", justify="left")
+
+                for sharename in sorted(shares.keys()):
+                    is_hidden = bool(sharename.endswith('$'))
+                    types = ', '.join([s.replace("STYPE_","") for s in shares[sharename]["type"]])
+                    if is_hidden:
+                        table.add_row(
+                            sharename,
+                            str(is_hidden),
+                            types,
+                            shares[sharename]["comment"]
+                        )
+                    else:
+                        table.add_row(
+                            sharename,
+                            str(is_hidden),
+                            types,
+                            shares[sharename]["comment"]
+                        )
+
+                console = Console()
+                console.print(table)
+
+                # max_sharename_len = max([len(sharename) for sharename, sharedata in shares.items()]) + 1
+
+                # for sharename in sorted(shares.keys()):
+                #     print("- \x1b[1;93m%s\x1b[0m | %s" % (sharename.ljust(max_sharename_len), shares[sharename]["comment"]))
+            else:
+                print("[!] No share served on '%s'" % self.smbSession.address)
+
+        # Use a share
+        elif command == "use":
+            if len(arguments) != 0:
+                sharename = arguments[0]
+
+                # Reload the list of shares
+                self.smbSession.list_shares()
+
+                if sharename in self.smbSession.shares.keys():
+                    self.smb_share = sharename
+                    self.smbSession.smb_share = sharename
+                else:
+                    print("[!] No share named '%s' on '%s'" % (sharename, self.smbSession.address))
+            else:
+                self.commandCompleterObject.print_help(command=command)   
 
         else:
             pass
@@ -846,7 +846,7 @@ def parseArgs():
     by @podalirius_                         %10s  |___/  
     """ % ("v"+VERSION))
 
-    parser = argparse.ArgumentParser(add_help=True, description="smbclient-ng")
+    parser = argparse.ArgumentParser(add_help=True, description="smbclient-ng, a fast and user friendly way to interact with SMB shares.")
     parser.add_argument("--debug", dest="debug", action="store_true", default=False, help="Debug mode")
 
     parser.add_argument("--target", action="store", metavar="ip address", required=True, type=str, help="IP Address of the SMB Server to connect to.")  
