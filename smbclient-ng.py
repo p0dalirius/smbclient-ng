@@ -59,6 +59,22 @@ class CommandCompleter(object):
                 "description": ["Get information about the server and or the share."], 
                 "subcommands": ["server", "share"]
             },
+            "lcd": {
+                "description": ["Changes the current local directory."], 
+                "subcommands": []
+            },
+            "lls": {
+                "description": ["Changes the current local directory."], 
+                "subcommands": []
+            },
+            "lmkdir": {
+                "description": [""], 
+                "subcommands": []
+            },
+            "lpwd": {
+                "description": ["Shows the current local directory."], 
+                "subcommands": []
+            },
             "ls": {
                 "description": ["List the contents of the current working directory."], 
                 "subcommands": []
@@ -339,6 +355,23 @@ class InteractiveShell(object):
                     print("[!] Syntax: 'cd <path>'")
             else:
                 print("[!] You must open a share first, try the 'use <share>' command.")
+
+        # 
+        elif command == "lcd":
+            pass
+
+        # 
+        elif command == "lls":
+            pass
+
+        # 
+        elif command == "lmkdir":
+            pass
+
+        # Shows the current local directory.
+        elif command == "lpwd":
+            # print("Current local working directory:")
+            print(os.getcwd())
 
         # Change directory to a share
         elif command == "ls" or command == "dir":
