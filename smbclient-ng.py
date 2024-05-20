@@ -11,6 +11,7 @@ import os
 import readline
 from sectools.windows.crypto import parse_lm_nt_hashes
 import re
+import stat
 import sys
 import time
 import traceback
@@ -64,7 +65,7 @@ class CommandCompleter(object):
                 "subcommands": []
             },
             "lls": {
-                "description": ["Changes the current local directory.", "Syntax: 'lls'"], 
+                "description": ["Lists the contents of the current local directory.", "Syntax: 'lls'"], 
                 "subcommands": []
             },
             "lmkdir": {
@@ -202,6 +203,27 @@ def b_filesize(l):
         if l < (1024**(k+1)):
             break
     return "%4.2f %s" % (round(l/(1024**(k)),2), units[k])
+
+
+def unix_permissions(entryname):
+    mode = os.lstat(entryname).st_mode
+    permissions = []
+
+    permissions.append('d' if stat.S_ISDIR(mode) else '-')
+
+    permissions.append('r' if mode & stat.S_IRUSR else '-')
+    permissions.append('w' if mode & stat.S_IWUSR else '-')
+    permissions.append('x' if mode & stat.S_IXUSR else '-')
+
+    permissions.append('r' if mode & stat.S_IRGRP else '-')
+    permissions.append('w' if mode & stat.S_IWGRP else '-')
+    permissions.append('x' if mode & stat.S_IXGRP else '-')
+
+    permissions.append('r' if mode & stat.S_IROTH else '-')
+    permissions.append('w' if mode & stat.S_IWOTH else '-')
+    permissions.append('x' if mode & stat.S_IXOTH else '-')
+
+    return ''.join(permissions)
 
 
 class InteractiveShell(object):
@@ -370,11 +392,21 @@ class InteractiveShell(object):
             else:
                 self.commandCompleterObject.print_help(command=command)
 
-        # 
+        # Lists the contents of the current local directory.
         elif command == "lls":
-            pass
+            folder_contents = os.listdir(path='.')
 
-        # 
+            for entryname in sorted(folder_contents):
+                rights_str = unix_permissions(entryname)
+                size_str = b_filesize(os.path.getsize(filename=entryname))
+                date_str = datetime.datetime.fromtimestamp(os.path.getmtime(filename=entryname)).strftime("%Y-%m-%d %H:%M")
+
+                if os.path.isdir(s=entryname):
+                    print("%s %10s  %s  \x1b[1;96m%s\x1b[0m%s" % (rights_str, size_str, date_str, entryname, os.path.sep))
+                else:
+                    print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, entryname))
+
+        # Creates a new local directory.
         elif command == "lmkdir":
             path = ' '.join(arguments)
             if not os.path.exists(path):
@@ -463,14 +495,11 @@ class InteractiveShell(object):
             pass
 
     def __prompt(self):
-
         if self.smb_share is None:
             str_prompt = "[\x1b[1;94m\\\\%s\\\x1b[0m]> " % (self.smbSession.address)
-
         else:
             str_path = "\\\\%s\\%s\\%s" % (self.smbSession.address, self.smb_share, self.smb_path)
             str_prompt = "[\x1b[1;94m%s\x1b[0m]> " % str_path
-
         return str_prompt
 
 
