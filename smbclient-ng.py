@@ -17,6 +17,8 @@ import traceback
 import impacket
 from impacket.smbconnection import SMBConnection as impacketSMBConnection
 from rich.progress import BarColumn, DownloadColumn, Progress, TaskID, TextColumn, TimeRemainingColumn, TransferSpeedColumn
+from rich.console import Console
+from rich.table import Table
 
 
 VERSION = "2.1.0"
@@ -52,6 +54,10 @@ class CommandCompleter(object):
             "help": {
                 "description": ["Displays this help message."], 
                 "subcommands": ["format"]
+            },
+            "info": {
+                "description": ["Get information about the server and or the share."], 
+                "subcommands": ["server", "share"]
             },
             "ls": {
                 "description": ["List the contents of the current working directory."], 
@@ -199,9 +205,7 @@ class InteractiveShell(object):
         readline.set_completer_delims("\n")
 
     def run(self):
-
         running = True
-
         while running:
             try:
                 user_input = input(self.__prompt()).strip().split(" ")
@@ -259,10 +263,38 @@ class InteractiveShell(object):
         elif command == "shares":
             shares = self.smbSession.list_shares()
             if len(shares.keys()) != 0:
-                max_sharename_len = max([len(sharename) for sharename, sharedata in shares.items()]) + 1
+
+                table = Table(title=None)
+                table.add_column("Share")
+                table.add_column("Hidden")
+                table.add_column("Type")
+                table.add_column("Description", justify="left")
 
                 for sharename in sorted(shares.keys()):
-                    print("- \x1b[1;93m%s\x1b[0m | %s" % (sharename.ljust(max_sharename_len), shares[sharename]["comment"]))
+                    is_hidden = bool(sharename.endswith('$'))
+                    types = ', '.join([s.replace("STYPE_","") for s in shares[sharename]["type"]])
+                    if is_hidden:
+                        table.add_row(
+                            sharename,
+                            str(is_hidden),
+                            types,
+                            shares[sharename]["comment"]
+                        )
+                    else:
+                        table.add_row(
+                            sharename,
+                            str(is_hidden),
+                            types,
+                            shares[sharename]["comment"]
+                        )
+
+                console = Console()
+                console.print(table)
+
+                # max_sharename_len = max([len(sharename) for sharename, sharedata in shares.items()]) + 1
+
+                # for sharename in sorted(shares.keys()):
+                #     print("- \x1b[1;93m%s\x1b[0m | %s" % (sharename.ljust(max_sharename_len), shares[sharename]["comment"]))
             else:
                 print("[!] No share served on '%s'" % self.smbSession.address)
 
@@ -360,6 +392,25 @@ class InteractiveShell(object):
                 except impacket.smbconnection.SessionError as e:
                     print("[!] SMB Error: %s" % e)
 
+        # SMB server info
+        elif command == "info":
+            print_server_info = False
+            print_share_info = False
+            if len(arguments) != 0:
+                print_server_info = (arguments[0].lower() == "server")
+                print_share_info = (arguments[0].lower() == "share")
+            else:
+                print_server_info = True
+                print_share_info = True
+
+            try:
+                self.smbSession.info(
+                    share=print_share_info,
+                    server=print_server_info
+                )
+            except impacket.smbconnection.SessionError as e:
+                print("[!] SMB Error: %s" % e)
+
         else:
             pass
 
@@ -373,6 +424,45 @@ class InteractiveShell(object):
             str_prompt = "[\x1b[1;94m%s\x1b[0m]> " % str_path
 
         return str_prompt
+
+
+def STYPE_MASK(stype_value):
+    known_flags = {
+        ## One of the following values may be specified. You can isolate these values by using the STYPE_MASK value.
+        # Disk drive.
+        "STYPE_DISKTREE": 0x0,
+
+        # Print queue.
+        "STYPE_PRINTQ": 0x1,
+
+        # Communication device.
+        "STYPE_DEVICE": 0x2,
+
+        # Interprocess communication (IPC).
+        "STYPE_IPC": 0x3,
+
+        ## In addition, one or both of the following values may be specified.
+        # Special share reserved for interprocess communication (IPC$) or remote administration of the server (ADMIN$).
+        # Can also refer to administrative shares such as C$, D$, E$, and so forth. For more information, see Network Share Functions.
+        "STYPE_SPECIAL": 0x80000000,
+
+        # A temporary share.
+        "STYPE_TEMPORARY": 0x40000000
+    }
+    flags = []
+    if (stype_value & 0b11) == known_flags["STYPE_DISKTREE"]:
+        flags.append("STYPE_DISKTREE")
+    elif (stype_value & 0b11) == known_flags["STYPE_PRINTQ"]:
+        flags.append("STYPE_PRINTQ")
+    elif (stype_value & 0b11) == known_flags["STYPE_DEVICE"]:
+        flags.append("STYPE_DEVICE")
+    elif (stype_value & 0b11) == known_flags["STYPE_IPC"]:
+        flags.append("STYPE_IPC")
+    if (stype_value & known_flags["STYPE_SPECIAL"]) == known_flags["STYPE_SPECIAL"]:
+        flags.append("STYPE_SPECIAL")
+    if (stype_value & known_flags["STYPE_TEMPORARY"]) == known_flags["STYPE_TEMPORARY"]:
+        flags.append("STYPE_TEMPORARY")
+    return flags
 
 
 class FileWriter(object):
@@ -528,7 +618,13 @@ class SMBSession(object):
                 sharecomment = share["shi1_remark"][:-1]
                 sharetype = share["shi1_type"]
 
-                self.shares[sharename] = {"name": sharename, "type": sharetype, "comment": sharecomment}
+                self.shares[sharename] = {
+                    "name": sharename, 
+                    "type": STYPE_MASK(sharetype), 
+                    "rawtype": sharetype, 
+                    "comment": sharecomment
+                }
+
         else:
             print("")
 
@@ -611,7 +707,39 @@ class SMBSession(object):
             path=[path]
         )
 
+    def put_file(self, path=None):
+        pass
 
+    def put_file_recursively(self, path=None):
+        pass
+
+    def info(self, share=True, server=True):
+        if server:
+            print("[+] Server:")
+            print("  ├─NetBIOS:")
+            print("  │ ├─ \x1b[94mNetBIOS Hostname\x1b[0m \x1b[90m────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerName()))
+            print("  │ └─ \x1b[94mNetBIOS Domain\x1b[0m \x1b[90m──────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerDomain()))
+            print("  ├─DNS:")
+            print("  │ ├─ \x1b[94mDNS Hostname\x1b[0m \x1b[90m────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerDNSHostName()))
+            print("  │ └─ \x1b[94mDNS Domain\x1b[0m \x1b[90m──────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerDNSDomainName()))
+            print("  ├─OS:")
+            print("  │ ├─ \x1b[94mOS Name\x1b[0m \x1b[90m─────────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerOS()))
+            print("  │ └─ \x1b[94mOS Version\x1b[0m \x1b[90m──────────────\x1b[0m : \x1b[93m%s.%s.%s\x1b[0m" % (self.smbClient.getServerOSMajor(), self.smbClient.getServerOSMinor(), self.smbClient.getServerOSBuild()))
+            print("  ├─SMB:")
+            print("  │ ├─ \x1b[94mSMB Signing Required\x1b[0m \x1b[90m────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.isSigningRequired()))
+            print("  │ ├─ \x1b[94mSMB Login Required\x1b[0m \x1b[90m──────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.isLoginRequired()))
+            print("  │ ├─ \x1b[94mSupports NTLMv2\x1b[0m \x1b[90m─────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.doesSupportNTLMv2()))
+            MaxReadSize = self.smbClient.getIOCapabilities()["MaxReadSize"]
+            print("  │ ├─ \x1b[94mMax size of read chunk\x1b[0m \x1b[90m──\x1b[0m : \x1b[93m%d bytes (%s)\x1b[0m" % (MaxReadSize, b_filesize(MaxReadSize)))
+            MaxWriteSize = self.smbClient.getIOCapabilities()["MaxWriteSize"]
+            print("  │ └─ \x1b[94mMax size of write chunk\x1b[0m \x1b[90m─\x1b[0m : \x1b[93m%d bytes (%s)\x1b[0m" % (MaxWriteSize, b_filesize(MaxWriteSize)))
+            print("  └─")
+
+
+
+        if share and self.smb_share is not None:
+            print("\n[+] Share:")
+            # print("│ " % self.smbClient.queryInfo())
 
 
 def parseArgs():
