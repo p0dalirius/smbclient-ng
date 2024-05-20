@@ -421,26 +421,28 @@ class InteractiveShell(object):
 
         # Get a file
         elif command == "get":
-            try:
-                # Get files recursively
-                if arguments[0] == "-r":
-                    path = ' '.join(arguments[1:]).replace('/',r'\\')
-                    try:
-                        self.smbSession.get_file_recursively(path=path)
-                    except impacket.smbconnection.SessionError as e:
-                        print("[!] SMB Error: %s" % e)
+            if self.smb_share is not None:
+                try:
+                    # Get files recursively
+                    if arguments[0] == "-r":
+                        path = ' '.join(arguments[1:]).replace('/',r'\\')
+                        try:
+                            self.smbSession.get_file_recursively(path=path)
+                        except impacket.smbconnection.SessionError as e:
+                            print("[!] SMB Error: %s" % e)
 
-                # Get a single file
-                else:
-                    path = ' '.join(arguments).replace('/',r'\\')
-                    try:
-                        self.smbSession.get_file(path=path)
-                    except impacket.smbconnection.SessionError as e:
-                        print("[!] SMB Error: %s" % e)
+                    # Get a single file
+                    else:
+                        path = ' '.join(arguments).replace('/',r'\\')
+                        try:
+                            self.smbSession.get_file(path=path)
+                        except impacket.smbconnection.SessionError as e:
+                            print("[!] SMB Error: %s" % e)
 
-            except KeyboardInterrupt as e:
-                print("[!] Interrupted.")
-        
+                except KeyboardInterrupt as e:
+                    print("[!] Interrupted.")
+            else:
+                print("[!] You must open a share first, try the 'use <share>' command.")
 
         # SMB server info
         elif command == "info":
