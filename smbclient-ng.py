@@ -316,9 +316,7 @@ class InteractiveShell(object):
 
         # Use a share
         elif command == "use":
-            if len(arguments) == 0:
-                self.commandCompleterObject.print_help(command="use")
-            else:
+            if len(arguments) != 0:
                 sharename = arguments[0]
 
                 # Reload the list of shares
@@ -329,6 +327,8 @@ class InteractiveShell(object):
                     self.smbSession.smb_share = sharename
                 else:
                     print("[!] No share named '%s' on '%s'" % (sharename, self.smbSession.address))
+            else:
+                self.commandCompleterObject.print_help(command=command)   
 
         # Change directory to a share
         elif command == "cd":
@@ -356,9 +356,19 @@ class InteractiveShell(object):
             else:
                 print("[!] You must open a share first, try the 'use <share>' command.")
 
-        # 
+        # Changes the current local directory.
         elif command == "lcd":
-            pass
+            if len(arguments) != 0:
+                path = ' '.join(arguments)
+                if os.path.exists(path=path):
+                    if os.path.isdir(s=path):
+                        os.chdir(path=path)
+                    else:
+                        print("[!] Path '%s' is not a directory." % path)
+                else:
+                    print("[!] Folder '%s' does not exists." % path)
+            else:
+                self.commandCompleterObject.print_help(command=command)
 
         # 
         elif command == "lls":
@@ -366,7 +376,9 @@ class InteractiveShell(object):
 
         # 
         elif command == "lmkdir":
-            pass
+            path = ' '.join(arguments)
+            if not os.path.exists(path):
+                os.mkdir(path=path)
 
         # Shows the current local directory.
         elif command == "lpwd":
@@ -409,21 +421,26 @@ class InteractiveShell(object):
 
         # Get a file
         elif command == "get":
-            # Get files recursively
-            if arguments[0] == "-r":
-                path = ' '.join(arguments[1:]).replace('/',r'\\')
-                try:
-                    self.smbSession.get_file_recursively(path=path)
-                except impacket.smbconnection.SessionError as e:
-                    print("[!] SMB Error: %s" % e)
+            try:
+                # Get files recursively
+                if arguments[0] == "-r":
+                    path = ' '.join(arguments[1:]).replace('/',r'\\')
+                    try:
+                        self.smbSession.get_file_recursively(path=path)
+                    except impacket.smbconnection.SessionError as e:
+                        print("[!] SMB Error: %s" % e)
 
-            # Get a single file
-            else:
-                path = ' '.join(arguments).replace('/',r'\\')
-                try:
-                    self.smbSession.get_file(path=path)
-                except impacket.smbconnection.SessionError as e:
-                    print("[!] SMB Error: %s" % e)
+                # Get a single file
+                else:
+                    path = ' '.join(arguments).replace('/',r'\\')
+                    try:
+                        self.smbSession.get_file(path=path)
+                    except impacket.smbconnection.SessionError as e:
+                        print("[!] SMB Error: %s" % e)
+
+            except KeyboardInterrupt as e:
+                print("[!] Interrupted.")
+        
 
         # SMB server info
         elif command == "info":
