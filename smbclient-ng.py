@@ -79,6 +79,10 @@ class CommandCompleter(object):
                 "description": ["List the contents of the current remote working directory.", "Syntax: 'ls'"], 
                 "subcommands": []
             },
+            "mkdir": {
+                "description": ["Creates a new remote directory.", "Syntax: 'mkdir <directory>'"], 
+                "subcommands": []
+            },
             "put": {
                 "description": ["Put a local file or directory in a remote directory.", "Syntax: 'put [-r] <directory or file>'"], 
                 "subcommands": []
@@ -438,6 +442,11 @@ class InteractiveShell(object):
                         print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (meta_string, size_str, date_str, longname))
             else:
                 print("[!] You must open a share first, try the 'use <share>' command.")
+
+        # Creates a new remote directory.
+        elif command == "mkdir":
+            path = ' '.join(arguments)
+            self.smbSession.mkdir(path=path)
 
         # Put a file
         elif command == "put":
@@ -870,10 +879,12 @@ class SMBSession(object):
     def mkdir(self, path=None):
         if path is not None:
             # Prepare path
+            path = path.replace('/','\\')
             if '\\' in path:
                 path = path.strip('\\').split('\\')
             else:
                 path = [path]
+                
             # Create each dir in the path
             for depth in range(1, len(path)+1):
                 tmp_path = '\\'.join(path[:depth])
