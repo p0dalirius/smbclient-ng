@@ -205,6 +205,19 @@ class CommandCompleter(object):
 
 
 def b_filesize(l):
+    """
+    Convert a file size from bytes to a more readable format using the largest appropriate unit.
+
+    This function takes an integer representing a file size in bytes and converts it to a human-readable
+    string using the largest appropriate unit from bytes (B) to petabytes (PB). The result is rounded to
+    two decimal places.
+
+    Args:
+        l (int): The file size in bytes.
+
+    Returns:
+        str: A string representing the file size in a more readable format, including the appropriate unit.
+    """
     units = ['B','kB','MB','GB','TB','PB']
     for k in range(len(units)):
         if l < (1024**(k+1)):
@@ -213,6 +226,21 @@ def b_filesize(l):
 
 
 def unix_permissions(entryname):
+    """
+    Generate a string representing the Unix-style permissions for a given file or directory.
+
+    This function uses the os.lstat() method to retrieve the status of the specified file or directory,
+    then constructs a string that represents the Unix-style permissions based on the mode of the file.
+
+    Args:
+        entryname (str): The path to the file or directory for which permissions are being determined.
+
+    Returns:
+        str: A string of length 10 representing the Unix-style permissions (e.g., '-rwxr-xr--').
+             The first character is either 'd' (directory), '-' (not a directory), followed by
+             three groups of 'r', 'w', 'x' (read, write, execute permissions) for owner, group,
+             and others respectively.
+    """
     mode = os.lstat(entryname).st_mode
     permissions = []
 
@@ -234,7 +262,25 @@ def unix_permissions(entryname):
 
 
 class InteractiveShell(object):
+    """
+    Class InteractiveShell is designed to manage the interactive command line interface for smbclient-ng.
+    
+    This class handles user input, executes commands, and manages the state of the SMB session. It provides
+    a command line interface for users to interact with SMB shares, execute commands like directory listing,
+    file transfer, and more.
 
+    Attributes:
+        smbSession (SMBConnection): The active SMB connection session.
+        debug (bool): Flag to enable or disable debug mode.
+        smb_share (str): The current SMB share in use.
+        smb_path (str): The current path within the SMB share.
+        commandCompleterObject (CommandCompleter): Object to handle command completion and help generation.
+
+    Methods:
+        __init__(self, smbSession, debug=False): Initializes the InteractiveShell with the given SMB session and debug mode.
+        run(self): Starts the command line interface loop, processing user input until exit.
+    """
+    
     def __init__(self, smbSession, debug=False):
         self.smbSession = smbSession
         self.debug = debug
@@ -537,6 +583,19 @@ class InteractiveShell(object):
 
 
 def STYPE_MASK(stype_value):
+    """
+    Extracts the share type flags from a given share type value.
+
+    This function uses bitwise operations to determine which share type flags are set in the provided `stype_value`.
+    It checks against known share type flags and returns a list of the flags that are set.
+
+    Parameters:
+        stype_value (int): The share type value to analyze, typically obtained from SMB share properties.
+
+    Returns:
+        list: A list of strings, where each string represents a share type flag that is set in the input value.
+    """
+
     known_flags = {
         ## One of the following values may be specified. You can isolate these values by using the STYPE_MASK value.
         # Disk drive.
@@ -685,7 +744,29 @@ class LocalFileIO(object):
 
 class SMBSession(object):
     """
-    Documentation for class SMBSession
+    Class SMBSession is designed to handle the session management for SMB (Server Message Block) protocol connections.
+    It provides functionalities to connect to an SMB server, authenticate using either NTLM or Kerberos, and manage SMB shares.
+
+    Attributes:
+        address (str): The IP address or hostname of the SMB server.
+        domain (str): The domain name for SMB server authentication.
+        username (str): The username for SMB server authentication.
+        password (str): The password for SMB server authentication.
+        lmhash (str): The LM hash of the user's password, if available.
+        nthash (str): The NT hash of the user's password, if available.
+        use_kerberos (bool): A flag to determine whether to use Kerberos for authentication.
+        kdcHost (str): The Key Distribution Center (KDC) host for Kerberos authentication.
+        debug (bool): A flag to enable debug output.
+        smbClient (object): The SMB client object used for the connection.
+        connected (bool): A flag to check the status of the connection.
+        smb_share (str): The current SMB share in use.
+        smb_path (str): The current path within the SMB share.
+
+    Methods:
+        __init__(address, domain, username, password, lmhash, nthash, use_kerberos=False, kdcHost=None, debug=False):
+            Initializes the SMBSession with the specified parameters.
+        init_smb_session():
+            Initializes the SMB session by connecting to the server and authenticating using the specified method.
     """
 
     def __init__(self, address, domain, username, password, lmhash, nthash, use_kerberos=False, kdcHost=None, debug=False):
@@ -884,7 +965,7 @@ class SMBSession(object):
                 path = path.strip('\\').split('\\')
             else:
                 path = [path]
-                
+
             # Create each dir in the path
             for depth in range(1, len(path)+1):
                 tmp_path = '\\'.join(path[:depth])
