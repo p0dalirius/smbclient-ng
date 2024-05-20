@@ -284,46 +284,63 @@ class InteractiveShell(object):
 
         # Change directory to a share
         elif command == "cd":
-            path = ' '.join(arguments).replace('/',r'\\')
-            path = path + r'\\'
-            path = re.sub(r'\\+', r'\\', path)
+            if self.smb_share is not None:
+                if len(arguments) != 0:
+                    path = ' '.join(arguments).replace('/',r'\\')
+                    path = path + '\\'
+                    path = re.sub(r'\\+', r'\\', path)
 
-            if not path.startswith(r'\\'):
-                # Relative path
-                path = self.smb_path + path
-            
-            try:
-                self.smbSession.list_contents(shareName=self.smb_share, path=path)
-                self.smb_path = path
-            except impacket.smbconnection.SessionError as e:
-                print("[!] SMB Error: %s" % e)
+                    if not path.startswith('\\'):
+                        # Relative path
+                        path = self.smb_path + path
+                    
+                    path = ntpath.normpath(path=path) + '\\'
+                    if path == '.\\':
+                        path = ""
+
+                    try:
+                        self.smbSession.list_contents(shareName=self.smb_share, path=path)
+                        self.smb_path = path
+                    except impacket.smbconnection.SessionError as e:
+                        print("[!] SMB Error: %s" % e)
+                else:
+                    print("[!] Syntax: 'cd <path>'")
+            else:
+                print("[!] You must open a share first, try the 'use <share>' command.")
 
         # Change directory to a share
         elif command == "ls" or command == "dir":
-            # Reload the list of shares
-            folder_contents = self.smbSession.list_contents(shareName=self.smb_share, path=self.smb_path)
+            # 
+            if self.smb_share is not None:
+                # Read the files
+                folder_contents = self.smbSession.list_contents(
+                    shareName=self.smb_share, 
+                    path=self.smb_path
+                )
 
-            for longname in sorted(folder_contents.keys(), key=lambda x:x.lower()):
-                entry = folder_contents[longname]
+                for longname in sorted(folder_contents.keys(), key=lambda x:x.lower()):
+                    entry = folder_contents[longname]
 
-                meta_string = ""
-                meta_string += ("d" if entry.is_directory() else "-" )
-                meta_string += ("a" if entry.is_archive() else "-" )
-                meta_string += ("c" if entry.is_compressed() else "-" )
-                meta_string += ("h" if entry.is_hidden() else "-" )
-                meta_string += ("n" if entry.is_normal() else "-" )
-                meta_string += ("r" if entry.is_readonly() else "-" )
-                meta_string += ("s" if entry.is_system() else "-" )
-                meta_string += ("t" if entry.is_temporary() else "-" )
+                    meta_string = ""
+                    meta_string += ("d" if entry.is_directory() else "-")
+                    meta_string += ("a" if entry.is_archive() else "-")
+                    meta_string += ("c" if entry.is_compressed() else "-")
+                    meta_string += ("h" if entry.is_hidden() else "-")
+                    meta_string += ("n" if entry.is_normal() else "-")
+                    meta_string += ("r" if entry.is_readonly() else "-")
+                    meta_string += ("s" if entry.is_system() else "-")
+                    meta_string += ("t" if entry.is_temporary() else "-")
 
-                size_str = b_filesize(entry.get_filesize())
+                    size_str = b_filesize(entry.get_filesize())
 
-                date_str = datetime.datetime.fromtimestamp(entry.get_atime_epoch()).strftime("%Y-%m-%d %H:%M")
-                
-                if entry.is_directory():
-                    print("%s %10s  %s  \x1b[1;96m%s\x1b[0m\\" % (meta_string, size_str, date_str, longname))
-                else:
-                    print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (meta_string, size_str, date_str, longname))
+                    date_str = datetime.datetime.fromtimestamp(entry.get_atime_epoch()).strftime("%Y-%m-%d %H:%M")
+                    
+                    if entry.is_directory():
+                        print("%s %10s  %s  \x1b[1;96m%s\x1b[0m\\" % (meta_string, size_str, date_str, longname))
+                    else:
+                        print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (meta_string, size_str, date_str, longname))
+            else:
+                print("[!] You must open a share first, try the 'use <share>' command.")
 
         # Get a file
         elif command == "get":
@@ -593,6 +610,7 @@ class SMBSession(object):
             base_dir=self.smb_path, 
             path=[path]
         )
+
 
 
 
