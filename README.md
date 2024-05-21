@@ -28,9 +28,12 @@
 - [x] `ls`: List the contents of the current remote working directory. 
 - [x] `mkdir`: Creates a new remote directory. 
 - [x] `put`: Put a local file to a remote directory. (`put -r` to recursively upload a local directory to remote).
+- [x] `rm`: Removes a remote file. 
+- [x] `rmdir`: Removes a local directory. 
 - [x] `reconnect`: Reconnect to the remote machine (useful if connection timed out). 
 - [x] `shares`: Lists the SMB shares served by the remote machine. 
 - [x] `use`: Use a SMB share.
+- [x] `tree`: Displays a tree view of the nested subfolders.
 
 
 ## Demonstration
