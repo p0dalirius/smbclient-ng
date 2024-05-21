@@ -111,6 +111,10 @@ class CommandCompleter(object):
                 "description": ["Reconnect to the remote machine (useful if connection timed out).", "Syntax: 'reconnect'"], 
                 "subcommands": []
             },
+            "rmdir": {
+                "description": ["Removes a remote directory.", "Syntax: 'rmdir <directory>'"], 
+                "subcommands": []
+            },
             "shares": {
                 "description": ["Lists the SMB shares served by the remote machine.", "Syntax: 'shares'"], 
                 "subcommands": []
@@ -467,16 +471,17 @@ class InteractiveShell(object):
         # Creates a new local directory.
         elif command == "lmkdir":
             path = ' '.join(arguments)
-            if not os.path.exists(path):
-                # Split each dir
-                if os.path.sep in path:
-                    path = path.strip(os.path.sep).split(os.path.sep)
-                else:
-                    path = [path]
+            
+            # Split each dir
+            if os.path.sep in path:
+                path = path.strip(os.path.sep).split(os.path.sep)
+            else:
+                path = [path]
 
-                # Create each dir in the path
-                for depth in range(1, len(path)+1):
-                    tmp_path = os.path.sep.join(path[:depth])
+            # Create each dir in the path
+            for depth in range(1, len(path)+1):
+                tmp_path = os.path.sep.join(path[:depth])
+                if not os.path.exists(tmp_path):
                     os.mkdir(path=tmp_path)
 
         # Removes a local directory.
