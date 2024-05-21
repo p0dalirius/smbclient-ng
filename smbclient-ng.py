@@ -632,11 +632,16 @@ class InteractiveShell(object):
             pass
 
     def __prompt(self):
+        self.smbSession.ping_smb_session()
+        if self.smbSession.connected:
+            connected_dot = "\x1b[1;92m⏺ \x1b[0m"
+        else:
+            connected_dot = "\x1b[1;91m⏺ \x1b[0m"
         if self.smb_share is None:
-            str_prompt = "[\x1b[1;94m\\\\%s\\\x1b[0m]> " % (self.smbSession.address)
+            str_prompt = "%s[\x1b[1;94m\\\\%s\\\x1b[0m]> " % (connected_dot, self.smbSession.address)
         else:
             str_path = "\\\\%s\\%s\\%s" % (self.smbSession.address, self.smb_share, self.smb_path)
-            str_prompt = "[\x1b[1;94m%s\x1b[0m]> " % str_path
+            str_prompt = "%s[\x1b[1;94m%s\x1b[0m]> " % (connected_dot, str_path)
         return str_prompt
 
 
@@ -898,9 +903,10 @@ class SMBSession(object):
     def ping_smb_session(self):
         try:
             self.smbClient.getSMBServer().echo()
-            return True
+            self.connected = True
         except Exception as e:
-            return False
+            self.connected = False
+        return self.connected
 
     def list_shares(self):
         self.shares = {}
@@ -925,7 +931,7 @@ class SMBSession(object):
                         "rawtype": sharetype, 
                         "comment": sharecomment
                     }
-                    
+
             else:
                 print("[!] Error: SMBSession.smbClient is None.")
 
