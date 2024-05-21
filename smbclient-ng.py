@@ -579,37 +579,50 @@ class InteractiveShell(object):
 
         # Removes a remote file
         elif command == "rm":
-            path = ' '.join(arguments)
-            if self.smbSession.remote_path_exists(path):
-                if self.smbSession.remote_path_isfile(path):
-                    try:
-                        pass
-                    except Exception as e:
-                        print("[!] Error removing file '%s' : %s" % path)
+            if len(arguments) != 0:
+                self.smbSession.ping_smb_session()
+                if self.smbSession.connected:
+                    path = ' '.join(arguments)
+                    if self.smbSession.path_exists(path):
+                        if self.smbSession.path_isfile(path):
+                            try:
+                                pass
+                            except Exception as e:
+                                print("[!] Error removing file '%s' : %s" % path)
+                        else:
+                            print("[!] Cannot delete '%s': This is a directory, use 'rmdir <directory>' instead." % path)
+                    else:
+                        print("[!] Remote file '%s' does not exist." % path)
                 else:
-                    print("[!] Cannot delete '%s': This is a directory, use 'rmdir <directory>' instead." % path)
+                    print("[!] SMB Session is disconnected.")
             else:
-                print("[!] Remote file '%s' does not exist." % path)
-
+                self.commandCompleterObject.print_help(command=command)
+            
         # Removes a remote directory
         elif command == "rmdir":
-            path = ' '.join(arguments)
-            if self.smbSession.remote_path_exists(path):
-                if self.smbSession.remote_path_isdir(path):
-                    try:
-                        pass
-                    except Exception as e:
-                        print("[!] Error removing directory '%s' : %s" % path)
+            if len(arguments) != 0:
+                self.smbSession.ping_smb_session()
+                if self.smbSession.connected:
+                    path = ' '.join(arguments)
+                    if self.smbSession.path_exists(path):
+                        if self.smbSession.path_isdir(path):
+                            try:
+                                pass
+                            except Exception as e:
+                                print("[!] Error removing directory '%s' : %s" % path)
+                        else:
+                            print("[!] Cannot delete '%s': This is a file, use 'rm <file>' instead." % path)
+                    else:
+                        print("[!] Remote directory '%s' does not exist." % path)
                 else:
-                    print("[!] Cannot delete '%s': This is a file, use 'rm <file>' instead." % path)
+                    print("[!] SMB Session is disconnected.")
             else:
-                print("[!] Remote directory '%s' does not exist." % path)
-
+                self.commandCompleterObject.print_help(command=command)
+            
         # List shares
         elif command == "shares":
             shares = self.smbSession.list_shares()
             if len(shares.keys()) != 0:
-
                 table = Table(title=None)
                 table.add_column("Share")
                 table.add_column("Hidden")
@@ -658,7 +671,7 @@ class InteractiveShell(object):
                     else:
                         print("[!] No share named '%s' on '%s'" % (sharename, self.smbSession.address))
                 else:
-                    print("[!] ")
+                    print("[!] SMB Session is disconnected.")
             else:
                 self.commandCompleterObject.print_help(command=command)
 
@@ -760,8 +773,7 @@ class LocalFileIO(object):
 
         # Write to local (read remote)
         if self.mode in ["wb"]:
-            if os.path.sep in self.path:
-                self.dir = os.path.dirname(self.path)
+            self.dir = './' + os.path.dirname(self.path)
 
             if not os.path.exists(self.dir):
                 if self.debug:
@@ -890,6 +902,86 @@ class SMBSession(object):
         self.smb_share = None
         self.smb_path = ""
 
+    def close_smb_session(self):
+        print("[>] Closing the current SMB connection ...")
+        self.smbClient.close()
+
+    def get_file(self, path=None):
+        try:
+            tmp_file_path = self.smb_path + '\\' + path
+            matches = self.smbClient.listPath(shareName=self.smb_share, path=tmp_file_path)
+            for entry in matches:
+                if entry.is_directory():
+                    print("[>] Skipping '%s' because it is a directory." % tmp_file_path)
+                else:
+                    f = LocalFileIO(
+                        mode="wb", 
+                        path=entry.get_longname(),
+                        expected_size=entry.get_filesize(), 
+                        debug=self.debug
+                    )
+                    self.smbClient.getFile(
+                        shareName=self.smb_share, 
+                        pathName=tmp_file_path, 
+                        callback=f.write
+                    )
+                    f.close()
+        except (BrokenPipeError, KeyboardInterrupt) as e:
+            print("[!] Interrupted.")
+            self.close_smb_session()
+            self.init_smb_session()
+                
+        return None
+
+    def get_file_recursively(self, path=None):
+
+        def recurse_action(base_dir="", path=[]):
+            remote_smb_path = base_dir + '\\'.join(path)
+            entries = self.smbClient.listPath(shareName=self.smb_share, path=remote_smb_path+'\\*')
+            if len(entries) != 0:
+                files = [entry for entry in entries if not entry.is_directory()]
+                directories = [entry for entry in entries if entry.is_directory() and entry.get_longname() not in [".", ".."]]
+
+                # Files
+                if len(files) != 0:
+                    print("[>] Getting files of '%s'" % remote_smb_path)
+                for entry_file in files:
+                    if not entry_file.is_directory():
+                        f = LocalFileIO(
+                            mode="wb",
+                            path=remote_smb_path + '\\' + entry_file.get_longname(), 
+                            expected_size=entry_file.get_filesize(),
+                            debug=self.debug
+                        )
+                        try:
+                            self.smbClient.getFile(
+                                shareName=self.smb_share, 
+                                pathName=remote_smb_path + '\\' + entry_file.get_longname(), 
+                                callback=f.write
+                            )
+                            f.close()
+                        except Exception as err:
+                            f.set_error(message="[bold red]Failed downloading '%s': %s" % (f.path, err))
+                            f.close(remove=True)
+                
+                # Directories
+                for entry_directory in directories:
+                    if entry_directory.is_directory():
+                        recurse_action(
+                            base_dir=self.smb_path, 
+                            path=path+[entry_directory.get_longname()]
+                        )                   
+        # Entrypoint
+        try:
+            recurse_action(
+                base_dir=self.smb_path, 
+                path=[path]
+            )
+        except (BrokenPipeError, KeyboardInterrupt) as e:
+            print("[!] Interrupted.")
+            self.close_smb_session()
+            self.init_smb_session()
+
     def init_smb_session(self):
         if self.debug:
             print("[debug] [>] Connecting to remote SMB server '%s' ... " % self.address)
@@ -931,17 +1023,31 @@ class SMBSession(object):
 
         return self.connected
 
-    def close_smb_session(self):
-        print("[>] Closing the current SMB connection ...")
-        self.smbClient.close()
+    def info(self, share=True, server=True):
+        if server:
+            print("[+] Server:")
+            print("  ├─NetBIOS:")
+            print("  │ ├─ \x1b[94mNetBIOS Hostname\x1b[0m \x1b[90m────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerName()))
+            print("  │ └─ \x1b[94mNetBIOS Domain\x1b[0m \x1b[90m──────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerDomain()))
+            print("  ├─DNS:")
+            print("  │ ├─ \x1b[94mDNS Hostname\x1b[0m \x1b[90m────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerDNSHostName()))
+            print("  │ └─ \x1b[94mDNS Domain\x1b[0m \x1b[90m──────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerDNSDomainName()))
+            print("  ├─OS:")
+            print("  │ ├─ \x1b[94mOS Name\x1b[0m \x1b[90m─────────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerOS()))
+            print("  │ └─ \x1b[94mOS Version\x1b[0m \x1b[90m──────────────\x1b[0m : \x1b[93m%s.%s.%s\x1b[0m" % (self.smbClient.getServerOSMajor(), self.smbClient.getServerOSMinor(), self.smbClient.getServerOSBuild()))
+            print("  ├─SMB:")
+            print("  │ ├─ \x1b[94mSMB Signing Required\x1b[0m \x1b[90m────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.isSigningRequired()))
+            print("  │ ├─ \x1b[94mSMB Login Required\x1b[0m \x1b[90m──────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.isLoginRequired()))
+            print("  │ ├─ \x1b[94mSupports NTLMv2\x1b[0m \x1b[90m─────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.doesSupportNTLMv2()))
+            MaxReadSize = self.smbClient.getIOCapabilities()["MaxReadSize"]
+            print("  │ ├─ \x1b[94mMax size of read chunk\x1b[0m \x1b[90m──\x1b[0m : \x1b[93m%d bytes (%s)\x1b[0m" % (MaxReadSize, b_filesize(MaxReadSize)))
+            MaxWriteSize = self.smbClient.getIOCapabilities()["MaxWriteSize"]
+            print("  │ └─ \x1b[94mMax size of write chunk\x1b[0m \x1b[90m─\x1b[0m : \x1b[93m%d bytes (%s)\x1b[0m" % (MaxWriteSize, b_filesize(MaxWriteSize)))
+            print("  └─")
 
-    def ping_smb_session(self):
-        try:
-            self.smbClient.getSMBServer().echo()
-            self.connected = True
-        except Exception as e:
-            self.connected = False
-        return self.connected
+        if share and self.smb_share is not None:
+            print("\n[+] Share:")
+            # print("│ " % self.smbClient.queryInfo())
 
     def list_shares(self):
         self.shares = {}
@@ -991,82 +1097,6 @@ class SMBSession(object):
 
         return contents
 
-    def get_file(self, path=None):
-        try:
-            matches = self.smbClient.listPath(shareName=self.smb_share, path=path)
-            for entry in matches:
-                if entry.is_directory():
-                    print("[>] Skipping '%s' because it is a directory." % path)
-                else:
-                    f = LocalFileIO(
-                        mode="wb", 
-                        path=entry.get_longname(),
-                        expected_size=entry.get_filesize(), 
-                        debug=self.debug
-                    )
-                    self.smbClient.getFile(
-                        shareName=self.smb_share, 
-                        pathName=entry.get_longname(), 
-                        callback=f.write
-                    )
-                    f.close()
-        except (BrokenPipeError, KeyboardInterrupt) as e:
-            print("[!] Interrupted.")
-            self.close_smb_session()
-            self.init_smb_session()
-                
-        return None
-
-    def get_file_recursively(self, path=None):
-
-        def recurse_action(base_dir="", path=[]):
-            remote_smb_path = base_dir + '\\'.join(path)
-            entries = self.smbClient.listPath(shareName=self.smb_share, path=remote_smb_path+'\\*')
-
-            if len(entries) != 0:
-                files = [entry for entry in entries if not entry.is_directory()]
-                directories = [entry for entry in entries if entry.is_directory() and entry.get_longname() not in [".", ".."]]
-
-                # Files
-                if len(files) != 0:
-                    print("[>] Getting files of '%s'" % remote_smb_path)
-                for entry_file in files:
-                    if not entry_file.is_directory():
-                        f = LocalFileIO(
-                            mode="wb",
-                            path=remote_smb_path + '\\' + entry_file.get_longname(), 
-                            expected_size=entry_file.get_filesize(),
-                            debug=self.debug
-                        )
-                        try:
-                            self.smbClient.getFile(
-                                shareName=self.smb_share, 
-                                pathName=remote_smb_path + '\\' + entry_file.get_longname(), 
-                                callback=f.write
-                            )
-                            f.close()
-                        except Exception as err:
-                            f.set_error(message="[bold red]Failed downloading '%s': %s" % (f.path, err))
-                            f.close(remove=True)
-                
-                # Directories
-                for entry_directory in directories:
-                    if entry_directory.is_directory():
-                        recurse_action(
-                            base_dir=self.smb_path, 
-                            path=path+[entry_directory.get_longname()]
-                        )                   
-        # Entrypoint
-        try:
-            recurse_action(
-                base_dir=self.smb_path, 
-                path=[path]
-            )
-        except (BrokenPipeError, KeyboardInterrupt) as e:
-            print("[!] Interrupted.")
-            self.close_smb_session()
-            self.init_smb_session()
-
     def mkdir(self, path=None):
         if path is not None:
             # Prepare path
@@ -1097,7 +1127,7 @@ class SMBSession(object):
         else:
             pass
 
-    def remote_path_exists(self, path=None):
+    def path_exists(self, path=None):
         if path is not None:
             path = path.replace('*','')
             try:
@@ -1111,7 +1141,7 @@ class SMBSession(object):
         else:
             return False
 
-    def remote_path_isfile(self, path=None):
+    def path_isfile(self, path=None):
         if path is not None:
             path = path.replace('*','')
             try:
@@ -1130,7 +1160,7 @@ class SMBSession(object):
         else:
             return False
         
-    def remote_path_isdir(self, path=None):
+    def path_isdir(self, path=None):
         if path is not None:
             path = path.replace('*','')
             try:
@@ -1148,6 +1178,14 @@ class SMBSession(object):
                 return False
         else:
             return False
+
+    def ping_smb_session(self):
+        try:
+            self.smbClient.getSMBServer().echo()
+            self.connected = True
+        except Exception as e:
+            self.connected = False
+        return self.connected
 
     def put_file(self, localpath=None):
         try:
@@ -1210,34 +1248,6 @@ class SMBSession(object):
                             traceback.print_exc()
         else:
             print("[!] The specified localpath is not a directory.")
-
-    def info(self, share=True, server=True):
-        if server:
-            print("[+] Server:")
-            print("  ├─NetBIOS:")
-            print("  │ ├─ \x1b[94mNetBIOS Hostname\x1b[0m \x1b[90m────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerName()))
-            print("  │ └─ \x1b[94mNetBIOS Domain\x1b[0m \x1b[90m──────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerDomain()))
-            print("  ├─DNS:")
-            print("  │ ├─ \x1b[94mDNS Hostname\x1b[0m \x1b[90m────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerDNSHostName()))
-            print("  │ └─ \x1b[94mDNS Domain\x1b[0m \x1b[90m──────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerDNSDomainName()))
-            print("  ├─OS:")
-            print("  │ ├─ \x1b[94mOS Name\x1b[0m \x1b[90m─────────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerOS()))
-            print("  │ └─ \x1b[94mOS Version\x1b[0m \x1b[90m──────────────\x1b[0m : \x1b[93m%s.%s.%s\x1b[0m" % (self.smbClient.getServerOSMajor(), self.smbClient.getServerOSMinor(), self.smbClient.getServerOSBuild()))
-            print("  ├─SMB:")
-            print("  │ ├─ \x1b[94mSMB Signing Required\x1b[0m \x1b[90m────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.isSigningRequired()))
-            print("  │ ├─ \x1b[94mSMB Login Required\x1b[0m \x1b[90m──────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.isLoginRequired()))
-            print("  │ ├─ \x1b[94mSupports NTLMv2\x1b[0m \x1b[90m─────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.doesSupportNTLMv2()))
-            MaxReadSize = self.smbClient.getIOCapabilities()["MaxReadSize"]
-            print("  │ ├─ \x1b[94mMax size of read chunk\x1b[0m \x1b[90m──\x1b[0m : \x1b[93m%d bytes (%s)\x1b[0m" % (MaxReadSize, b_filesize(MaxReadSize)))
-            MaxWriteSize = self.smbClient.getIOCapabilities()["MaxWriteSize"]
-            print("  │ └─ \x1b[94mMax size of write chunk\x1b[0m \x1b[90m─\x1b[0m : \x1b[93m%d bytes (%s)\x1b[0m" % (MaxWriteSize, b_filesize(MaxWriteSize)))
-            print("  └─")
-
-
-
-        if share and self.smb_share is not None:
-            print("\n[+] Share:")
-            # print("│ " % self.smbClient.queryInfo())
 
 
 def parseArgs():
