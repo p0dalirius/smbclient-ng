@@ -13,6 +13,7 @@ from sectools.windows.crypto import parse_lm_nt_hashes
 import re
 import stat
 import sys
+import shutil
 import traceback
 import impacket
 from impacket.smbconnection import SMBConnection as impacketSMBConnection
@@ -21,7 +22,7 @@ from rich.console import Console
 from rich.table import Table
 
 
-VERSION = "2.1.0"
+VERSION = "2.1.1"
 
 
 class CommandCompleter(object):
@@ -84,6 +85,14 @@ class CommandCompleter(object):
             },
             "lpwd": {
                 "description": ["Shows the current local directory.", "Syntax: 'lpwd'"], 
+                "subcommands": []
+            },
+            "lrm": {
+                "description": ["Removes a local file.", "Syntax: 'lrm <file>'"], 
+                "subcommands": []
+            },
+            "lrmdir": {
+                "description": ["Removes a local directory.", "Syntax: 'lrmdir <directory>'"], 
                 "subcommands": []
             },
             "ls": {
@@ -459,7 +468,40 @@ class InteractiveShell(object):
         elif command == "lmkdir":
             path = ' '.join(arguments)
             if not os.path.exists(path):
-                os.mkdir(path=path)
+                # Split each dir
+                if os.path.sep in path:
+                    path = path.strip(os.path.sep).split(os.path.sep)
+                else:
+                    path = [path]
+
+                # Create each dir in the path
+                for depth in range(1, len(path)+1):
+                    tmp_path = os.path.sep.join(path[:depth])
+                    os.mkdir(path=tmp_path)
+
+        # Removes a local directory.
+        elif command == "lrm":
+            path = ' '.join(arguments)
+            if os.path.exists(path):
+                if not os.path.isdir(s=path):
+                    try:
+                        os.remove(path=path)
+                    except Exception as e:
+                        print("[!] Error removing file '%s' : %s" % path)
+                else:
+                    print("[!] Cannot delete '%s': This is a directory, use 'lrmdir <directory>' instead." % path)
+
+        # Creates a new local directory.
+        elif command == "lrmdir":
+            path = ' '.join(arguments)
+            if os.path.exists(path):
+                if os.path.isdir(s=path):
+                    try:
+                        shutil.rmtree(path=path)
+                    except Exception as e:
+                        print("[!] Error removing directory '%s' : %s" % path)
+                else:
+                    print("[!] Cannot delete '%s': This is a file, use 'lrm <file>' instead." % path)
 
         # Shows the current local directory.
         elif command == "lpwd":

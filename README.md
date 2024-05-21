@@ -23,6 +23,8 @@
 - [x] `lls`: Lists the contents of the current local directory. 
 - [x] `lmkdir`: Creates a new local directory. 
 - [x] `lpwd`: Shows the current local directory. 
+- [x] `lrm`: Removes a local file. 
+- [x] `lrmdir`: Removes a local directory. 
 - [x] `ls`: List the contents of the current remote working directory. 
 - [x] `mkdir`: Creates a new remote directory. 
 - [x] `put`: Put a local file to a remote directory. (`put -r` to recursively upload a local directory to remote).
