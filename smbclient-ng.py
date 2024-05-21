@@ -127,6 +127,10 @@ class CommandCompleter(object):
                 "description": ["Use a SMB share.", "Syntax: use <sharename>"], 
                 "subcommands": []
             },
+            "tree": {
+                "description": ["Displays a tree of the nested subfolders.", "Syntax: tree [directory]"], 
+                "subcommands": []
+            },
         }
         
         self.commands["help"]["subcommands"] = ["format"] + list(self.commands.keys())
@@ -674,6 +678,17 @@ class InteractiveShell(object):
                     print("[!] SMB Session is disconnected.")
             else:
                 self.commandCompleterObject.print_help(command=command)
+
+        # Use a share
+        elif command == "tree":
+            self.smbSession.ping_smb_session()
+            if self.smbSession.connected:
+                if len(arguments) == 0:
+                    self.smbSession.tree(path='.')
+                else:
+                    self.smbSession.tree(path=' '.join(arguments))
+            else:
+                print("[!] SMB Session is disconnected.")
 
         # Default no command typed
         else:
@@ -1248,6 +1263,87 @@ class SMBSession(object):
                             traceback.print_exc()
         else:
             print("[!] The specified localpath is not a directory.")
+
+    def tree(self, path=None):
+        #
+        def recurse_action(base_dir="", path=[], prompt=[]):
+            bars = ["│   ", "├── ", "└── "]
+
+            remote_smb_path = base_dir + '\\'.join(path)
+
+            entries = self.smbClient.listPath(
+                shareName=self.smb_share, 
+                path=remote_smb_path+'\\*'
+            )
+            entries = [e for e in entries if e.get_longname() not in [".", ".."]]
+            entries = sorted(entries, key=lambda x:x.get_longname())
+
+            # 
+            if len(entries) > 1:
+                index = 0
+                for entry in entries:
+                    index += 1
+                    # This is the first entry 
+                    if index == 0:
+                        if entry.is_directory():
+                            print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                            recurse_action(
+                                base_dir=self.smb_path, 
+                                path=path+[entry.get_longname()],
+                                prompt=prompt+["│   "]
+                            )
+                        else:
+                            print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+
+                    # This is the last entry
+                    elif index == len(entries):
+                        if entry.is_directory():
+                            print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+                            recurse_action(
+                                base_dir=self.smb_path, 
+                                path=path+[entry.get_longname()],
+                                prompt=prompt+["    "]
+                            )
+                        else:
+                            print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+                        
+                    # These are entries in the middle
+                    else:
+                        if entry.is_directory():
+                            print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                            recurse_action(
+                                base_dir=self.smb_path, 
+                                path=path+[entry.get_longname()],
+                                prompt=prompt+["│   "]
+                            )
+                        else:
+                            print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+
+            # 
+            elif len(entries) == 1:
+                entry = entries[0]
+                if entry.is_directory():
+                    print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                    recurse_action(
+                        base_dir=self.smb_path, 
+                        path=path+[entry.get_longname()],
+                        prompt=prompt+["    "]
+                    )
+                else:
+                    print("%s%s" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+
+        # Entrypoint
+        try:
+            print(path)
+            recurse_action(
+                base_dir=self.smb_path, 
+                path=[path],
+                prompt=[""]
+            )
+        except (BrokenPipeError, KeyboardInterrupt) as e:
+            print("[!] Interrupted.")
+            self.close_smb_session()
+            self.init_smb_session()
 
 
 def parseArgs():
