@@ -30,13 +30,15 @@
 - [x] `shares`: Lists the SMB shares served by the remote machine. 
 - [x] `use`: Use a SMB share.
 
+
 ## Demonstration
 
 ![](./.github/example.png)
-   
+
+
 ## Usage
 
-```              
+```
 $ ./smbclient-ng.py 
                _          _ _            _                    
  ___ _ __ ___ | |__   ___| (_) ___ _ __ | |_      _ __   __ _ 
@@ -71,12 +73,14 @@ Authentication & connection:
                         valid credentials cannot be found, it will use the ones specified in the command line
 ```
 
+
 ## Quick win commands
 
  + Connect to a remote SMB server:
     ```
     ./smbclient-ng.py -u "Administrator" -d LAB -p 'Admin123!' --target "10.0.0.201"
     ```
+
 
 ## Contributing
 

@@ -26,7 +26,18 @@ VERSION = "2.1.0"
 
 class CommandCompleter(object):
     """
-    Class for handling command completion
+    A class to handle command completion for the smbclient-ng shell.
+
+    This class provides a command completion feature that suggests possible command names based on the current input.
+    It uses a dictionary to store commands and their descriptions, which helps in providing hints during the command line
+    interaction in the smbclient-ng shell.
+
+    Attributes:
+        smbSession (SMBSession): An instance of SMBSession which maintains the current SMB session.
+        commands (dict): A dictionary containing command names as keys and their descriptions and subcommands as values.
+
+    Methods:
+        __init__(self, smbSession): Initializes the CommandCompleter with an SMBSession.
     """
     def __init__(self, smbSession):
         self.smbSession = smbSession
