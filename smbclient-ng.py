@@ -128,7 +128,7 @@ class CommandCompleter(object):
                 "subcommands": []
             },
             "tree": {
-                "description": ["Displays a tree of the nested subfolders.", "Syntax: tree [directory]"], 
+                "description": ["Displays a tree view of the nested subfolders.", "Syntax: tree [directory]"], 
                 "subcommands": []
             },
         }
