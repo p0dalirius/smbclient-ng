@@ -471,7 +471,7 @@ class InteractiveShell(object):
         # Creates a new local directory.
         elif command == "lmkdir":
             path = ' '.join(arguments)
-            
+
             # Split each dir
             if os.path.sep in path:
                 path = path.strip(os.path.sep).split(os.path.sep)
@@ -895,28 +895,39 @@ class SMBSession(object):
         print("[>] Closing the current SMB connection ...")
         self.smbClient.close()
 
+    def ping_smb_session(self):
+        try:
+            self.smbClient.getSMBServer().echo()
+            return True
+        except Exception as e:
+            return False
+
     def list_shares(self):
         self.shares = {}
-        
-        if self.smbClient is not None:
-            resp = self.smbClient.listShares()
 
-            for share in resp:
-                # SHARE_INFO_1 structure (lmshare.h)
-                # https://learn.microsoft.com/en-us/windows/win32/api/lmshare/ns-lmshare-share_info_1
-                sharename = share["shi1_netname"][:-1]
-                sharecomment = share["shi1_remark"][:-1]
-                sharetype = share["shi1_type"]
+        if not self.ping_smb_session():
+            self.connected = self.init_smb_session()
 
-                self.shares[sharename] = {
-                    "name": sharename, 
-                    "type": STYPE_MASK(sharetype), 
-                    "rawtype": sharetype, 
-                    "comment": sharecomment
-                }
+        if self.connected:
+            if self.smbClient is not None:
+                resp = self.smbClient.listShares()
 
-        else:
-            print("")
+                for share in resp:
+                    # SHARE_INFO_1 structure (lmshare.h)
+                    # https://learn.microsoft.com/en-us/windows/win32/api/lmshare/ns-lmshare-share_info_1
+                    sharename = share["shi1_netname"][:-1]
+                    sharecomment = share["shi1_remark"][:-1]
+                    sharetype = share["shi1_type"]
+
+                    self.shares[sharename] = {
+                        "name": sharename, 
+                        "type": STYPE_MASK(sharetype), 
+                        "rawtype": sharetype, 
+                        "comment": sharecomment
+                    }
+                    
+            else:
+                print("[!] Error: SMBSession.smbClient is None.")
 
         return self.shares
 
