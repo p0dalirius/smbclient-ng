@@ -115,6 +115,10 @@ class CommandCompleter(object):
                 "description": ["Removes a remote directory.", "Syntax: 'rmdir <directory>'"], 
                 "subcommands": []
             },
+            "rm": {
+                "description": ["Removes a remote file.", "Syntax: 'rm <file>'"], 
+                "subcommands": []
+            },
             "shares": {
                 "description": ["Lists the SMB shares served by the remote machine.", "Syntax: 'shares'"], 
                 "subcommands": []
@@ -160,9 +164,9 @@ class CommandCompleter(object):
                             # Choose SMB Share to connect to
                             self.matches = [command + " " + s for s in self.smbSession.list_shares().keys() if s and s.startswith(remainder)]
                         elif command == "cd":
-                            # Choose folder
-                            folder_contents = list(self.smbSession.list_contents().keys())
-                            self.matches = [command + " " + s for s in folder_contents if s and s.startswith(remainder)]
+                            # Choose directory
+                            directory_contents = list(self.smbSession.list_contents().keys())
+                            self.matches = [command + " " + s for s in directory_contents if s and s.startswith(remainder)]
                         else:
                             # Generic case for subcommands
                             self.matches = [command + " " + s for s in self.commands[command]["subcommands"] if s and s.startswith(remainder)]
@@ -392,10 +396,6 @@ class InteractiveShell(object):
             else:
                 print("[!] You must open a share first, try the 'use <share>' command.")
 
-        # Reconnects the current SMB session
-        elif command in ["reconnect", "connect"]:
-            self.smbSession.init_smb_session()
-
         # Closes the current SMB session
         elif command == "close":
             self.smbSession.close_smb_session()
@@ -440,7 +440,7 @@ class InteractiveShell(object):
             except impacket.smbconnection.SessionError as e:
                 print("[!] SMB Error: %s" % e)
 
-        # Changes the current local directory.
+        # Changes the current local directory
         elif command == "lcd":
             if len(arguments) != 0:
                 path = ' '.join(arguments)
@@ -450,15 +450,15 @@ class InteractiveShell(object):
                     else:
                         print("[!] Path '%s' is not a directory." % path)
                 else:
-                    print("[!] Folder '%s' does not exists." % path)
+                    print("[!] Directory '%s' does not exists." % path)
             else:
                 self.commandCompleterObject.print_help(command=command)
 
-        # Lists the contents of the current local directory.
+        # Lists the contents of the current local directory
         elif command == "lls":
-            folder_contents = os.listdir(path='.')
+            directory_contents = os.listdir(path='.')
 
-            for entryname in sorted(folder_contents):
+            for entryname in sorted(directory_contents):
                 rights_str = unix_permissions(entryname)
                 size_str = b_filesize(os.path.getsize(filename=entryname))
                 date_str = datetime.datetime.fromtimestamp(os.path.getmtime(filename=entryname)).strftime("%Y-%m-%d %H:%M")
@@ -468,7 +468,7 @@ class InteractiveShell(object):
                 else:
                     print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, entryname))
 
-        # Creates a new local directory.
+        # Creates a new local directory
         elif command == "lmkdir":
             path = ' '.join(arguments)
 
@@ -484,7 +484,7 @@ class InteractiveShell(object):
                 if not os.path.exists(tmp_path):
                     os.mkdir(path=tmp_path)
 
-        # Removes a local directory.
+        # Removes a local file
         elif command == "lrm":
             path = ' '.join(arguments)
             if os.path.exists(path):
@@ -496,7 +496,7 @@ class InteractiveShell(object):
                 else:
                     print("[!] Cannot delete '%s': This is a directory, use 'lrmdir <directory>' instead." % path)
 
-        # Creates a new local directory.
+        # Removes a local directory
         elif command == "lrmdir":
             path = ' '.join(arguments)
             if os.path.exists(path):
@@ -508,7 +508,7 @@ class InteractiveShell(object):
                 else:
                     print("[!] Cannot delete '%s': This is a file, use 'lrm <file>' instead." % path)
 
-        # Shows the current local directory.
+        # Shows the current local directory
         elif command == "lpwd":
             # print("Current local working directory:")
             print(os.getcwd())
@@ -518,13 +518,13 @@ class InteractiveShell(object):
             # 
             if self.smb_share is not None:
                 # Read the files
-                folder_contents = self.smbSession.list_contents(
+                directory_contents = self.smbSession.list_contents(
                     shareName=self.smb_share, 
                     path=self.smb_path
                 )
 
-                for longname in sorted(folder_contents.keys(), key=lambda x:x.lower()):
-                    entry = folder_contents[longname]
+                for longname in sorted(directory_contents.keys(), key=lambda x:x.lower()):
+                    entry = directory_contents[longname]
 
                     meta_string = ""
                     meta_string += ("d" if entry.is_directory() else "-")
@@ -547,7 +547,7 @@ class InteractiveShell(object):
             else:
                 print("[!] You must open a share first, try the 'use <share>' command.")
 
-        # Creates a new remote directory.
+        # Creates a new remote directory
         elif command == "mkdir":
             path = ' '.join(arguments)
             self.smbSession.mkdir(path=path)
@@ -572,6 +572,38 @@ class InteractiveShell(object):
                         print("[!] SMB Error: %s" % e)
             else:
                 print("[!] You must open a share first, try the 'use <share>' command.")
+
+        # Reconnects the current SMB session
+        elif command in ["reconnect", "connect"]:
+            self.smbSession.init_smb_session()
+
+        # Removes a remote file
+        elif command == "rm":
+            path = ' '.join(arguments)
+            if self.smbSession.remote_path_exists(path):
+                if self.smbSession.remote_path_isfile(path):
+                    try:
+                        pass
+                    except Exception as e:
+                        print("[!] Error removing file '%s' : %s" % path)
+                else:
+                    print("[!] Cannot delete '%s': This is a directory, use 'rmdir <directory>' instead." % path)
+            else:
+                print("[!] Remote file '%s' does not exist." % path)
+
+        # Removes a remote directory
+        elif command == "rmdir":
+            path = ' '.join(arguments)
+            if self.smbSession.remote_path_exists(path):
+                if self.smbSession.remote_path_isdir(path):
+                    try:
+                        pass
+                    except Exception as e:
+                        print("[!] Error removing directory '%s' : %s" % path)
+                else:
+                    print("[!] Cannot delete '%s': This is a file, use 'rm <file>' instead." % path)
+            else:
+                print("[!] Remote directory '%s' does not exist." % path)
 
         # List shares
         elif command == "shares":
@@ -615,19 +647,22 @@ class InteractiveShell(object):
         # Use a share
         elif command == "use":
             if len(arguments) != 0:
-                sharename = arguments[0]
-
-                # Reload the list of shares
-                self.smbSession.list_shares()
-
-                if sharename in self.smbSession.shares.keys():
-                    self.smb_share = sharename
-                    self.smbSession.smb_share = sharename
+                self.smbSession.ping_smb_session()
+                if self.smbSession.connected:
+                    sharename = arguments[0]
+                    # Reload the list of shares
+                    self.smbSession.list_shares()
+                    if sharename in self.smbSession.shares.keys():
+                        self.smb_share = sharename
+                        self.smbSession.smb_share = sharename
+                    else:
+                        print("[!] No share named '%s' on '%s'" % (sharename, self.smbSession.address))
                 else:
-                    print("[!] No share named '%s' on '%s'" % (sharename, self.smbSession.address))
+                    print("[!] ")
             else:
-                self.commandCompleterObject.print_help(command=command)   
+                self.commandCompleterObject.print_help(command=command)
 
+        # Default no command typed
         else:
             pass
 
@@ -1061,6 +1096,58 @@ class SMBSession(object):
                             traceback.print_exc()
         else:
             pass
+
+    def remote_path_exists(self, path=None):
+        if path is not None:
+            path = path.replace('*','')
+            try:
+                contents = self.smbClient.listPath(
+                    shareName=self.smb_share,
+                    path=self.smb_path + '\\' + path
+                )
+                return (len(contents) != 0)
+            except Exception as e:
+                return False
+        else:
+            return False
+
+    def remote_path_isfile(self, path=None):
+        if path is not None:
+            path = path.replace('*','')
+            try:
+                contents = self.smbClient.listPath(
+                    shareName=self.smb_share,
+                    path=self.smb_path + '\\' + path
+                )
+                # Filter on files
+                contents = [
+                    c for c in contents
+                    if c.get_longname() == ntpath.basename(path) and not c.is_directory()
+                ]
+                return (len(contents) != 0)
+            except Exception as e:
+                return False
+        else:
+            return False
+        
+    def remote_path_isdir(self, path=None):
+        if path is not None:
+            path = path.replace('*','')
+            try:
+                contents = self.smbClient.listPath(
+                    shareName=self.smb_share,
+                    path=self.smb_path + '\\' + path
+                )
+                # Filter on directories
+                contents = [
+                    c for c in contents
+                    if c.get_longname() == ntpath.basename(path) and c.is_directory()
+                ]
+                return (len(contents) != 0)
+            except Exception as e:
+                return False
+        else:
+            return False
 
     def put_file(self, localpath=None):
         try:
