@@ -423,25 +423,32 @@ class InteractiveShell(object):
 
         # Get a file
         elif command == "get":
-            if self.smb_share is not None:
-                # Get files recursively
-                if arguments[0] == "-r":
-                    path = ' '.join(arguments[1:]).replace('/',r'\\')
-                    try:
-                        self.smbSession.get_file_recursively(path=path)
-                    except impacket.smbconnection.SessionError as e:
-                        print("[!] SMB Error: %s" % e)
+            if len(arguments) != 0:
+                self.smbSession.ping_smb_session()
+                if self.smbSession.connected:
+                    if self.smb_share is not None:
+                        # Get files recursively
+                        if arguments[0] == "-r":
+                            path = ' '.join(arguments[1:]).replace('/',r'\\')
+                            try:
+                                self.smbSession.get_file_recursively(path=path)
+                            except impacket.smbconnection.SessionError as e:
+                                print("[!] SMB Error: %s" % e)
 
-                # Get a single file
+                        # Get a single file
+                        else:
+                            path = ' '.join(arguments).replace('/',r'\\')
+                            try:
+                                self.smbSession.get_file(path=path)
+                            except impacket.smbconnection.SessionError as e:
+                                print("[!] SMB Error: %s" % e)
+                    else:
+                        print("[!] You must open a share first, try the 'use <share>' command.")
                 else:
-                    path = ' '.join(arguments).replace('/',r'\\')
-                    try:
-                        self.smbSession.get_file(path=path)
-                    except impacket.smbconnection.SessionError as e:
-                        print("[!] SMB Error: %s" % e)
+                    print("[!] SMB Session is disconnected.")
             else:
-                print("[!] You must open a share first, try the 'use <share>' command.")
-
+                self.commandCompleterObject.print_help(command=command)
+            
         # SMB server info
         elif command == "info":
             self.smbSession.ping_smb_session()
