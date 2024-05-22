@@ -393,29 +393,33 @@ class InteractiveShell(object):
         
         # Change directory to a share
         elif command == "cd":
-            if self.smb_share is not None:
-                if len(arguments) != 0:
-                    path = ' '.join(arguments).replace('/',r'\\')
-                    path = path + '\\'
-                    path = re.sub(r'\\+', r'\\', path)
+            if len(arguments) != 0:
+                self.smbSession.ping_smb_session()
+                if self.smbSession.connected:
+                    if self.smb_share is not None:
+                        path = ' '.join(arguments).replace('/',r'\\')
+                        path = path + '\\'
+                        path = re.sub(r'\\+', r'\\', path)
 
-                    if not path.startswith('\\'):
-                        # Relative path
-                        path = self.smb_path + path
-                    
-                    path = ntpath.normpath(path=path) + '\\'
-                    if path == '.\\':
-                        path = ""
+                        if not path.startswith('\\'):
+                            # Relative path
+                            path = self.smb_path + path
+                        
+                        path = ntpath.normpath(path=path) + '\\'
+                        if path == '.\\':
+                            path = ""
 
-                    try:
-                        self.smbSession.list_contents(shareName=self.smb_share, path=path)
-                        self.smb_path = path
-                    except impacket.smbconnection.SessionError as e:
-                        print("[!] SMB Error: %s" % e)
+                        try:
+                            self.smbSession.list_contents(shareName=self.smb_share, path=path)
+                            self.smb_path = path
+                        except impacket.smbconnection.SessionError as e:
+                            print("[!] SMB Error: %s" % e)
+                    else:
+                        print("[!] You must open a share first, try the 'use <share>' command.")
                 else:
-                    print("[!] Syntax: 'cd <path>'")
+                    print("[!] SMB Session is disconnected.")
             else:
-                print("[!] You must open a share first, try the 'use <share>' command.")
+                self.commandCompleterObject.print_help(command=command)
 
         # Closes the current SMB session
         elif command == "close":
