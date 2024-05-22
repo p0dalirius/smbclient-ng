@@ -444,22 +444,26 @@ class InteractiveShell(object):
 
         # SMB server info
         elif command == "info":
-            print_server_info = False
-            print_share_info = False
-            if len(arguments) != 0:
-                print_server_info = (arguments[0].lower() == "server")
-                print_share_info = (arguments[0].lower() == "share")
-            else:
-                print_server_info = True
-                print_share_info = True
+            self.smbSession.ping_smb_session()
+            if self.smbSession.connected:
+                print_server_info = False
+                print_share_info = False
+                if len(arguments) != 0:
+                    print_server_info = (arguments[0].lower() == "server")
+                    print_share_info = (arguments[0].lower() == "share")
+                else:
+                    print_server_info = True
+                    print_share_info = True
 
-            try:
-                self.smbSession.info(
-                    share=print_share_info,
-                    server=print_server_info
-                )
-            except impacket.smbconnection.SessionError as e:
-                print("[!] SMB Error: %s" % e)
+                try:
+                    self.smbSession.info(
+                        share=print_share_info,
+                        server=print_server_info
+                    )
+                except impacket.smbconnection.SessionError as e:
+                    print("[!] SMB Error: %s" % e)
+            else:
+                print("[!] SMB Session is disconnected.")
 
         # Changes the current local directory
         elif command == "lcd":
@@ -481,7 +485,7 @@ class InteractiveShell(object):
                 directory_contents = os.listdir(path='.')
             else:
                 directory_contents = os.listdir(path=' '.join(arguments))
-                
+
             for entryname in sorted(directory_contents):
                 rights_str = unix_permissions(entryname)
                 size_str = b_filesize(os.path.getsize(filename=entryname))
