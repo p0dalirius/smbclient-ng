@@ -961,10 +961,40 @@ class SMBSession(object):
         self.smb_path = ""
 
     def close_smb_session(self):
-        print("[>] Closing the current SMB connection ...")
-        self.smbClient.close()
+        """
+        Closes the current SMB session by disconnecting the SMB client.
+
+        This method ensures that the SMB client connection is properly closed. It checks if the client is connected
+        and if so, it closes the connection and resets the connection status.
+
+        Raises:
+            Exception: If the SMB client is not initialized or if there's an error during the disconnection process.
+        """
+        if self.smbClient is not None:
+            if self.connected:
+                self.smbClient.close()
+                self.connected = False
+                print("[+] SMB connection closed successfully.")
+            else:
+                print("[!] No active SMB connection to close.")
+        else:
+            raise Exception("SMB client is not initialized.")
 
     def get_file(self, path=None):
+        """
+        Retrieves a file from the specified path on the SMB share.
+
+        This method attempts to retrieve a file from the given path within the currently connected SMB share.
+        If the path points to a directory, it skips the retrieval. It handles file retrieval by creating a local
+        file object and writing the contents of the remote file to it using the SMB client's getFile method.
+
+        Parameters:
+            path (str): The path of the file to retrieve. If None, uses the current smb_path.
+
+        Returns:
+            None
+        """
+
         try:
             tmp_file_path = self.smb_path + '\\' + path
             matches = self.smbClient.listPath(shareName=self.smb_share, path=tmp_file_path)
@@ -992,7 +1022,19 @@ class SMBSession(object):
         return None
 
     def get_file_recursively(self, path=None):
+        """
+        Recursively retrieves files from a specified path on the SMB share.
 
+        This method navigates through all directories starting from the given path,
+        and downloads all files found. It handles directories recursively, ensuring
+        that all nested files are retrieved. The method skips over directory entries
+        and handles errors gracefully, attempting to continue the operation where possible.
+
+        Parameters:
+            path (str): The initial directory path from which to start the recursive file retrieval.
+                        If None, it starts from the root of the configured SMB share.
+        """
+        #
         def recurse_action(base_dir="", path=[]):
             remote_smb_path = base_dir + '\\'.join(path)
             entries = self.smbClient.listPath(shareName=self.smb_share, path=remote_smb_path+'\\*')
@@ -1041,6 +1083,18 @@ class SMBSession(object):
             self.init_smb_session()
 
     def init_smb_session(self):
+        """
+        Initializes and establishes a session with the SMB server.
+
+        This method sets up the SMB connection using either Kerberos or NTLM authentication based on the configuration.
+        It attempts to connect to the SMB server specified by the `address` attribute and authenticate using the credentials provided during the object's initialization.
+
+        The method will print debug information if the `debug` attribute is set to True. Upon successful connection and authentication, it sets the `connected` attribute to True.
+
+        Returns:
+            bool: True if the connection and authentication are successful, False otherwise.
+        """
+
         if self.debug:
             print("[debug] [>] Connecting to remote SMB server '%s' ... " % self.address)
         self.smbClient = impacketSMBConnection(
@@ -1082,6 +1136,19 @@ class SMBSession(object):
         return self.connected
 
     def info(self, share=True, server=True):
+        """
+        Displays information about the server and optionally the shares.
+
+        This method prints detailed information about the server's characteristics such as NetBIOS names, DNS details, OS information, and SMB capabilities. If the `share` parameter is set to True and a share is currently set, it will also attempt to display information about the share.
+
+        Parameters:
+            share (bool): If True, display information about the current share.
+            server (bool): If True, display information about the server.
+
+        Returns:
+            None
+        """
+
         if server:
             print("[+] Server:")
             print("  ├─NetBIOS:")
@@ -1108,6 +1175,17 @@ class SMBSession(object):
             # print("│ " % self.smbClient.queryInfo())
 
     def list_shares(self):
+        """
+        Lists all the shares available on the connected SMB server.
+
+        This method queries the SMB server to retrieve a list of all available shares. It populates the `shares` dictionary
+        with key-value pairs where the key is the share name and the value is a dictionary containing details about the share
+        such as its name, type, raw type, and any comments associated with the share.
+
+        Returns:
+            dict: A dictionary containing information about each share available on the server.
+        """
+
         self.shares = {}
 
         if not self.ping_smb_session():
@@ -1137,6 +1215,20 @@ class SMBSession(object):
         return self.shares
 
     def list_contents(self, shareName=None, path=None):
+        """
+        Lists the contents of a specified directory on the SMB share.
+
+        This method retrieves the contents of a directory specified by `shareName` and `path`. If `shareName` or `path`
+        is not provided, it defaults to the instance's current SMB share or path. The method returns a dictionary with
+        the long names of the files and directories as keys and their respective SMB entry objects as values.
+
+        Args:
+            shareName (str, optional): The name of the SMB share. Defaults to the current SMB share if None.
+            path (str, optional): The directory path to list contents from. Defaults to the current path if None.
+
+        Returns:
+            dict: A dictionary with file and directory names as keys and their SMB entry objects as values.
+        """
         if path is not None:
             self.smb_path = path
         else:
@@ -1156,6 +1248,19 @@ class SMBSession(object):
         return contents
 
     def mkdir(self, path=None):
+        """
+        Creates a directory at the specified path on the SMB share.
+
+        This method takes a path and attempts to create the directory structure on the SMB share. If the path includes
+        nested directories, it will create each directory in the sequence. If a directory already exists, it will skip
+        the creation for that directory without raising an error.
+
+        Args:
+            path (str, optional): The full path of the directory to create on the SMB share. Defaults to None.
+
+        Note:
+            The path should use forward slashes ('/') which will be converted to backslashes ('\\') for SMB compatibility.
+        """
         if path is not None:
             # Prepare path
             path = path.replace('/','\\')
@@ -1186,6 +1291,18 @@ class SMBSession(object):
             pass
 
     def path_exists(self, path=None):
+        """
+        Checks if the specified path exists on the SMB share.
+
+        This method determines if a given path exists on the SMB share by attempting to list the contents of the path.
+        If the path listing is successful and returns one or more entries, the path is considered to exist.
+
+        Args:
+            path (str, optional): The path to check on the SMB share. Defaults to None.
+
+        Returns:
+            bool: True if the path exists, False otherwise or if an error occurs.
+        """
         if path is not None:
             path = path.replace('*','')
             try:
@@ -1200,6 +1317,18 @@ class SMBSession(object):
             return False
 
     def path_isfile(self, path=None):
+        """
+        Checks if the specified path is a file on the SMB share.
+
+        This method determines if a given path corresponds to a file on the SMB share. It does this by listing the
+        contents of the path and filtering for entries that match the basename of the path and are not marked as directories.
+
+        Args:
+            path (str, optional): The path to check on the SMB share. Defaults to None.
+
+        Returns:
+            bool: True if the path is a file, False otherwise or if an error occurs.
+        """
         if path is not None:
             path = path.replace('*','')
             try:
@@ -1219,6 +1348,18 @@ class SMBSession(object):
             return False
         
     def path_isdir(self, path=None):
+        """
+        Checks if the specified path is a directory on the SMB share.
+
+        This method determines if a given path corresponds to a directory on the SMB share. It does this by listing the
+        contents of the path and filtering for entries that match the basename of the path and are marked as directories.
+
+        Args:
+            path (str, optional): The path to check on the SMB share. Defaults to None.
+
+        Returns:
+            bool: True if the path is a directory, False otherwise or if an error occurs.
+        """
         if path is not None:
             path = path.replace('*','')
             try:
@@ -1238,6 +1379,15 @@ class SMBSession(object):
             return False
 
     def ping_smb_session(self):
+        """
+        Tests the connectivity to the SMB server by sending an echo command.
+
+        This method attempts to send an echo command to the SMB server to check if the session is still active.
+        It updates the `connected` attribute of the class based on the success or failure of the echo command.
+
+        Returns:
+            bool: True if the echo command succeeds (indicating the session is active), False otherwise.
+        """
         try:
             self.smbClient.getSMBServer().echo()
             self.connected = True
@@ -1246,6 +1396,16 @@ class SMBSession(object):
         return self.connected
 
     def put_file(self, localpath=None):
+        """
+        Uploads a single file to the SMB share.
+
+        This method takes a local file path, opens the file, and uploads it to the SMB share at the specified path.
+        It handles exceptions such as broken pipe errors or keyboard interrupts by closing and reinitializing the SMB session.
+        General exceptions are caught and logged, with a traceback provided if debugging is enabled.
+
+        Args:
+            localpath (str, optional): The local file path of the file to be uploaded. Defaults to None.
+        """
         try:
             localfile = os.path.basename(localpath)
             f = LocalFileIO(
@@ -1269,6 +1429,17 @@ class SMBSession(object):
                 traceback.print_exc()
 
     def put_file_recursively(self, localpath=None):
+        """
+        Recursively uploads files from a specified local directory to the SMB share.
+
+        This method walks through the given local directory and all its subdirectories, uploading each file to the
+        corresponding directory structure on the SMB share. It first checks if the local path is a directory. If it is,
+        it iterates over all files and directories within the local path, creating necessary directories on the SMB share
+        and uploading files. If the local path is not a directory, it prints an error message.
+
+        Args:
+            localpath (str, optional): The local directory path from which files will be uploaded. Defaults to None.
+        """
         # Check if the path is a directory
         if os.path.isdir(localpath):
             # Iterate over all files and directories within the local path
@@ -1308,6 +1479,16 @@ class SMBSession(object):
             print("[!] The specified localpath is not a directory.")
 
     def rmdir(self, path=None):
+        """
+        Removes a directory from the SMB share at the specified path.
+
+        This method attempts to delete a directory located at the given path on the SMB share. If the operation fails,
+        it prints an error message indicating the failure and the reason. If debugging is enabled, it also prints
+        the stack trace of the exception.
+
+        Args:
+            path (str, optional): The path of the directory to be removed on the SMB share. Defaults to None.
+        """
         try:
             self.smbClient.deleteDirectory(
                 shareName=self.smb_share, 
@@ -1319,6 +1500,16 @@ class SMBSession(object):
                 traceback.print_exc()
 
     def rm(self, path=None):
+        """
+        Removes a file from the SMB share at the specified path.
+
+        This method attempts to delete a file located at the given path on the SMB share. If the operation fails,
+        it prints an error message indicating the failure and the reason. If debugging is enabled, it also prints
+        the stack trace of the exception.
+
+        Args:
+            path (str, optional): The path of the file to be removed on the SMB share. Defaults to None.
+        """
         try:
             self.smbClient.deleteFile(
                 shareName=self.smb_share, 
@@ -1330,6 +1521,22 @@ class SMBSession(object):
                 traceback.print_exc()
 
     def tree(self, path=None):
+        """
+        Recursively lists the directory structure of the SMB share starting from the specified path.
+
+        This function prints a visual representation of the directory tree of the remote SMB share. It uses
+        recursion to navigate through directories and lists all files and subdirectories in each directory.
+        The output is color-coded and formatted to enhance readability, with directories highlighted in cyan.
+
+        Args:
+            path (str, optional): The starting path on the SMB share from which to begin listing the tree.
+                                  Defaults to the root of the current share.
+        """
+        if path is None:
+            path = self.smb_path
+
+        print("\x1b[1;94mDirectory tree for SMB share at path: %s\x1b[0m" % path)
+        self.recurse_action(base_dir=self.smb_path, path=[path], prompt=[])
         #
         def recurse_action(base_dir="", path=[], prompt=[]):
             bars = ["│   ", "├── ", "└── "]
