@@ -241,9 +241,14 @@ class CommandCompleter(object):
                         if command == "use":
                             # Choose SMB Share to connect to
                             self.matches = [command + " " + s for s in self.smbSession.list_shares().keys() if s and s.startswith(remainder)]
-                        elif command == "cd":
+                        elif command in ["cd", "dir", "get", "mkdir", "rm", "rmdir", "tree"]:
                             # Choose directory
                             directory_contents = list(self.smbSession.list_contents().keys())
+                            directory_contents = [d for d in directory_contents if d not in [".",".."]]
+                            self.matches = [command + " " + s for s in directory_contents if s and s.startswith(remainder)]
+                        elif command in ["lcd", "lls", "put", "lmkdir", "lrm", "lrmdir"]:
+                            # Choose directory
+                            directory_contents = os.listdir()
                             self.matches = [command + " " + s for s in directory_contents if s and s.startswith(remainder)]
                         else:
                             # Generic case for subcommands
