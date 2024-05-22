@@ -535,38 +535,41 @@ class InteractiveShell(object):
             print(os.getcwd())
 
         # Change directory to a share
-        elif command == "ls" or command == "dir":
-            # 
-            if self.smb_share is not None:
-                # Read the files
-                directory_contents = self.smbSession.list_contents(
-                    shareName=self.smb_share, 
-                    path=self.smb_path
-                )
+        elif command in ["ls", "dir"]:
+            self.smbSession.ping_smb_session()
+            if self.smbSession.connected:
+                if self.smb_share is not None:
+                    # Read the files
+                    directory_contents = self.smbSession.list_contents(
+                        shareName=self.smb_share, 
+                        path=self.smb_path
+                    )
 
-                for longname in sorted(directory_contents.keys(), key=lambda x:x.lower()):
-                    entry = directory_contents[longname]
+                    for longname in sorted(directory_contents.keys(), key=lambda x:x.lower()):
+                        entry = directory_contents[longname]
 
-                    meta_string = ""
-                    meta_string += ("d" if entry.is_directory() else "-")
-                    meta_string += ("a" if entry.is_archive() else "-")
-                    meta_string += ("c" if entry.is_compressed() else "-")
-                    meta_string += ("h" if entry.is_hidden() else "-")
-                    meta_string += ("n" if entry.is_normal() else "-")
-                    meta_string += ("r" if entry.is_readonly() else "-")
-                    meta_string += ("s" if entry.is_system() else "-")
-                    meta_string += ("t" if entry.is_temporary() else "-")
+                        meta_string = ""
+                        meta_string += ("d" if entry.is_directory() else "-")
+                        meta_string += ("a" if entry.is_archive() else "-")
+                        meta_string += ("c" if entry.is_compressed() else "-")
+                        meta_string += ("h" if entry.is_hidden() else "-")
+                        meta_string += ("n" if entry.is_normal() else "-")
+                        meta_string += ("r" if entry.is_readonly() else "-")
+                        meta_string += ("s" if entry.is_system() else "-")
+                        meta_string += ("t" if entry.is_temporary() else "-")
 
-                    size_str = b_filesize(entry.get_filesize())
+                        size_str = b_filesize(entry.get_filesize())
 
-                    date_str = datetime.datetime.fromtimestamp(entry.get_atime_epoch()).strftime("%Y-%m-%d %H:%M")
-                    
-                    if entry.is_directory():
-                        print("%s %10s  %s  \x1b[1;96m%s\x1b[0m\\" % (meta_string, size_str, date_str, longname))
-                    else:
-                        print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (meta_string, size_str, date_str, longname))
+                        date_str = datetime.datetime.fromtimestamp(entry.get_atime_epoch()).strftime("%Y-%m-%d %H:%M")
+                        
+                        if entry.is_directory():
+                            print("%s %10s  %s  \x1b[1;96m%s\x1b[0m\\" % (meta_string, size_str, date_str, longname))
+                        else:
+                            print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (meta_string, size_str, date_str, longname))
+                else:
+                    print("[!] You must open a share first, try the 'use <share>' command.")
             else:
-                print("[!] You must open a share first, try the 'use <share>' command.")
+                print("[!] SMB Session is disconnected.")
 
         # Creates a new remote directory
         elif command == "mkdir":
