@@ -477,8 +477,11 @@ class InteractiveShell(object):
 
         # Lists the contents of the current local directory
         elif command == "lls":
-            directory_contents = os.listdir(path='.')
-
+            if len(arguments) == 0:
+                directory_contents = os.listdir(path='.')
+            else:
+                directory_contents = os.listdir(path=' '.join(arguments))
+                
             for entryname in sorted(directory_contents):
                 rights_str = unix_permissions(entryname)
                 size_str = b_filesize(os.path.getsize(filename=entryname))
