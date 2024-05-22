@@ -9,7 +9,6 @@ import datetime
 import ntpath
 import os
 import readline
-from sectools.windows.crypto import parse_lm_nt_hashes
 import re
 import stat
 import sys
@@ -23,6 +22,81 @@ from rich.table import Table
 
 
 VERSION = "2.1.1"
+
+
+# Extracted from p0dalirius/sectools library
+# Src: https://github.com/p0dalirius/sectools/blob/7bb3f5cb7815ad4d4845713c8739e2e2b0ea4e75/sectools/windows/crypto.py#L11-L24
+def parse_lm_nt_hashes(lm_nt_hashes_string):
+    lm_hash_value, nt_hash_value = "", ""
+    if lm_nt_hashes_string is not None:
+        matched = re.match("([0-9a-f]{32})?(:)?([0-9a-f]{32})?", lm_nt_hashes_string.strip().lower())
+        m_lm_hash, m_sep, m_nt_hash = matched.groups()
+        if m_lm_hash is None and m_sep is None and m_nt_hash is None:
+            lm_hash_value, nt_hash_value = "", ""
+        elif m_lm_hash is None and m_nt_hash is not None:
+            lm_hash_value = "aad3b435b51404eeaad3b435b51404ee"
+            nt_hash_value = m_nt_hash
+        elif m_lm_hash is not None and m_nt_hash is None:
+            lm_hash_value = m_lm_hash
+            nt_hash_value = "31d6cfe0d16ae931b73c59d7e0c089c0"
+    return lm_hash_value, nt_hash_value
+
+
+def b_filesize(l):
+    """
+    Convert a file size from bytes to a more readable format using the largest appropriate unit.
+
+    This function takes an integer representing a file size in bytes and converts it to a human-readable
+    string using the largest appropriate unit from bytes (B) to petabytes (PB). The result is rounded to
+    two decimal places.
+
+    Args:
+        l (int): The file size in bytes.
+
+    Returns:
+        str: A string representing the file size in a more readable format, including the appropriate unit.
+    """
+    units = ['B','kB','MB','GB','TB','PB']
+    for k in range(len(units)):
+        if l < (1024**(k+1)):
+            break
+    return "%4.2f %s" % (round(l/(1024**(k)),2), units[k])
+
+
+def unix_permissions(entryname):
+    """
+    Generate a string representing the Unix-style permissions for a given file or directory.
+
+    This function uses the os.lstat() method to retrieve the status of the specified file or directory,
+    then constructs a string that represents the Unix-style permissions based on the mode of the file.
+
+    Args:
+        entryname (str): The path to the file or directory for which permissions are being determined.
+
+    Returns:
+        str: A string of length 10 representing the Unix-style permissions (e.g., '-rwxr-xr--').
+             The first character is either 'd' (directory), '-' (not a directory), followed by
+             three groups of 'r', 'w', 'x' (read, write, execute permissions) for owner, group,
+             and others respectively.
+    """
+    mode = os.lstat(entryname).st_mode
+    permissions = []
+
+    permissions.append('d' if stat.S_ISDIR(mode) else '-')
+
+    permissions.append('r' if mode & stat.S_IRUSR else '-')
+    permissions.append('w' if mode & stat.S_IWUSR else '-')
+    permissions.append('x' if mode & stat.S_IXUSR else '-')
+
+    permissions.append('r' if mode & stat.S_IRGRP else '-')
+    permissions.append('w' if mode & stat.S_IWGRP else '-')
+    permissions.append('x' if mode & stat.S_IXGRP else '-')
+
+    permissions.append('r' if mode & stat.S_IROTH else '-')
+    permissions.append('w' if mode & stat.S_IWOTH else '-')
+    permissions.append('x' if mode & stat.S_IXOTH else '-')
+
+    return ''.join(permissions)
 
 
 class CommandCompleter(object):
@@ -234,63 +308,6 @@ class CommandCompleter(object):
         print("\x1b[90m││└───────>\x1b[0m Compressed")
         print("\x1b[90m│└────────>\x1b[0m Archived")
         print("\x1b[90m└─────────>\x1b[0m Directory")
-
-
-def b_filesize(l):
-    """
-    Convert a file size from bytes to a more readable format using the largest appropriate unit.
-
-    This function takes an integer representing a file size in bytes and converts it to a human-readable
-    string using the largest appropriate unit from bytes (B) to petabytes (PB). The result is rounded to
-    two decimal places.
-
-    Args:
-        l (int): The file size in bytes.
-
-    Returns:
-        str: A string representing the file size in a more readable format, including the appropriate unit.
-    """
-    units = ['B','kB','MB','GB','TB','PB']
-    for k in range(len(units)):
-        if l < (1024**(k+1)):
-            break
-    return "%4.2f %s" % (round(l/(1024**(k)),2), units[k])
-
-
-def unix_permissions(entryname):
-    """
-    Generate a string representing the Unix-style permissions for a given file or directory.
-
-    This function uses the os.lstat() method to retrieve the status of the specified file or directory,
-    then constructs a string that represents the Unix-style permissions based on the mode of the file.
-
-    Args:
-        entryname (str): The path to the file or directory for which permissions are being determined.
-
-    Returns:
-        str: A string of length 10 representing the Unix-style permissions (e.g., '-rwxr-xr--').
-             The first character is either 'd' (directory), '-' (not a directory), followed by
-             three groups of 'r', 'w', 'x' (read, write, execute permissions) for owner, group,
-             and others respectively.
-    """
-    mode = os.lstat(entryname).st_mode
-    permissions = []
-
-    permissions.append('d' if stat.S_ISDIR(mode) else '-')
-
-    permissions.append('r' if mode & stat.S_IRUSR else '-')
-    permissions.append('w' if mode & stat.S_IWUSR else '-')
-    permissions.append('x' if mode & stat.S_IXUSR else '-')
-
-    permissions.append('r' if mode & stat.S_IRGRP else '-')
-    permissions.append('w' if mode & stat.S_IWGRP else '-')
-    permissions.append('x' if mode & stat.S_IXGRP else '-')
-
-    permissions.append('r' if mode & stat.S_IROTH else '-')
-    permissions.append('w' if mode & stat.S_IWOTH else '-')
-    permissions.append('x' if mode & stat.S_IXOTH else '-')
-
-    return ''.join(permissions)
 
 
 class InteractiveShell(object):
@@ -1323,18 +1340,19 @@ class SMBSession(object):
             elif len(entries) == 1:
                 entry = entries[0]
                 if entry.is_directory():
-                    print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                    print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[2]]), entry.get_longname()))
                     recurse_action(
                         base_dir=self.smb_path, 
                         path=path+[entry.get_longname()],
                         prompt=prompt+["    "]
                     )
                 else:
-                    print("%s%s" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+                    print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[2]]), entry.get_longname()))
 
         # Entrypoint
         try:
-            print(path)
+            path = ntpath.normpath(path)
+            print("\x1b[1;96m%s\x1b[0m\\" % path)
             recurse_action(
                 base_dir=self.smb_path, 
                 path=[path],
