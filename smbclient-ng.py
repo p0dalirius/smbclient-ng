@@ -596,7 +596,12 @@ class InteractiveShell(object):
 
         # Reconnects the current SMB session
         elif command in ["reconnect", "connect"]:
-            self.smbSession.init_smb_session()
+            self.smbSession.ping_smb_session()
+            if self.smbSession.connected:
+                self.smbSession.close()
+                self.smbSession.init_smb_session()
+            else:
+                self.smbSession.init_smb_session()
 
         # Removes a remote file
         elif command == "rm":
@@ -679,6 +684,17 @@ class InteractiveShell(object):
                 print("[!] No share served on '%s'" % self.smbSession.address)
 
         # Use a share
+        elif command == "tree":
+            self.smbSession.ping_smb_session()
+            if self.smbSession.connected:
+                if len(arguments) == 0:
+                    self.smbSession.tree(path='.')
+                else:
+                    self.smbSession.tree(path=' '.join(arguments))
+            else:
+                print("[!] SMB Session is disconnected.")
+
+        # Use a share
         elif command == "use":
             if len(arguments) != 0:
                 self.smbSession.ping_smb_session()
@@ -696,20 +712,6 @@ class InteractiveShell(object):
             else:
                 self.commandCompleterObject.print_help(command=command)
 
-        # Use a share
-        elif command == "tree":
-            self.smbSession.ping_smb_session()
-            if self.smbSession.connected:
-                if len(arguments) == 0:
-                    self.smbSession.tree(path='.')
-                else:
-                    self.smbSession.tree(path=' '.join(arguments))
-            else:
-                print("[!] SMB Session is disconnected.")
-
-        # Default no command typed
-        else:
-            pass
 
     def __prompt(self):
         self.smbSession.ping_smb_session()
