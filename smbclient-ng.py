@@ -419,7 +419,9 @@ class InteractiveShell(object):
 
         # Closes the current SMB session
         elif command == "close":
-            self.smbSession.close_smb_session()
+            self.smbSession.ping_smb_session()
+            if self.smbSession.connected:
+                self.smbSession.close_smb_session()
 
         # Get a file
         elif command == "get":
