@@ -647,41 +647,29 @@ class InteractiveShell(object):
             
         # List shares
         elif command == "shares":
-            shares = self.smbSession.list_shares()
-            if len(shares.keys()) != 0:
-                table = Table(title=None)
-                table.add_column("Share")
-                table.add_column("Hidden")
-                table.add_column("Type")
-                table.add_column("Description", justify="left")
+            self.smbSession.ping_smb_session()
+            if self.smbSession.connected:
+                shares = self.smbSession.list_shares()
+                if len(shares.keys()) != 0:
+                    table = Table(title=None)
+                    table.add_column("Share")
+                    table.add_column("Hidden")
+                    table.add_column("Type")
+                    table.add_column("Description", justify="left")
 
-                for sharename in sorted(shares.keys()):
-                    is_hidden = bool(sharename.endswith('$'))
-                    types = ', '.join([s.replace("STYPE_","") for s in shares[sharename]["type"]])
-                    if is_hidden:
-                        table.add_row(
-                            sharename,
-                            str(is_hidden),
-                            types,
-                            shares[sharename]["comment"]
-                        )
-                    else:
-                        table.add_row(
-                            sharename,
-                            str(is_hidden),
-                            types,
-                            shares[sharename]["comment"]
-                        )
+                    for sharename in sorted(shares.keys()):
+                        is_hidden = bool(sharename.endswith('$'))
+                        types = ', '.join([s.replace("STYPE_","") for s in shares[sharename]["type"]])
+                        if is_hidden:
+                            table.add_row(sharename, str(is_hidden), types, shares[sharename]["comment"])
+                        else:
+                            table.add_row(sharename, str(is_hidden), types, shares[sharename]["comment"])
 
-                console = Console()
-                console.print(table)
-
-                # max_sharename_len = max([len(sharename) for sharename, sharedata in shares.items()]) + 1
-
-                # for sharename in sorted(shares.keys()):
-                #     print("- \x1b[1;93m%s\x1b[0m | %s" % (sharename.ljust(max_sharename_len), shares[sharename]["comment"]))
+                    Console().print(table)
+                else:
+                    print("[!] No share served on '%s'" % self.smbSession.address)
             else:
-                print("[!] No share served on '%s'" % self.smbSession.address)
+                print("[!] SMB Session is disconnected.")
 
         # Use a share
         elif command == "tree":
