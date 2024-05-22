@@ -687,7 +687,7 @@ class InteractiveShell(object):
             if len(arguments) != 0:
                 self.smbSession.ping_smb_session()
                 if self.smbSession.connected:
-                    sharename = arguments[0]
+                    sharename = ' '.join(arguments)
                     # Reload the list of shares
                     self.smbSession.list_shares()
                     if sharename in self.smbSession.shares.keys():
