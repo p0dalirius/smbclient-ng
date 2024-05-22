@@ -582,28 +582,31 @@ class InteractiveShell(object):
             
         # Put a file
         elif command == "put":
-            self.smbSession.ping_smb_session()
-            if self.smbSession.connected:
-                if self.smb_share is not None:
-                    # Put files recursively
-                    if arguments[0] == "-r":
-                        localpath = ' '.join(arguments[1:])
-                        try:
-                            self.smbSession.put_file_recursively(localpath=localpath)
-                        except impacket.smbconnection.SessionError as e:
-                            print("[!] SMB Error: %s" % e)
+            if len(arguments) != 0:
+                self.smbSession.ping_smb_session()
+                if self.smbSession.connected:
+                    if self.smb_share is not None:
+                        # Put files recursively
+                        if arguments[0] == "-r":
+                            localpath = ' '.join(arguments[1:])
+                            try:
+                                self.smbSession.put_file_recursively(localpath=localpath)
+                            except impacket.smbconnection.SessionError as e:
+                                print("[!] SMB Error: %s" % e)
 
-                    # Put a single file
+                        # Put a single file
+                        else:
+                            localpath = ' '.join(arguments)
+                            try:
+                                self.smbSession.put_file(localpath=localpath)
+                            except impacket.smbconnection.SessionError as e:
+                                print("[!] SMB Error: %s" % e)
                     else:
-                        localpath = ' '.join(arguments)
-                        try:
-                            self.smbSession.put_file(localpath=localpath)
-                        except impacket.smbconnection.SessionError as e:
-                            print("[!] SMB Error: %s" % e)
+                        print("[!] You must open a share first, try the 'use <share>' command.")
                 else:
-                    print("[!] You must open a share first, try the 'use <share>' command.")
+                    print("[!] SMB Session is disconnected.")
             else:
-                print("[!] SMB Session is disconnected.")
+                self.commandCompleterObject.print_help(command=command)
                 
         # Reconnects the current SMB session
         elif command in ["reconnect", "connect"]:
