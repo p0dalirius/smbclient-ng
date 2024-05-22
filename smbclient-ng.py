@@ -649,7 +649,7 @@ class InteractiveShell(object):
                     if self.smbSession.path_exists(path):
                         if self.smbSession.path_isfile(path):
                             try:
-                                pass
+                                self.smbSession.rm(path=path)
                             except Exception as e:
                                 print("[!] Error removing file '%s' : %s" % path)
                         else:
@@ -670,7 +670,7 @@ class InteractiveShell(object):
                     if self.smbSession.path_exists(path):
                         if self.smbSession.path_isdir(path):
                             try:
-                                pass
+                                self.smbSession.rmdir(path=path)
                             except Exception as e:
                                 print("[!] Error removing directory '%s' : %s" % path)
                         else:
@@ -736,7 +736,6 @@ class InteractiveShell(object):
                     print("[!] SMB Session is disconnected.")
             else:
                 self.commandCompleterObject.print_help(command=command)
-
 
     def __prompt(self):
         self.smbSession.ping_smb_session()
@@ -1307,6 +1306,28 @@ class SMBSession(object):
                             traceback.print_exc()
         else:
             print("[!] The specified localpath is not a directory.")
+
+    def rmdir(self, path=None):
+        try:
+            self.smbClient.deleteDirectory(
+                shareName=self.smb_share, 
+                pathName=self.smb_path + '\\' + path, 
+            )
+        except Exception as err:
+            print("[!] Failed to remove directory '%s': %s" % (path, err))
+            if self.debug:
+                traceback.print_exc()
+
+    def rm(self, path=None):
+        try:
+            self.smbClient.deleteFile(
+                shareName=self.smb_share, 
+                pathName=self.smb_path + '\\' + path, 
+            )
+        except Exception as err:
+            print("[!] Failed to remove file '%s': %s" % (path, err))
+            if self.debug:
+                traceback.print_exc()
 
     def tree(self, path=None):
         #
