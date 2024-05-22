@@ -246,19 +246,20 @@ class CommandCompleter(object):
                                 if s and s.startswith(remainder)
                             ]
 
-                        elif command in ["cd", "dir", "ls", "rmdir", "tree"]:
+                        elif command in ["cd", "dir", "ls", "mkdir", "rmdir", "tree"]:
                             # Choose remote directory
-                            directory_contents = []
-                            for _, entry in self.smbSession.list_contents(path=remainder.strip()).items():
-                                if entry.is_directory() and entry.get_longname() not in [".",".."]:
-                                    directory_contents.append(entry.get_longname() + '\\')
-                            self.matches = [
-                                command + " " + s 
-                                for s in directory_contents
-                                if s and s.startswith(remainder)
-                            ]
+                            # directory_contents = []
+                            # for _, entry in self.smbSession.list_contents(path=remainder.strip()).items():
+                            #     if entry.is_directory() and entry.get_longname() not in [".",".."]:
+                            #         directory_contents.append(entry.get_longname() + '\\')
+                            # self.matches = [
+                            #     command + " " + s 
+                            #     for s in directory_contents
+                            #     if s and s.startswith(remainder)
+                            # ]
+                            pass
 
-                        elif command in ["get", "mkdir", "rm"]:
+                        elif command in ["get", "rm"]:
                             # Choose local files and directories
                             directory_contents = []
                             for _, entry in self.smbSession.list_contents(path=remainder.strip()).items():
@@ -1020,6 +1021,26 @@ class SMBSession(object):
         else:
             raise Exception("SMB client is not initialized.")
 
+    def set_cwd(self, path):
+        """
+        Sets the current working directory on the SMB share to the specified path.
+
+        This method updates the current working directory (cwd) of the SMB session to the given path if it is a valid directory.
+        If the specified path is not a directory, the cwd remains unchanged.
+
+        Parameters:
+            path (str): The path to set as the current working directory.
+
+        Raises:
+            ValueError: If the specified path is not a directory.
+        """
+        if self.path_isdir(path=path):
+            # Path exists on the remote 
+            self.smb_cwd = path
+        else:
+            # Path does not exists or is not a directory on the remote 
+            print("[!] Remote directory '%s' does not exist." % path)
+
     def get_file(self, path=None):
         """
         Retrieves a file from the specified path on the SMB share.
@@ -1034,7 +1055,6 @@ class SMBSession(object):
         Returns:
             None
         """
-
         try:
             tmp_file_path = self.smb_path + '\\' + path
             matches = self.smbClient.listPath(shareName=self.smb_share, path=tmp_file_path)
