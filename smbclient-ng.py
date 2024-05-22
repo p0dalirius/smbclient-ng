@@ -240,19 +240,54 @@ class CommandCompleter(object):
                     if command in self.commands.keys():
                         if command == "use":
                             # Choose SMB Share to connect to
-                            self.matches = [command + " " + s for s in self.smbSession.list_shares().keys() if s and s.startswith(remainder)]
-                        elif command in ["cd", "dir", "get", "mkdir", "rm", "rmdir", "tree"]:
-                            # Choose directory
-                            directory_contents = list(self.smbSession.list_contents().keys())
-                            directory_contents = [d for d in directory_contents if d not in [".",".."]]
-                            self.matches = [command + " " + s for s in directory_contents if s and s.startswith(remainder)]
+                            self.matches = [
+                                command + " " + s
+                                for s in self.smbSession.list_shares().keys()
+                                if s and s.startswith(remainder)
+                            ]
+
+                        elif command in ["cd", "dir", "ls", "rmdir", "tree"]:
+                            # Choose remote directory
+                            directory_contents = []
+                            for _, entry in self.smbSession.list_contents(path=remainder.strip()).items():
+                                if entry.is_directory() and entry.get_longname() not in [".",".."]:
+                                    directory_contents.append(entry.get_longname() + '\\')
+                            self.matches = [
+                                command + " " + s 
+                                for s in directory_contents
+                                if s and s.startswith(remainder)
+                            ]
+
+                        elif command in ["get", "mkdir", "rm"]:
+                            # Choose local files and directories
+                            directory_contents = []
+                            for _, entry in self.smbSession.list_contents(path=remainder.strip()).items():
+                                if entry.is_directory() and entry.get_longname() not in [".",".."]:
+                                    directory_contents.append(entry.get_longname()+'\\')
+                                else:
+                                    directory_contents.append(entry.get_longname())
+                            self.matches = [
+                                command + " " + s
+                                for s in directory_contents
+                                if s and s.startswith(remainder)
+                            ]
+
                         elif command in ["lcd", "lls", "put", "lmkdir", "lrm", "lrmdir"]:
                             # Choose directory
-                            directory_contents = os.listdir()
-                            self.matches = [command + " " + s for s in directory_contents if s and s.startswith(remainder)]
+                            directory_contents = os.listdir(path=remainder.strip())
+                            self.matches = [
+                                command + " " + s
+                                for s in directory_contents
+                                if s and s.startswith(remainder)
+                            ]
+                            
                         else:
                             # Generic case for subcommands
-                            self.matches = [command + " " + s for s in self.commands[command]["subcommands"] if s and s.startswith(remainder)]
+                            self.matches = [
+                                command + " " + s
+                                for s in self.commands[command]["subcommands"]
+                                if s and s.startswith(remainder)
+                            ]
                     else:
                         # Unknown subcommand, skipping autocomplete
                         pass
