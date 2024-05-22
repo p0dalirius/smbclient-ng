@@ -570,9 +570,16 @@ class InteractiveShell(object):
 
         # Creates a new remote directory
         elif command == "mkdir":
-            path = ' '.join(arguments)
-            self.smbSession.mkdir(path=path)
-
+            if len(arguments) != 0:
+                self.smbSession.ping_smb_session()
+                if self.smbSession.connected:
+                    path = ' '.join(arguments)
+                    self.smbSession.mkdir(path=path)
+                else:
+                    print("[!] SMB Session is disconnected.")
+            else:
+                self.commandCompleterObject.print_help(command=command)
+            
         # Put a file
         elif command == "put":
             self.smbSession.ping_smb_session()
