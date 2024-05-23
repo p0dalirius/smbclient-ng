@@ -588,7 +588,9 @@ class InteractiveShell(object):
                     except Exception as e:
                         print("[!] Error removing directory '%s' : %s" % path)
                 else:
-                    print("[!] Cannot delete '%s': This is a file, use 'lrm <file>' instead." % path)
+                    print("[!] Cannot delete file '%s', use 'lrm <file>' instead." % path)
+            else:
+                print("[!] Path '%s' does not exist." % path)
 
         # Shows the current local directory
         elif command == "lpwd":
