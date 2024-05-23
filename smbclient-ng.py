@@ -437,24 +437,26 @@ class InteractiveShell(object):
             if len(arguments) != 0:
                 self.smbSession.ping_smb_session()
                 if self.smbSession.connected:
-                    if self.smb_share is not None:
-                        path = ' '.join(arguments).replace('/',ntpath.sep)
-                        path = path + ntpath.sep
-                        path = re.sub(r'\\+', ntpath.sep, path)
+                    if self.smbSession.smb_share is not None:
+                        path = ' '.join(arguments)
+                        # .replace('/',ntpath.sep)
+                        # path = path + ntpath.sep
+                        # path = re.sub(r'\\+', r'\\', path)
 
-                        if not path.startswith(ntpath.sep):
-                            # Relative path
-                            path = self.smb_cwd + path
+                        # if not path.startswith(ntpath.sep):
+                        #     # Relative path
+                        #     path = self.smb_cwd + path
                         
-                        path = ntpath.normpath(path=path) + ntpath.sep
-                        if path in ['.', '.'+ntpath.sep]:
-                            path = ""
-
-                        try:
-                            self.smbSession.set_cwd(path)
-                            # self.smbSession.list_contents(shareName=self.smb_share, path=path)
-                        except impacket.smbconnection.SessionError as e:
-                            print("[!] SMB Error: %s" % e)
+                        # path = ntpath.normpath(path=path) + ntpath.sep
+                        # if path in ['.', '.'+ntpath.sep]:
+                        #     path = ""
+                        if self.smbSession.path_isdir(path):
+                            try:
+                                self.smbSession.set_cwd(path)
+                            except impacket.smbconnection.SessionError as e:
+                                print("[!] SMB Error: %s" % e)
+                        else:
+                            print("[!] Remote path '%s' is not a directory or does not exist." % path)
                     else:
                         print("[!] You must open a share first, try the 'use <share>' command.")
                 else:
@@ -473,7 +475,7 @@ class InteractiveShell(object):
             if len(arguments) != 0:
                 self.smbSession.ping_smb_session()
                 if self.smbSession.connected:
-                    if self.smb_share is not None:
+                    if self.smbSession.smb_share is not None:
                         # Get files recursively
                         if arguments[0] == "-r":
                             path = ' '.join(arguments[1:]).replace('/', ntpath.sep)
@@ -603,12 +605,9 @@ class InteractiveShell(object):
         elif command in ["ls", "dir"]:
             self.smbSession.ping_smb_session()
             if self.smbSession.connected:
-                if self.smb_share is not None:
+                if self.smbSession.smb_share is not None:
                     # Read the files
-                    directory_contents = self.smbSession.list_contents(
-                        shareName=self.smb_share, 
-                        path=self.smb_cwd
-                    )
+                    directory_contents = self.smbSession.list_contents(path=' '.join(arguments))
 
                     for longname in sorted(directory_contents.keys(), key=lambda x:x.lower()):
                         entry = directory_contents[longname]
@@ -653,7 +652,7 @@ class InteractiveShell(object):
             if len(arguments) != 0:
                 self.smbSession.ping_smb_session()
                 if self.smbSession.connected:
-                    if self.smb_share is not None:
+                    if self.smbSession.smb_share is not None:
                         # Put files recursively
                         if arguments[0] == "-r":
                             localpath = ' '.join(arguments[1:])
@@ -771,10 +770,10 @@ class InteractiveShell(object):
                 if self.smbSession.connected:
                     sharename = ' '.join(arguments)
                     # Reload the list of shares
-                    self.smbSession.list_shares()
-                    if sharename in self.smbSession.shares.keys():
-                        self.smb_share = sharename
-                        self.smbSession.smb_share = sharename
+                    shares = self.smbSession.list_shares()
+                    shares = [s.lower() for s in shares.keys()]
+                    if sharename.lower() in shares:
+                        self.smbSession.set_share(sharename)
                     else:
                         print("[!] No share named '%s' on '%s'" % (sharename, self.smbSession.address))
                 else:
@@ -788,10 +787,10 @@ class InteractiveShell(object):
             connected_dot = "\x1b[1;92m⏺ \x1b[0m"
         else:
             connected_dot = "\x1b[1;91m⏺ \x1b[0m"
-        if self.smb_share is None:
+        if self.smbSession.smb_share is None:
             str_prompt = "%s[\x1b[1;94m\\\\%s\\\x1b[0m]> " % (connected_dot, self.smbSession.address)
         else:
-            str_path = "\\\\%s\\%s\\%s" % (self.smbSession.address, self.smb_share, self.smb_cwd)
+            str_path = "\\\\%s\\%s\\%s" % (self.smbSession.address, self.smbSession.smb_share, self.smbSession.smb_cwd)
             str_prompt = "%s[\x1b[1;94m%s\x1b[0m]> " % (connected_dot, str_path)
         return str_prompt
 
@@ -1026,7 +1025,24 @@ class SMBSession(object):
         else:
             raise Exception("SMB client is not initialized.")
 
-    def set_cwd(self, path):
+    def set_share(self, shareName):
+        """
+        Sets the current SMB share to the specified share name.
+
+        This method updates the SMB session to use the specified share name. It checks if the share name is valid
+        and updates the smb_share attribute of the SMBSession instance.
+
+        Parameters:
+            shareName (str): The name of the share to set as the current SMB share.
+
+        Raises:
+            ValueError: If the shareName is None or an empty string.
+        """
+
+        if shareName is not None:
+            self.smb_share = shareName
+
+    def set_cwd(self, path=None):
         """
         Sets the current working directory on the SMB share to the specified path.
 
@@ -1040,15 +1056,26 @@ class SMBSession(object):
             ValueError: If the specified path is not a directory.
         """
         
-        if not path.startswith(ntpath.sep):
-            path = ntpath.normpath(self.smb_cwd + ntpath.sep + path)
+        if path is not None:
+            if path.startswith('/') or path.startswith(ntpath.sep):
+                # Absolute path
+                path = path
+            else:
+                # Relative path to the CWD
+                if len(self.smb_cwd) == 0:
+                    path = ntpath.normpath(path + ntpath.sep)
+                else:
+                    path = ntpath.normpath(self.smb_cwd + ntpath.sep + path)
+            
+            # Strip leading backslashes
+            path = path.lstrip(ntpath.sep)
 
-        if self.path_isdir(path=path):
-            # Path exists on the remote 
-            self.smb_cwd = path
-        else:
-            # Path does not exists or is not a directory on the remote 
-            print("[!] Remote directory '%s' does not exist." % path)
+            if self.path_isdir(path=path):
+                # Path exists on the remote 
+                self.smb_cwd = path
+            else:
+                # Path does not exists or is not a directory on the remote 
+                print("[!] Remote directory '%s' does not exist." % path)
 
     def get_file(self, path=None):
         """
@@ -1287,7 +1314,7 @@ class SMBSession(object):
 
         return self.shares
 
-    def list_contents(self, shareName=None, path=None):
+    def list_contents(self, path=None):
         """
         Lists the contents of a specified directory on the SMB share.
 
@@ -1303,16 +1330,11 @@ class SMBSession(object):
             dict: A dictionary with file and directory names as keys and their SMB entry objects as values.
         """
         
-        if shareName is not None:
-            self.smb_share = shareName
-        else:
-            shareName = self.smb_share
-
         path = path + "*"
 
         contents = {}
         entries = self.smbClient.listPath(
-            shareName=shareName, 
+            shareName=self.smb_share, 
             path=path
         )
         for entry in entries:
@@ -1439,10 +1461,23 @@ class SMBSession(object):
 
         if path is not None:
             path = path.replace('*','')
+            
+            if path.startswith('/') or path.startswith(ntpath.sep):
+                # Absolute path
+                path = path
+            else:
+                # Relative path to the CWD
+                if len(self.smb_cwd) == 0:
+                    path = ntpath.normpath(path + ntpath.sep)
+                else:
+                    path = ntpath.normpath(self.smb_cwd + ntpath.sep + path + ntpath.sep)
+            # 
+            path = path.rstrip(ntpath.sep) + '*'
+
             try:
                 contents = self.smbClient.listPath(
                     shareName=self.smb_share,
-                    path=ntpath.normpath(self.smb_cwd + ntpath.sep + path + ntpath.sep)
+                    path=path
                 )
                 # Filter on directories
                 contents = [
