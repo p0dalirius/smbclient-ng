@@ -377,7 +377,7 @@ class InteractiveShell(object):
 
         #
         self.smb_share = None
-        self.smb_path = ""
+        self.smb_cwd = ""
 
         #
         self.commandCompleterObject = CommandCompleter(smbSession=self.smbSession)
@@ -444,15 +444,15 @@ class InteractiveShell(object):
 
                         if not path.startswith('\\'):
                             # Relative path
-                            path = self.smb_path + path
+                            path = self.smb_cwd + path
                         
                         path = ntpath.normpath(path=path) + '\\'
                         if path == '.\\':
                             path = ""
 
                         try:
+                            self.smbSession.set_cwd(path)
                             self.smbSession.list_contents(shareName=self.smb_share, path=path)
-                            self.smb_path = path
                         except impacket.smbconnection.SessionError as e:
                             print("[!] SMB Error: %s" % e)
                     else:
@@ -603,7 +603,7 @@ class InteractiveShell(object):
                     # Read the files
                     directory_contents = self.smbSession.list_contents(
                         shareName=self.smb_share, 
-                        path=self.smb_path
+                        path=self.smb_cwd
                     )
 
                     for longname in sorted(directory_contents.keys(), key=lambda x:x.lower()):
@@ -787,7 +787,7 @@ class InteractiveShell(object):
         if self.smb_share is None:
             str_prompt = "%s[\x1b[1;94m\\\\%s\\\x1b[0m]> " % (connected_dot, self.smbSession.address)
         else:
-            str_path = "\\\\%s\\%s\\%s" % (self.smbSession.address, self.smb_share, self.smb_path)
+            str_path = "\\\\%s\\%s\\%s" % (self.smbSession.address, self.smb_share, self.smb_cwd)
             str_prompt = "%s[\x1b[1;94m%s\x1b[0m]> " % (connected_dot, str_path)
         return str_prompt
 
@@ -999,7 +999,7 @@ class SMBSession(object):
         self.connected = False
 
         self.smb_share = None
-        self.smb_path = ""
+        self.smb_cwd = ""
 
     def close_smb_session(self):
         """
@@ -1011,6 +1011,7 @@ class SMBSession(object):
         Raises:
             Exception: If the SMB client is not initialized or if there's an error during the disconnection process.
         """
+
         if self.smbClient is not None:
             if self.connected:
                 self.smbClient.close()
@@ -1034,6 +1035,7 @@ class SMBSession(object):
         Raises:
             ValueError: If the specified path is not a directory.
         """
+
         if self.path_isdir(path=path):
             # Path exists on the remote 
             self.smb_cwd = path
@@ -1055,9 +1057,13 @@ class SMBSession(object):
         Returns:
             None
         """
+
         try:
-            tmp_file_path = self.smb_path + '\\' + path
-            matches = self.smbClient.listPath(shareName=self.smb_share, path=tmp_file_path)
+            tmp_file_path = self.smb_cwd + '\\' + path
+            matches = self.smbClient.listPath(
+                shareName=self.smb_share, 
+                path=tmp_file_path
+            )
             for entry in matches:
                 if entry.is_directory():
                     print("[>] Skipping '%s' because it is a directory." % tmp_file_path)
@@ -1094,10 +1100,13 @@ class SMBSession(object):
             path (str): The initial directory path from which to start the recursive file retrieval.
                         If None, it starts from the root of the configured SMB share.
         """
-        #
+        
         def recurse_action(base_dir="", path=[]):
             remote_smb_path = base_dir + '\\'.join(path)
-            entries = self.smbClient.listPath(shareName=self.smb_share, path=remote_smb_path+'\\*')
+            entries = self.smbClient.listPath(
+                shareName=self.smb_share, 
+                path=remote_smb_path + '\\*'
+            )
             if len(entries) != 0:
                 files = [entry for entry in entries if not entry.is_directory()]
                 directories = [entry for entry in entries if entry.is_directory() and entry.get_longname() not in [".", ".."]]
@@ -1128,13 +1137,13 @@ class SMBSession(object):
                 for entry_directory in directories:
                     if entry_directory.is_directory():
                         recurse_action(
-                            base_dir=self.smb_path, 
+                            base_dir=self.smb_cwd, 
                             path=path+[entry_directory.get_longname()]
                         )                   
         # Entrypoint
         try:
             recurse_action(
-                base_dir=self.smb_path, 
+                base_dir=self.smb_cwd, 
                 path=[path]
             )
         except (BrokenPipeError, KeyboardInterrupt) as e:
@@ -1248,9 +1257,6 @@ class SMBSession(object):
 
         self.shares = {}
 
-        if not self.ping_smb_session():
-            self.connected = self.init_smb_session()
-
         if self.connected:
             if self.smbClient is not None:
                 resp = self.smbClient.listShares()
@@ -1289,10 +1295,6 @@ class SMBSession(object):
         Returns:
             dict: A dictionary with file and directory names as keys and their SMB entry objects as values.
         """
-        if path is not None:
-            self.smb_path = path
-        else:
-            path = self.smb_path
         
         if shareName is not None:
             self.smb_share = shareName
@@ -1302,7 +1304,11 @@ class SMBSession(object):
         path = path + "*"
 
         contents = {}
-        for entry in self.smbClient.listPath(shareName=shareName, path=path):
+        entries = self.smbClient.listPath(
+            shareName=shareName, 
+            path=path
+        )
+        for entry in entries:
             contents[entry.get_longname()] = entry
 
         return contents
@@ -1321,6 +1327,7 @@ class SMBSession(object):
         Note:
             The path should use forward slashes ('/') which will be converted to backslashes ('\\') for SMB compatibility.
         """
+
         if path is not None:
             # Prepare path
             path = path.replace('/','\\')
@@ -1335,7 +1342,7 @@ class SMBSession(object):
                 try:
                     self.smbClient.createDirectory(
                         shareName=self.smb_share, 
-                        pathName=ntpath.normpath(self.smb_path + '\\' + tmp_path + '\\')
+                        pathName=ntpath.normpath(self.smb_cwd + '\\' + tmp_path + '\\')
                     )
                 except impacket.smbconnection.SessionError as err:
                     if err.getErrorCode() == 0xc0000035:
@@ -1363,12 +1370,13 @@ class SMBSession(object):
         Returns:
             bool: True if the path exists, False otherwise or if an error occurs.
         """
+
         if path is not None:
             path = path.replace('*','')
             try:
                 contents = self.smbClient.listPath(
                     shareName=self.smb_share,
-                    path=self.smb_path + '\\' + path
+                    path=ntpath.normpath(self.smb_cwd + '\\' + path + '\\')
                 )
                 return (len(contents) != 0)
             except Exception as e:
@@ -1389,12 +1397,13 @@ class SMBSession(object):
         Returns:
             bool: True if the path is a file, False otherwise or if an error occurs.
         """
+
         if path is not None:
             path = path.replace('*','')
             try:
                 contents = self.smbClient.listPath(
                     shareName=self.smb_share,
-                    path=self.smb_path + '\\' + path
+                    path=ntpath.normpath(self.smb_cwd + '\\' + path + '\\')
                 )
                 # Filter on files
                 contents = [
@@ -1420,12 +1429,13 @@ class SMBSession(object):
         Returns:
             bool: True if the path is a directory, False otherwise or if an error occurs.
         """
+
         if path is not None:
             path = path.replace('*','')
             try:
                 contents = self.smbClient.listPath(
                     shareName=self.smb_share,
-                    path=self.smb_path + '\\' + path
+                    path=ntpath.normpath(self.smb_cwd + '\\' + path + '\\')
                 )
                 # Filter on directories
                 contents = [
@@ -1448,6 +1458,7 @@ class SMBSession(object):
         Returns:
             bool: True if the echo command succeeds (indicating the session is active), False otherwise.
         """
+
         try:
             self.smbClient.getSMBServer().echo()
             self.connected = True
@@ -1466,6 +1477,7 @@ class SMBSession(object):
         Args:
             localpath (str, optional): The local file path of the file to be uploaded. Defaults to None.
         """
+
         try:
             localfile = os.path.basename(localpath)
             f = LocalFileIO(
@@ -1475,7 +1487,7 @@ class SMBSession(object):
             )
             self.smbClient.putFile(
                 shareName=self.smb_share, 
-                pathName=self.smb_path + '\\' + localfile, 
+                pathName=ntpath.normpath(self.smb_cwd + '\\' + localfile + '\\'), 
                 callback=f.read
             )
             f.close()
@@ -1515,7 +1527,7 @@ class SMBSession(object):
                 # Create remote directory
                 remote_dir_path = local_dir_path.replace(os.path.sep, '\\')
                 self.mkdir(
-                    path=ntpath.normpath(self.smb_path + '\\' + remote_dir_path + '\\')
+                    path=ntpath.normpath(self.smb_cwd + '\\' + remote_dir_path + '\\')
                 )
 
                 for local_file_path in local_files[local_dir_path]:
@@ -1527,7 +1539,7 @@ class SMBSession(object):
                         )
                         self.smbClient.putFile(
                             shareName=self.smb_share, 
-                            pathName=ntpath.normpath(self.smb_path + '\\' + remote_dir_path + '\\' + local_file_path), 
+                            pathName=ntpath.normpath(self.smb_cwd + '\\' + remote_dir_path + '\\' + local_file_path), 
                             callback=f.read
                         )
                         f.close()
@@ -1552,7 +1564,7 @@ class SMBSession(object):
         try:
             self.smbClient.deleteDirectory(
                 shareName=self.smb_share, 
-                pathName=self.smb_path + '\\' + path, 
+                pathName=ntpath.normpath(self.smb_cwd + '\\' + path), 
             )
         except Exception as err:
             print("[!] Failed to remove directory '%s': %s" % (path, err))
@@ -1573,7 +1585,7 @@ class SMBSession(object):
         try:
             self.smbClient.deleteFile(
                 shareName=self.smb_share, 
-                pathName=self.smb_path + '\\' + path, 
+                pathName=ntpath.normpath(self.smb_cwd + '\\' + path), 
             )
         except Exception as err:
             print("[!] Failed to remove file '%s': %s" % (path, err))
@@ -1592,21 +1604,20 @@ class SMBSession(object):
             path (str, optional): The starting path on the SMB share from which to begin listing the tree.
                                   Defaults to the root of the current share.
         """
-        if path is None:
-            path = self.smb_path
-
-        print("\x1b[1;94mDirectory tree for SMB share at path: %s\x1b[0m" % path)
-        self.recurse_action(base_dir=self.smb_path, path=[path], prompt=[])
-        #
+        
         def recurse_action(base_dir="", path=[], prompt=[]):
             bars = ["│   ", "├── ", "└── "]
 
-            remote_smb_path = base_dir + '\\'.join(path)
+            remote_smb_path = ntpath.normpath(base_dir + '\\' + '\\'.join(path))
 
-            entries = self.smbClient.listPath(
-                shareName=self.smb_share, 
-                path=remote_smb_path+'\\*'
-            )
+            entries = []
+            try:
+                entries = self.smbClient.listPath(
+                    shareName=self.smb_share, 
+                    path=remote_smb_path+'\\*'
+                )
+            except Exception as e:
+                pass
             entries = [e for e in entries if e.get_longname() not in [".", ".."]]
             entries = sorted(entries, key=lambda x:x.get_longname())
 
@@ -1620,7 +1631,7 @@ class SMBSession(object):
                         if entry.is_directory():
                             print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
                             recurse_action(
-                                base_dir=self.smb_path, 
+                                base_dir=base_dir, 
                                 path=path+[entry.get_longname()],
                                 prompt=prompt+["│   "]
                             )
@@ -1632,7 +1643,7 @@ class SMBSession(object):
                         if entry.is_directory():
                             print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[2]]), entry.get_longname()))
                             recurse_action(
-                                base_dir=self.smb_path, 
+                                base_dir=base_dir, 
                                 path=path+[entry.get_longname()],
                                 prompt=prompt+["    "]
                             )
@@ -1644,7 +1655,7 @@ class SMBSession(object):
                         if entry.is_directory():
                             print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
                             recurse_action(
-                                base_dir=self.smb_path, 
+                                base_dir=base_dir, 
                                 path=path+[entry.get_longname()],
                                 prompt=prompt+["│   "]
                             )
@@ -1657,7 +1668,7 @@ class SMBSession(object):
                 if entry.is_directory():
                     print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[2]]), entry.get_longname()))
                     recurse_action(
-                        base_dir=self.smb_path, 
+                        base_dir=base_dir, 
                         path=path+[entry.get_longname()],
                         prompt=prompt+["    "]
                     )
@@ -1666,10 +1677,10 @@ class SMBSession(object):
 
         # Entrypoint
         try:
-            path = ntpath.normpath(path)
+            tmp_dir_path = ntpath.normpath(self.smb_cwd + '\\' + path)
             print("\x1b[1;96m%s\x1b[0m\\" % path)
             recurse_action(
-                base_dir=self.smb_path, 
+                base_dir=tmp_dir_path, 
                 path=[path],
                 prompt=[""]
             )
