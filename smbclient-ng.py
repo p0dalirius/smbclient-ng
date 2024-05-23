@@ -576,7 +576,9 @@ class InteractiveShell(object):
                     except Exception as e:
                         print("[!] Error removing file '%s' : %s" % path)
                 else:
-                    print("[!] Cannot delete '%s': This is a directory, use 'lrmdir <directory>' instead." % path)
+                    print("[!] Cannot delete '%s'. It is a directory, use 'lrmdir <directory>' instead." % path)
+            else:
+                print("[!] Path '%s' does not exist." % path)
 
         # Removes a local directory
         elif command == "lrmdir":
@@ -588,7 +590,7 @@ class InteractiveShell(object):
                     except Exception as e:
                         print("[!] Error removing directory '%s' : %s" % path)
                 else:
-                    print("[!] Cannot delete file '%s', use 'lrm <file>' instead." % path)
+                    print("[!] Cannot delete '%s'. It is a file, use 'lrm <file>' instead." % path)
             else:
                 print("[!] Path '%s' does not exist." % path)
 
