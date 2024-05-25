@@ -306,9 +306,7 @@ class SMBSession(object):
         
         if path is None or len(path) == 0:
             path = self.smb_cwd
-        path = path + ntpath.sep + "*"
-        
-        print(path)
+        path = path.rstrip(ntpath.sep) + ntpath.sep + "*"
 
         contents = {}
         entries = self.smbClient.listPath(
