@@ -18,6 +18,41 @@ from smbclient_ng.core.CommandCompleter import CommandCompleter
 from smbclient_ng.core.utils import b_filesize, unix_permissions
 
 
+## Decorators
+
+def command_arguments_required(func):
+    def wrapper(*args, **kwargs):
+        self, arguments,command  = args[0], args[1], args[2]
+        if len(arguments) != 0:
+            return func(*args, **kwargs)
+        else:
+            self.commandCompleterObject.print_help(command=command)
+            return None
+    return wrapper
+
+def active_smb_connection_needed(func):
+    def wrapper(*args, **kwargs):
+        self, arguments,command  = args[0], args[1], args[2]
+        #
+        self.smbSession.ping_smb_session()
+        if self.smbSession.connected:
+            return func(*args, **kwargs)
+        else:
+            print("[!] SMB Session is disconnected.")
+            return None
+    return wrapper
+
+def smb_share_is_set(func):
+    def wrapper(*args, **kwargs):
+        self, arguments,command  = args[0], args[1], args[2]
+        if self.smbSession.smb_share is not None:
+            return func(*args, **kwargs)
+        else:
+            print("[!] You must open a share first, try the 'use <share>' command.")
+            return None
+    return wrapper
+
+
 class InteractiveShell(object):
     """
     Class InteractiveShell is designed to manage the interactive command line interface for smbclient-ng.
@@ -87,225 +122,94 @@ class InteractiveShell(object):
         
         # Display help
         elif command == "help":
-            # Command arguments required   : No
-            # Active SMB connection needed : No
-            self.command_help(arguments)
+            self.command_help(arguments, command)
 
         # Closes the current SMB session
         elif command == "close":
-            # Command arguments required   : No
-            # Active SMB connection needed : No
-            # SMB share needed             : No
-            self.command_close(arguments)
-        
-        # SMB server info
-        elif command == "info":
-            # Command arguments required   : No
-            # Active SMB connection needed : Yes
-            # SMB share needed             : No
-            if not self.check_smb_connection_available():
-                return None
-            #
-            self.command_info(arguments)
-        
-        # Reconnects the current SMB session
-        elif command in ["reconnect", "connect"]:
-            # Command arguments required   : No
-            # Active SMB connection needed : No
-            # SMB share needed             : No
-            self.command_reconnect(arguments)
-        
+            self.command_close(arguments, command)
+               
         # Change directory in the current share
-        if command == "cd":
-            # Command arguments required   : Yes
-            # Active SMB connection needed : Yes
-            # SMB share needed             : Yes
-            if not self.check_command_has_arguments(arguments, command):
-                return None
-            if not self.check_smb_connection_available():
-                return None
-            if not self.check_smb_share_is_set():
-                return None
-            #
-            self.command_cd(arguments)
+        elif command == "cd":
+            self.command_cd(arguments, command)
 
         # Get a file
         elif command == "get":
-            # Command arguments required   : Yes
-            # Active SMB connection needed : Yes
-            # SMB share needed             : Yes
-            if not self.check_command_has_arguments(arguments, command):
-                return None
-            if not self.check_smb_connection_available():
-                return None
-            if not self.check_smb_share_is_set():
-                return None
-            #
-            self.command_get(arguments)
+            self.command_get(arguments, command)
+
+        # SMB server info
+        elif command == "info":
+            self.command_info(arguments, command)
 
         # List directory contents in a share
         elif command in ["ls", "dir"]:
-            # Command arguments required   : No
-            # Active SMB connection needed : Yes
-            # SMB share needed             : Yes
-            if not self.check_smb_connection_available():
-                return None
-            if not self.check_smb_share_is_set():
-                return None
-            #
-            self.command_ls(arguments)
+            self.command_ls(arguments, command)
 
         # Creates a new remote directory
         elif command == "mkdir":
-            # Command arguments required   : Yes
-            # Active SMB connection needed : Yes
-            # SMB share needed             : Yes
-            if not self.check_command_has_arguments(arguments, command):
-                return None
-            if not self.check_smb_connection_available():
-                return None
-            if not self.check_smb_share_is_set():
-                return None
-            #
-            self.command_mkdir(arguments)
+            self.command_mkdir(arguments, command)
 
         # Put a file
         elif command == "put":
-            # Command arguments required   : Yes
-            # Active SMB connection needed : Yes
-            # SMB share needed             : Yes
-            if not self.check_command_has_arguments(arguments, command):
-                return None
-            if not self.check_smb_connection_available():
-                return None
-            if not self.check_smb_share_is_set():
-                return None
-            #
-            self.command_put(arguments)
+            self.command_put(arguments, command)
 
         # Changes the current local directory
         elif command == "lcd":
-            # Command arguments required   : Yes
-            # Active SMB connection needed : No
-            # SMB share needed             : No
-            if not self.check_command_has_arguments(arguments, command):
-                return None
-            #
-            self.command_lcd(arguments)
+            self.command_lcd(arguments, command)
 
         # Lists the contents of the current local directory
         elif command == "lls":
-            # Command arguments required   : Yes
-            # Active SMB connection needed : No
-            # SMB share needed             : No
-            if not self.check_command_has_arguments(arguments, command):
-                return None
-            #
-            self.command_lls(arguments)
+            self.command_lls(arguments, command)
 
         # Creates a new local directory
         elif command == "lmkdir":
-            # Command arguments required   : Yes
-            # Active SMB connection needed : No
-            # SMB share needed             : No
-            if not self.check_command_has_arguments(arguments, command):
-                return None
-            #
-            self.command_lmkdir(arguments)
+            self.command_lmkdir(arguments, command)
 
         # Removes a local file
         elif command == "lrm":
-            # Command arguments required   : Yes
-            # Active SMB connection needed : No
-            # SMB share needed             : No
-            if not self.check_command_has_arguments(arguments, command):
-                return None
-            #
-            self.command_lrm(arguments)
+            self.command_lrm(arguments, command)
 
         # Removes a local directory
         elif command == "lrmdir":
-            # Command arguments required   : Yes
-            # Active SMB connection needed : No
-            # SMB share needed             : No
-            if not self.check_command_has_arguments(arguments, command):
-                return None
-            #
-            self.command_lrmdir(arguments)
+            self.command_lrmdir(arguments, command)
 
         # Shows the current local directory
         elif command == "lpwd":
-            # Command arguments required   : No
-            # Active SMB connection needed : No
-            # SMB share needed             : No
-            #
-            self.command_lpwd(arguments)
+            self.command_lpwd(arguments, command)
 
+        # Reconnects the current SMB session
+        elif command in ["connect", "reconnect"]:
+            self.command_reconnect(arguments, command)
+        
         # Removes a remote file
         elif command == "rm":
-            # Command arguments required   : Yes
-            # Active SMB connection needed : Yes
-            # SMB share needed             : Yes
-            if not self.check_command_has_arguments(arguments, command):
-                return None
-            if not self.check_smb_connection_available():
-                return None
-            if not self.check_smb_share_is_set():
-                return None
-            #
-            self.command_rm(arguments)
+            self.command_rm(arguments, command)
             
         # Removes a remote directory
         elif command == "rmdir":
-            # Command arguments required   : Yes
-            # Active SMB connection needed : Yes
-            # SMB share needed             : Yes
-            if not self.check_command_has_arguments(arguments, command):
-                return None
-            if not self.check_smb_connection_available():
-                return None
-            if not self.check_smb_share_is_set():
-                return None
-            #
-            self.command_rmdir(arguments)
+            self.command_rmdir(arguments, command)
 
         # List shares
         elif command == "shares":
-            # Command arguments required   : No
-            # Active SMB connection needed : Yes
-            # SMB share needed             : No
-            if not self.check_smb_connection_available():
-                return None
-            #
-            self.command_shares(arguments)
+            self.command_shares(arguments, command)
         
         # Displays a tree view of the CWD
         elif command == "tree":
-            # Command arguments required   : No
-            # Active SMB connection needed : Yes
-            # SMB share needed             : Yes
-            if not self.check_smb_connection_available():
-                return None
-            if not self.check_smb_share_is_set():
-                return None
-            #
-            self.command_tree(arguments)
+            self.command_tree(arguments, command)
         
         # Use a share
         elif command == "use":
-            # Command arguments required   : Yes
-            # Active SMB connection needed : Yes
-            # SMB share needed             : No
-            if not self.check_command_has_arguments(arguments, command):
-                return None
-            if not self.check_smb_connection_available():
-                return None
-            #
-            self.command_use(arguments)
+            self.command_use(arguments, command)
 
     # Commands ================================================================
 
-    def command_cd(self, arguments):
+    @command_arguments_required
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def command_cd(self, arguments, command="cd"):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
+
         path = ' '.join(arguments)
         if self.smbSession.path_isdir(path=path):
             try:
@@ -315,12 +219,23 @@ class InteractiveShell(object):
         else:
             print("[!] Remote path '%s' is not a directory or does not exist." % path)
 
-    def command_close(self):
+    def command_close(self, arguments, command="close"):
+        # Command arguments required   : No
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+
         self.smbSession.ping_smb_session()
         if self.smbSession.connected:
             self.smbSession.close_smb_session()
 
-    def command_get(self, arguments):
+    @command_arguments_required
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def command_get(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
+
         # Get files recursively
         if arguments[0] == "-r":
             path = ' '.join(arguments[1:]).replace('/', ntpath.sep)
@@ -336,13 +251,22 @@ class InteractiveShell(object):
             except impacket.smbconnection.SessionError as e:
                 print("[!] SMB Error: %s" % e)
 
-    def command_help(self, arguments):
+    def command_help(self, arguments, command):
+        # Command arguments required   : No
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+
         if len(arguments) != 0:
             self.commandCompleterObject.print_help(command=arguments[0])
         else:
             self.commandCompleterObject.print_help(command=None)
 
-    def command_info(self, arguments):
+    @active_smb_connection_needed
+    def command_info(self, arguments, command):
+        # Command arguments required   : No
+        # Active SMB connection needed : Yes
+        # SMB share needed             : No
+
         print_server_info = False
         print_share_info = False
         if len(arguments) != 0:
@@ -360,7 +284,12 @@ class InteractiveShell(object):
         except impacket.smbconnection.SessionError as e:
             print("[!] SMB Error: %s" % e)
 
-    def command_lcd(self, arguments):
+    @command_arguments_required
+    def command_lcd(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+
         path = ' '.join(arguments)
         if os.path.exists(path=path):
             if os.path.isdir(s=path):
@@ -370,7 +299,11 @@ class InteractiveShell(object):
         else:
             print("[!] Directory '%s' does not exists." % path)
 
-    def command_lls(self, arguments):
+    def command_lls(self, arguments, command):
+        # Command arguments required   : No
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+
         if len(arguments) == 0:
             directory_contents = os.listdir(path='.')
         else:
@@ -386,7 +319,12 @@ class InteractiveShell(object):
             else:
                 print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, entryname))
     
-    def command_lmkdir(self, arguments):
+    @command_arguments_required
+    def command_lmkdir(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+
         path = ' '.join(arguments)
 
         # Split each dir
@@ -401,7 +339,12 @@ class InteractiveShell(object):
             if not os.path.exists(tmp_path):
                 os.mkdir(path=tmp_path)
 
-    def command_lrm(self, arguments):
+    @command_arguments_required
+    def command_lrm(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+
         path = ' '.join(arguments)
         if os.path.exists(path):
             if not os.path.isdir(s=path):
@@ -414,7 +357,12 @@ class InteractiveShell(object):
         else:
             print("[!] Path '%s' does not exist." % path)
 
-    def command_lrmdir(self, arguments):
+    @command_arguments_required
+    def command_lrmdir(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+
         path = ' '.join(arguments)
         if os.path.exists(path):
             if os.path.isdir(s=path):
@@ -427,10 +375,20 @@ class InteractiveShell(object):
         else:
             print("[!] Path '%s' does not exist." % path)
 
-    def command_lpwd(self):
+    def command_lpwd(self, arguments, command):
+        # Command arguments required   : No
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+
         print(os.getcwd())
 
-    def command_ls(self, arguments):
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def command_ls(self, arguments, command):
+        # Command arguments required   : No
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
+
         # Read the files
         directory_contents = self.smbSession.list_contents(path=' '.join(arguments))
 
@@ -456,11 +414,25 @@ class InteractiveShell(object):
             else:
                 print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (meta_string, size_str, date_str, longname))
 
-    def command_mkdir(self, arguments):
+    @command_arguments_required
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def command_mkdir(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
+
         path = ' '.join(arguments)
         self.smbSession.mkdir(path=path)
 
-    def command_put(self, arguments):
+    @command_arguments_required
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def command_put(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
+
         # Put files recursively
         if arguments[0] == "-r":
             localpath = ' '.join(arguments[1:])
@@ -477,7 +449,11 @@ class InteractiveShell(object):
             except impacket.smbconnection.SessionError as e:
                 print("[!] SMB Error: %s" % e)
 
-    def command_reconnect(self):
+    def command_reconnect(self, arguments, command):
+        # Command arguments required   : No
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+
         self.smbSession.ping_smb_session()
         if self.smbSession.connected:
             self.smbSession.close()
@@ -485,7 +461,14 @@ class InteractiveShell(object):
         else:
             self.smbSession.init_smb_session()
 
-    def command_rm(self, arguments):
+    @command_arguments_required
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def command_rm(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
+
         path = ' '.join(arguments)
         if self.smbSession.path_exists(path):
             if self.smbSession.path_isfile(path):
@@ -498,7 +481,14 @@ class InteractiveShell(object):
         else:
             print("[!] Remote file '%s' does not exist." % path)
 
-    def command_rmdir(self, arguments):
+    @command_arguments_required
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def command_rmdir(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
+
         path = ' '.join(arguments)
         if self.smbSession.path_exists(path):
             if self.smbSession.path_isdir(path):
@@ -511,7 +501,12 @@ class InteractiveShell(object):
         else:
             print("[!] Remote directory '%s' does not exist." % path)
 
-    def command_shares(self):
+    @active_smb_connection_needed
+    def command_shares(self, arguments, command):
+        # Command arguments required   : No
+        # Active SMB connection needed : Yes
+        # SMB share needed             : No
+
         shares = self.smbSession.list_shares()
         if len(shares.keys()) != 0:
             table = Table(title=None)
@@ -532,13 +527,25 @@ class InteractiveShell(object):
         else:
             print("[!] No share served on '%s'" % self.smbSession.address)
 
-    def command_tree(self, arguments):
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def command_tree(self, arguments, command):
+        # Command arguments required   : No
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
+
         if len(arguments) == 0:
             self.smbSession.tree(path='.')
         else:
             self.smbSession.tree(path=' '.join(arguments))
 
-    def command_use(self, arguments):
+    @command_arguments_required
+    @active_smb_connection_needed
+    def command_use(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : Yes
+        # SMB share needed             : No
+
         sharename = ' '.join(arguments)
         # Reload the list of shares
         shares = self.smbSession.list_shares()
@@ -547,30 +554,6 @@ class InteractiveShell(object):
             self.smbSession.set_share(sharename)
         else:
             print("[!] No share named '%s' on '%s'" % (sharename, self.smbSession.address))
-
-    # Checks ==================================================================
-
-    def check_smb_connection_available(self):
-        self.smbSession.ping_smb_session()
-        if self.smbSession.connected:
-            return True
-        else:
-            print("[!] SMB Session is disconnected.")
-            return False
-
-    def check_command_has_arguments(self, arguments, command):
-        if len(arguments) != 0:
-            return True
-        else:
-            self.commandCompleterObject.print_help(command=command)
-            return False
-
-    def check_smb_share_is_set(self):
-        if self.smbSession.smb_share is not None:
-            return True
-        else:
-            print("[!] You must open a share first, try the 'use <share>' command.")
-            return False
 
     # Private functions =======================================================
 
