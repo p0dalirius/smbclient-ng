@@ -101,6 +101,9 @@ class InteractiveShell(object):
                         command=command, 
                         arguments=arguments
                     )
+                    
+                elif command.strip() == "":
+                    pass
 
                 # Fallback to unknown command
                 else:
@@ -117,7 +120,7 @@ class InteractiveShell(object):
 
     def process_command(self, command, arguments=[]):
         # Skip
-        if command == "":
+        if command.strip() == "":
             pass
         
         # Display help
@@ -205,7 +208,7 @@ class InteractiveShell(object):
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
-    def command_cd(self, arguments, command="cd"):
+    def command_cd(self, arguments, command):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
@@ -219,7 +222,7 @@ class InteractiveShell(object):
         else:
             print("[!] Remote path '%s' is not a directory or does not exist." % path)
 
-    def command_close(self, arguments, command="close"):
+    def command_close(self, arguments, command):
         # Command arguments required   : No
         # Active SMB connection needed : No
         # SMB share needed             : No
