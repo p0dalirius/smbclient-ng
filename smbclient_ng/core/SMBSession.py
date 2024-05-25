@@ -63,6 +63,61 @@ class SMBSession(object):
         self.smb_share = None
         self.smb_cwd = ""
 
+    # Connect and disconnet SMB session
+
+    def init_smb_session(self):
+        """
+        Initializes and establishes a session with the SMB server.
+
+        This method sets up the SMB connection using either Kerberos or NTLM authentication based on the configuration.
+        It attempts to connect to the SMB server specified by the `address` attribute and authenticate using the credentials provided during the object's initialization.
+
+        The method will print debug information if the `debug` attribute is set to True. Upon successful connection and authentication, it sets the `connected` attribute to True.
+
+        Returns:
+            bool: True if the connection and authentication are successful, False otherwise.
+        """
+
+        if self.debug:
+            print("[debug] [>] Connecting to remote SMB server '%s' ... " % self.address)
+        self.smbClient = impacket.smbconnection.SMBConnection(
+            remoteName=self.address,
+            remoteHost=self.address,
+            sess_port=int(445)
+        )
+
+        self.connected = False
+        if self.use_kerberos:
+            if self.debug:
+                print("[debug] [>] Authenticating as '%s\\%s' with kerberos ... " % (self.domain, self.username))
+            self.connected = self.smbClient.kerberosLogin(
+                user=self.username,
+                password=self.password,
+                domain=self.domain,
+                lmhash=self.lmhash,
+                nthash=self.nthash,
+                aesKey=self.aesKey,
+                kdcHost=self.kdcHost
+            )
+
+        else:
+            if self.debug:
+                print("[debug] [>] Authenticating as '%s\\%s' with NTLM ... " % (self.domain, self.username))
+            self.connected = self.smbClient.login(
+                user=self.username,
+                password=self.password,
+                domain=self.domain,
+                lmhash=self.lmhash,
+                nthash=self.nthash
+            )
+
+        if self.connected:
+            print("[+] Successfully authenticated to '%s' as '%s\\%s'!" % (self.address, self.domain, self.username))
+        else:
+            print("[!] Failed to authenticate to '%s' as '%s\\%s'!" % (self.address, self.domain, self.username))
+
+        return self.connected
+
     def close_smb_session(self):
         """
         Closes the current SMB session by disconnecting the SMB client.
@@ -83,6 +138,8 @@ class SMBSession(object):
                 print("[!] No active SMB connection to close.")
         else:
             raise Exception("SMB client is not initialized.")
+
+    # Operations
 
     def get_file(self, path=None):
         """
@@ -192,59 +249,6 @@ class SMBSession(object):
             self.close_smb_session()
             self.init_smb_session()
 
-    def init_smb_session(self):
-        """
-        Initializes and establishes a session with the SMB server.
-
-        This method sets up the SMB connection using either Kerberos or NTLM authentication based on the configuration.
-        It attempts to connect to the SMB server specified by the `address` attribute and authenticate using the credentials provided during the object's initialization.
-
-        The method will print debug information if the `debug` attribute is set to True. Upon successful connection and authentication, it sets the `connected` attribute to True.
-
-        Returns:
-            bool: True if the connection and authentication are successful, False otherwise.
-        """
-
-        if self.debug:
-            print("[debug] [>] Connecting to remote SMB server '%s' ... " % self.address)
-        self.smbClient = impacket.smbconnection.SMBConnection(
-            remoteName=self.address,
-            remoteHost=self.address,
-            sess_port=int(445)
-        )
-
-        self.connected = False
-        if self.use_kerberos:
-            if self.debug:
-                print("[debug] [>] Authenticating as '%s\\%s' with kerberos ... " % (self.domain, self.username))
-            self.connected = self.smbClient.kerberosLogin(
-                user=self.username,
-                password=self.password,
-                domain=self.domain,
-                lmhash=self.lmhash,
-                nthash=self.nthash,
-                aesKey=self.aesKey,
-                kdcHost=self.kdcHost
-            )
-
-        else:
-            if self.debug:
-                print("[debug] [>] Authenticating as '%s\\%s' with NTLM ... " % (self.domain, self.username))
-            self.connected = self.smbClient.login(
-                user=self.username,
-                password=self.password,
-                domain=self.domain,
-                lmhash=self.lmhash,
-                nthash=self.nthash
-            )
-
-        if self.connected:
-            print("[+] Successfully authenticated to '%s' as '%s\\%s'!" % (self.address, self.domain, self.username))
-        else:
-            print("[!] Failed to authenticate to '%s' as '%s\\%s'!" % (self.address, self.domain, self.username))
-
-        return self.connected
-
     def info(self, share=True, server=True):
         """
         Displays information about the server and optionally the shares.
@@ -284,6 +288,38 @@ class SMBSession(object):
             print("\n[+] Share:")
             # print("│ " % self.smbClient.queryInfo())
 
+    def list_contents(self, path=None):
+        """
+        Lists the contents of a specified directory on the SMB share.
+
+        This method retrieves the contents of a directory specified by `shareName` and `path`. If `shareName` or `path`
+        is not provided, it defaults to the instance's current SMB share or path. The method returns a dictionary with
+        the long names of the files and directories as keys and their respective SMB entry objects as values.
+
+        Args:
+            shareName (str, optional): The name of the SMB share. Defaults to the current SMB share if None.
+            path (str, optional): The directory path to list contents from. Defaults to the current path if None.
+
+        Returns:
+            dict: A dictionary with file and directory names as keys and their SMB entry objects as values.
+        """
+        
+        if path is None or len(path) == 0:
+            path = self.smb_cwd
+        path = path + ntpath.sep + "*"
+        
+        print(path)
+
+        contents = {}
+        entries = self.smbClient.listPath(
+            shareName=self.smb_share, 
+            path=path
+        )
+        for entry in entries:
+            contents[entry.get_longname()] = entry
+
+        return contents
+
     def list_shares(self):
         """
         Lists all the shares available on the connected SMB server.
@@ -320,38 +356,6 @@ class SMBSession(object):
                 print("[!] Error: SMBSession.smbClient is None.")
 
         return self.shares
-
-    def list_contents(self, path=None):
-        """
-        Lists the contents of a specified directory on the SMB share.
-
-        This method retrieves the contents of a directory specified by `shareName` and `path`. If `shareName` or `path`
-        is not provided, it defaults to the instance's current SMB share or path. The method returns a dictionary with
-        the long names of the files and directories as keys and their respective SMB entry objects as values.
-
-        Args:
-            shareName (str, optional): The name of the SMB share. Defaults to the current SMB share if None.
-            path (str, optional): The directory path to list contents from. Defaults to the current path if None.
-
-        Returns:
-            dict: A dictionary with file and directory names as keys and their SMB entry objects as values.
-        """
-        
-        if path is None or len(path) == 0:
-            path = self.smb_cwd
-        path = path + ntpath.sep + "*"
-        
-        print(path)
-
-        contents = {}
-        entries = self.smbClient.listPath(
-            shareName=self.smb_share, 
-            path=path
-        )
-        for entry in entries:
-            contents[entry.get_longname()] = entry
-
-        return contents
 
     def mkdir(self, path=None):
         """
@@ -423,39 +427,7 @@ class SMBSession(object):
                 return False
         else:
             return False
-
-    def path_isfile(self, path=None):
-        """
-        Checks if the specified path is a file on the SMB share.
-
-        This method determines if a given path corresponds to a file on the SMB share. It does this by listing the
-        contents of the path and filtering for entries that match the basename of the path and are not marked as directories.
-
-        Args:
-            path (str, optional): The path to check on the SMB share. Defaults to None.
-
-        Returns:
-            bool: True if the path is a file, False otherwise or if an error occurs.
-        """
-
-        if path is not None:
-            path = path.replace('*','')
-            try:
-                contents = self.smbClient.listPath(
-                    shareName=self.smb_share,
-                    path=ntpath.normpath(self.smb_cwd + ntpath.sep + path + ntpath.sep)
-                )
-                # Filter on files
-                contents = [
-                    c for c in contents
-                    if c.get_longname() == ntpath.basename(path) and not c.is_directory()
-                ]
-                return (len(contents) != 0)
-            except Exception as e:
-                return False
-        else:
-            return False
-        
+   
     def path_isdir(self, path=None):
         """
         Checks if the specified path is a directory on the SMB share.
@@ -494,6 +466,38 @@ class SMBSession(object):
                 contents = [
                     c for c in contents
                     if c.get_longname() == ntpath.basename(path) and c.is_directory()
+                ]
+                return (len(contents) != 0)
+            except Exception as e:
+                return False
+        else:
+            return False
+
+    def path_isfile(self, path=None):
+        """
+        Checks if the specified path is a file on the SMB share.
+
+        This method determines if a given path corresponds to a file on the SMB share. It does this by listing the
+        contents of the path and filtering for entries that match the basename of the path and are not marked as directories.
+
+        Args:
+            path (str, optional): The path to check on the SMB share. Defaults to None.
+
+        Returns:
+            bool: True if the path is a file, False otherwise or if an error occurs.
+        """
+
+        if path is not None:
+            path = path.replace('*','')
+            try:
+                contents = self.smbClient.listPath(
+                    shareName=self.smb_share,
+                    path=ntpath.normpath(self.smb_cwd + ntpath.sep + path + ntpath.sep)
+                )
+                # Filter on files
+                contents = [
+                    c for c in contents
+                    if c.get_longname() == ntpath.basename(path) and not c.is_directory()
                 ]
                 return (len(contents) != 0)
             except Exception as e:
