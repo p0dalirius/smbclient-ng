@@ -84,58 +84,6 @@ class SMBSession(object):
         else:
             raise Exception("SMB client is not initialized.")
 
-    def set_share(self, shareName):
-        """
-        Sets the current SMB share to the specified share name.
-
-        This method updates the SMB session to use the specified share name. It checks if the share name is valid
-        and updates the smb_share attribute of the SMBSession instance.
-
-        Parameters:
-            shareName (str): The name of the share to set as the current SMB share.
-
-        Raises:
-            ValueError: If the shareName is None or an empty string.
-        """
-
-        if shareName is not None:
-            self.smb_share = shareName
-
-    def set_cwd(self, path=None):
-        """
-        Sets the current working directory on the SMB share to the specified path.
-
-        This method updates the current working directory (cwd) of the SMB session to the given path if it is a valid directory.
-        If the specified path is not a directory, the cwd remains unchanged.
-
-        Parameters:
-            path (str): The path to set as the current working directory.
-
-        Raises:
-            ValueError: If the specified path is not a directory.
-        """
-
-        if path is not None:
-            if path.startswith('/') or path.startswith(ntpath.sep):
-                # Absolute path
-                path = path
-            else:
-                # Relative path to the CWD
-                if len(self.smb_cwd) == 0:
-                    path = ntpath.normpath(path + ntpath.sep)
-                else:
-                    path = ntpath.normpath(self.smb_cwd + ntpath.sep + path)
-            
-            # Strip leading backslashes
-            path = path.lstrip(ntpath.sep)
-
-            if self.path_isdir(path=path):
-                # Path exists on the remote 
-                self.smb_cwd = path
-            else:
-                # Path does not exists or is not a directory on the remote 
-                print("[!] Remote directory '%s' does not exist." % path)
-
     def get_file(self, path=None):
         """
         Retrieves a file from the specified path on the SMB share.
@@ -721,8 +669,12 @@ class SMBSession(object):
                     shareName=self.smb_share, 
                     path=remote_smb_path+'\\*'
                 )
-            except Exception as e:
-                pass
+            except impacket.smbconnection.SessionError as err:
+                code, const, text = err.getErrorCode(), err.getErrorString()[0], err.getErrorString()[1]
+                errmsg = "Error 0x%08x (%s): %s" % (code, const, text)
+                print("%s\x1b[1;91m%s\x1b[0m" % (''.join(prompt+[bars[2]]), errmsg))
+                return 
+
             entries = [e for e in entries if e.get_longname() not in [".", ".."]]
             entries = sorted(entries, key=lambda x:x.get_longname())
 
@@ -794,3 +746,56 @@ class SMBSession(object):
             self.close_smb_session()
             self.init_smb_session()
 
+    # Setter / Getter
+
+    def set_share(self, shareName):
+        """
+        Sets the current SMB share to the specified share name.
+
+        This method updates the SMB session to use the specified share name. It checks if the share name is valid
+        and updates the smb_share attribute of the SMBSession instance.
+
+        Parameters:
+            shareName (str): The name of the share to set as the current SMB share.
+
+        Raises:
+            ValueError: If the shareName is None or an empty string.
+        """
+
+        if shareName is not None:
+            self.smb_share = shareName
+
+    def set_cwd(self, path=None):
+        """
+        Sets the current working directory on the SMB share to the specified path.
+
+        This method updates the current working directory (cwd) of the SMB session to the given path if it is a valid directory.
+        If the specified path is not a directory, the cwd remains unchanged.
+
+        Parameters:
+            path (str): The path to set as the current working directory.
+
+        Raises:
+            ValueError: If the specified path is not a directory.
+        """
+
+        if path is not None:
+            if path.startswith('/') or path.startswith(ntpath.sep):
+                # Absolute path
+                path = path
+            else:
+                # Relative path to the CWD
+                if len(self.smb_cwd) == 0:
+                    path = ntpath.normpath(path + ntpath.sep)
+                else:
+                    path = ntpath.normpath(self.smb_cwd + ntpath.sep + path)
+            
+            # Strip leading backslashes
+            path = path.lstrip(ntpath.sep)
+
+            if self.path_isdir(path=path):
+                # Path exists on the remote 
+                self.smb_cwd = path
+            else:
+                # Path does not exists or is not a directory on the remote 
+                print("[!] Remote directory '%s' does not exist." % path)
