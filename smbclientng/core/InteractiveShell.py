@@ -7,10 +7,12 @@
 
 import datetime
 import impacket
+from importlib import import_module
 import ntpath
 import os
 import readline
 import shutil
+import sys
 import traceback
 from rich.console import Console
 from rich.table import Table
@@ -80,10 +82,14 @@ class InteractiveShell(object):
         self.smb_share = None
         self.smb_cwd = ""
 
+        self.modules = {}
+
         self.commandCompleterObject = CommandCompleter(smbSession=self.smbSession)
         readline.set_completer(self.commandCompleterObject.complete)
         readline.parse_and_bind("tab: complete")
         readline.set_completer_delims("\n")
+
+        self.__load_modules()
 
     def run(self):
         running = True
@@ -179,6 +185,10 @@ class InteractiveShell(object):
         elif command == "lpwd":
             self.command_lpwd(arguments, command)
 
+        # 
+        elif command == "module":
+            self.command_module(arguments, command)
+
         # Reconnects the current SMB session
         elif command in ["connect", "reconnect"]:
             self.command_reconnect(arguments, command)
@@ -227,6 +237,18 @@ class InteractiveShell(object):
         self.smbSession.ping_smb_session()
         if self.smbSession.connected:
             self.smbSession.close_smb_session()
+
+    @command_arguments_required
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def command_module(self, arguments, command):
+        module_name = arguments[0]
+
+        if module_name in self.modules.keys():
+            module = self.modules[module_name](self.smbSession)
+            module.run(' '.join(arguments[1:]))
+        else:
+            print("[!] Module '%s' does not exist." % module_name)
 
     @command_arguments_required
     @active_smb_connection_needed
@@ -557,6 +579,31 @@ class InteractiveShell(object):
 
     # Private functions =======================================================
 
+    def __load_modules(self):
+        self.modules.clear()
+
+        modules_dir = os.path.normpath(os.path.dirname(__file__) + os.path.sep + ".." + os.path.sep + "modules")
+        if self.debug:
+            print("[debug] Loading modules from %s ..." % modules_dir)
+        sys.path.extend([modules_dir])
+
+        for file in os.listdir(modules_dir):
+            filepath = os.path.normpath(modules_dir + os.path.sep + file)
+            if file.endswith('.py'):
+                if os.path.isfile(filepath) and file not in ["__init__.py"]:
+                    try:
+                        module_file = import_module('smbclientng.modules.%s' % (file[:-3]))
+                        module = module_file.__getattribute__(file[:-3])
+                        self.modules[module.name.lower()] = module
+                    except AttributeError as e:
+                        pass
+
+        if self.debug:
+            print("[debug] modules:", self.modules)
+        
+        if self.commandCompleterObject is not None:
+            self.commandCompleterObject.commands["module"]["subcommands"] = list(self.modules.keys())
+
     def __prompt(self):
         self.smbSession.ping_smb_session()
         if self.smbSession.connected:
@@ -566,6 +613,6 @@ class InteractiveShell(object):
         if self.smbSession.smb_share is None:
             str_prompt = "%s[\x1b[1;94m\\\\%s\\\x1b[0m]> " % (connected_dot, self.smbSession.address)
         else:
-            str_path = "\\\\%s\\%s\\%s" % (self.smbSession.address, self.smbSession.smb_share, self.smbSession.smb_cwd)
+            str_path = "\\\\%s\\%s\\%s" % (self.smbSession.address, self.smbSession.smb_share, self.smbSession.smb_cwd.lstrip(ntpath.sep))
             str_prompt = "%s[\x1b[1;94m%s\x1b[0m]> " % (connected_dot, str_path)
         return str_prompt

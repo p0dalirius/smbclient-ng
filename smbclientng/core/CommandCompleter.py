@@ -87,6 +87,10 @@ class CommandCompleter(object):
                 "description": ["Creates a new remote directory.", "Syntax: 'mkdir <directory>'"], 
                 "subcommands": []
             },
+            "module": {
+                "description": ["", "Syntax: 'module <name>'"], 
+                "subcommands": []
+            },
             "put": {
                 "description": ["Put a local file or directory in a remote directory.", "Syntax: 'put [-r] <directory or file>'"], 
                 "subcommands": []

@@ -8,6 +8,7 @@
 import impacket.smbconnection
 import ntpath
 import os
+import re
 import traceback
 from smbclientng.core.LocalFileIO import LocalFileIO
 from smbclientng.core.utils import b_filesize, STYPE_MASK
@@ -781,23 +782,30 @@ class SMBSession(object):
         """
 
         if path is not None:
-            # Path normalization
+            # Set path separators to ntpath sep 
             if '/' in path:
                 path = path.replace('/', ntpath.sep)
 
             if path.startswith(ntpath.sep):
                 # Absolute path
-                path = ntpath.normpath(path + ntpath.sep)
+                path = path + ntpath.sep
             else:
                 # Relative path to the CWD
                 if len(self.smb_cwd) == 0:
-                    path = ntpath.normpath(path + ntpath.sep)
+                    path = path + ntpath.sep
                 else:
-                    path = ntpath.normpath(self.smb_cwd + ntpath.sep + path)
+                    path = self.smb_cwd + ntpath.sep + path
             
-            if self.path_isdir(pathFromRoot=path.strip(ntpath.sep)):
-                # Path exists on the remote 
-                self.smb_cwd = ntpath.normpath(path)
+            # Path normalization
+            path = ntpath.normpath(path)
+            path = re.sub(r'\\+', r'\\', path)
+
+            if path in ["", ".", ".."]:
+                self.smb_cwd = ""
             else:
-                # Path does not exists or is not a directory on the remote 
-                print("[!] Remote directory '%s' does not exist." % path)
+                if self.path_isdir(pathFromRoot=path.strip(ntpath.sep)):
+                    # Path exists on the remote 
+                    self.smb_cwd = ntpath.normpath(path)
+                else:
+                    # Path does not exists or is not a directory on the remote 
+                    print("[!] Remote directory '%s' does not exist." % path)
