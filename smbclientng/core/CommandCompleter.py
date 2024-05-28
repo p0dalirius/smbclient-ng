@@ -88,7 +88,7 @@ class CommandCompleter(object):
                 "subcommands": []
             },
             "module": {
-                "description": ["", "Syntax: 'module <name>'"], 
+                "description": ["Loads a specific module for additional functionalities.", "Syntax: 'module <name>'"], 
                 "subcommands": []
             },
             "put": {

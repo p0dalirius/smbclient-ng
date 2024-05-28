@@ -27,6 +27,7 @@
 - [x] `lrmdir`: Removes a local directory. 
 - [x] `ls`: List the contents of the current remote working directory. 
 - [x] `mkdir`: Creates a new remote directory. 
+- [x] `module`: Loads a specific module for additional functionalities. 
 - [x] `put`: Put a local file to a remote directory. (`put -r` to recursively upload a local directory to remote).
 - [x] `rm`: Removes a remote file. 
 - [x] `rmdir`: Removes a local directory. 
@@ -44,16 +45,16 @@
 ## Usage
 
 ```
-$ ./smbclient-ng.py 
+$ smbclientng -h
                _          _ _            _                    
  ___ _ __ ___ | |__   ___| (_) ___ _ __ | |_      _ __   __ _ 
 / __| '_ ` _ \| '_ \ / __| | |/ _ \ '_ \| __|____| '_ \ / _` |
 \__ \ | | | | | |_) | (__| | |  __/ | | | ||_____| | | | (_| |
 |___/_| |_| |_|_.__/ \___|_|_|\___|_| |_|\__|    |_| |_|\__, |
-    by @podalirius_                             v2.1.0  |___/  
+    by @podalirius_                               v1.1  |___/  
     
-usage: smbclient-ng.py [-h] [--debug] --target ip address [--kdcHost FQDN KDC] [-d DOMAIN] [-u USER]
-                       [--no-pass | -p PASSWORD | -H [LMHASH:]NTHASH | --aes-key hex key] [-k]
+usage: smbclientng [-h] [--debug] --target ip address [--kdcHost FQDN KDC] [-d DOMAIN] [-u USER]
+                   [--no-pass | -p PASSWORD | -H [LMHASH:]NTHASH | --aes-key hex key] [-k]
 
 smbclient-ng, a fast and user friendly way to interact with SMB shares.
 
@@ -74,8 +75,8 @@ Authentication & connection:
   -H [LMHASH:]NTHASH, --hashes [LMHASH:]NTHASH
                         NT/LM hashes, format is LMhash:NThash
   --aes-key hex key     AES key to use for Kerberos Authentication (128 or 256 bits)
-  -k, --kerberos        Use Kerberos authentication. Grabs credentials from .ccache file (KRB5CCNAME) based on target parameters. If
-                        valid credentials cannot be found, it will use the ones specified in the command line
+  -k, --kerberos        Use Kerberos authentication. Grabs credentials from .ccache file (KRB5CCNAME) based on target parameters. If valid credentials
+                        cannot be found, it will use the ones specified in the command line
 ```
 
 
