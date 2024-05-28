@@ -115,7 +115,10 @@ class InteractiveShell(object):
                 else:
                     print("Unknown command. Type \"help\" for help.")
 
-            except (KeyboardInterrupt, EOFError) as e:
+            except KeyboardInterrupt as e:
+                print()
+
+            except EOFError as e:
                 print()
                 running = False
 
