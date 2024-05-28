@@ -120,7 +120,6 @@ class CommandCompleter(object):
                 "subcommands": []
             },
         }
-        
         self.commands["help"]["subcommands"] = ["format"] + list(self.commands.keys())
         self.commands["help"]["subcommands"].remove("help")
 
@@ -162,28 +161,53 @@ class CommandCompleter(object):
 
                         elif command in ["cd", "dir", "ls", "mkdir", "rmdir", "tree"]:
                             # Choose remote directory
-                            # directory_contents = []
-                            # for _, entry in self.smbSession.list_contents(path=remainder.strip()).items():
-                            #     if entry.is_directory() and entry.get_longname() not in [".",".."]:
-                            #         directory_contents.append(entry.get_longname() + ntpath.sep)
-                            # self.matches = [
-                            #     command + " " + s 
-                            #     for s in directory_contents
-                            #     if s and s.startswith(remainder)
-                            # ]
-                            pass
+                            path = ""
+                            if '\\' in remainder.strip() or '/' in remainder.strip():
+                                path = remainder.strip().replace('/', ntpath.sep)
+                                path = ntpath.sep.join(path.split(ntpath.sep)[:-1]) 
+
+                            directory_contents = self.smbSession.list_contents(path=path).items()
+
+                            matching_entries = []
+                            for _, entry in directory_contents:
+                                if entry.is_directory() and entry.get_longname() not in [".",".."]:
+                                    if len(path) != 0:
+                                        matching_entries.append(path + ntpath.sep + entry.get_longname() + ntpath.sep)
+                                    else:
+                                        matching_entries.append(entry.get_longname() + ntpath.sep)
+
+                            self.matches = [
+                                command + " " + s 
+                                for s in matching_entries
+                                if s and s.startswith(remainder)
+                            ]
 
                         elif command in ["get", "rm"]:
                             # Choose local files and directories
-                            directory_contents = []
-                            for _, entry in self.smbSession.list_contents(path=remainder.strip()).items():
-                                if entry.is_directory() and entry.get_longname() not in [".",".."]:
-                                    directory_contents.append(entry.get_longname()+ntpath.sep)
-                                else:
-                                    directory_contents.append(entry.get_longname())
+                            path = ""
+                            if '\\' in remainder.strip() or '/' in remainder.strip():
+                                path = remainder.strip().replace('/', ntpath.sep)
+                                path = ntpath.sep.join(path.split(ntpath.sep)[:-1]) 
+
+                            directory_contents = self.smbSession.list_contents(path=path).items()
+
+                            matching_entries = []
+                            for _, entry in directory_contents:
+                                if entry.get_longname() not in [".",".."]:
+                                    if len(path) != 0:
+                                        if entry.is_directory():
+                                            matching_entries.append(path + ntpath.sep + entry.get_longname() + ntpath.sep)
+                                        else:
+                                            matching_entries.append(path + ntpath.sep + entry.get_longname())
+                                    else:
+                                        if entry.is_directory():
+                                            matching_entries.append(entry.get_longname() + ntpath.sep)
+                                        else:
+                                            matching_entries.append(entry.get_longname())
+
                             self.matches = [
-                                command + " " + s
-                                for s in directory_contents
+                                command + " " + s 
+                                for s in matching_entries
                                 if s and s.startswith(remainder)
                             ]
 
