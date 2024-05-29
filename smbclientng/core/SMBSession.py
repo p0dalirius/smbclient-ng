@@ -183,7 +183,7 @@ class SMBSession(object):
                     )
                     f.close()
         except (BrokenPipeError, KeyboardInterrupt) as e:
-            print("[!] Interrupted.")
+            print("\x1b[v\x1b[o\r[!] Interrupted.")
             self.close_smb_session()
             self.init_smb_session()
                 
@@ -249,7 +249,7 @@ class SMBSession(object):
                 path=[path]
             )
         except (BrokenPipeError, KeyboardInterrupt) as e:
-            print("[!] Interrupted.")
+            print("\x1b[v\x1b[o\r[!] Interrupted.")
             self.close_smb_session()
             self.init_smb_session()
 
