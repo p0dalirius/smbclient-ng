@@ -736,10 +736,9 @@ class SMBSession(object):
 
         # Entrypoint
         try:
-            tmp_dir_path = ntpath.normpath(self.smb_cwd + ntpath.sep + path)
             print("\x1b[1;96m%s\x1b[0m\\" % path)
             recurse_action(
-                base_dir=tmp_dir_path, 
+                base_dir=self.smb_cwd, 
                 path=[path],
                 prompt=[""]
             )
