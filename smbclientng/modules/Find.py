@@ -176,10 +176,18 @@ class Find(Module):
                                     do_print_entry = (entry.get_longname().lower() == self.options.iname.lower())
 
                     if do_print_entry:
-                        if entry.is_directory():
-                            print("%s" % (path + entry.get_longname() + ntpath.sep))
+                        if self.options.download:
+                            pass
+                        elif self.options.ls:
+                            if entry.is_directory():
+                                print("%s" % (path + entry.get_longname() + ntpath.sep))
+                            else:
+                                print("%s" % (path + entry.get_longname()))
                         else:
-                            print("%s" % (path + entry.get_longname()))
+                            if entry.is_directory():
+                                print("%s" % (path + entry.get_longname() + ntpath.sep))
+                            else:
+                                print("%s" % (path + entry.get_longname()))
 
             # Next directories to explore
             for entry in entries:

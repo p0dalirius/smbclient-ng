@@ -244,18 +244,6 @@ class InteractiveShell(object):
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
-    def command_module(self, arguments, command):
-        module_name = arguments[0]
-
-        if module_name in self.modules.keys():
-            module = self.modules[module_name](self.smbSession)
-            module.run(' '.join(arguments[1:]))
-        else:
-            print("[!] Module '%s' does not exist." % module_name)
-
-    @command_arguments_required
-    @active_smb_connection_needed
-    @smb_share_is_set
     def command_get(self, arguments, command):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
@@ -449,6 +437,18 @@ class InteractiveShell(object):
 
         path = ' '.join(arguments)
         self.smbSession.mkdir(path=path)
+
+    @command_arguments_required
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def command_module(self, arguments, command):
+        module_name = arguments[0]
+
+        if module_name in self.modules.keys():
+            module = self.modules[module_name](self.smbSession)
+            module.run(' '.join(arguments[1:]))
+        else:
+            print("[!] Module '%s' does not exist." % module_name)
 
     @command_arguments_required
     @active_smb_connection_needed
