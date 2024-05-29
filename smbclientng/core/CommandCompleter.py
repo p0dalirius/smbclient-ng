@@ -213,10 +213,29 @@ class CommandCompleter(object):
 
                         elif command in ["lcd", "lls", "put", "lmkdir", "lrm", "lrmdir"]:
                             # Choose directory
-                            directory_contents = os.listdir(path=remainder.strip())
+                            path = ""
+                            if os.path.sep in remainder.strip():
+                                path = path.split(os.path.sep)[:-1]
+                                path = os.path.sep.join(path)
+                            
+                            # Current dir
+                            if len(path.strip()) == 0:
+                                path = "."
+                            print("path =", path)
+                            directory_contents = os.listdir(path=path + os.path.sep)
+                            print(directory_contents)
+                            matching_entries = []
+                            for entry in directory_contents:
+                                if entry not in [".",".."]:
+                                    entry_path = path + os.path.sep + entry
+                                    if os.path.isdir(entry_path):
+                                        matching_entries.append(entry_path + os.path.sep)
+                                    else:
+                                        matching_entries.append(entry_path)
+
                             self.matches = [
                                 command + " " + s
-                                for s in directory_contents
+                                for s in matching_entries
                                 if s and s.startswith(remainder)
                             ]
                             
