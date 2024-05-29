@@ -7,6 +7,7 @@
 import os
 import re
 import stat
+import datetime
 
 
 # Extracted from p0dalirius/sectools library
@@ -136,3 +137,35 @@ def STYPE_MASK(stype_value):
     return flags
 
 
+def windows_ls_entry(entry, pathToPrint=None):
+    """
+    This function generates a metadata string based on the attributes of the provided entry object.
+    
+    Parameters:
+        entry (object): An object representing a file or directory entry.
+
+    Returns:
+        str: A string representing the metadata of the entry, including attributes like directory, archive, compressed, hidden, normal, readonly, system, and temporary.
+    """
+    
+    if pathToPrint is None:
+        pathToPrint = entry.get_longname()
+
+    meta_string = ""
+    meta_string += ("d" if entry.is_directory() else "-")
+    meta_string += ("a" if entry.is_archive() else "-")
+    meta_string += ("c" if entry.is_compressed() else "-")
+    meta_string += ("h" if entry.is_hidden() else "-")
+    meta_string += ("n" if entry.is_normal() else "-")
+    meta_string += ("r" if entry.is_readonly() else "-")
+    meta_string += ("s" if entry.is_system() else "-")
+    meta_string += ("t" if entry.is_temporary() else "-")
+
+    size_str = b_filesize(entry.get_filesize())
+
+    date_str = datetime.datetime.fromtimestamp(entry.get_atime_epoch()).strftime("%Y-%m-%d %H:%M")
+    
+    if entry.is_directory():
+        print("%s %10s  %s  \x1b[1;96m%s\x1b[0m\\" % (meta_string, size_str, date_str, pathToPrint))
+    else:
+        print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (meta_string, size_str, date_str, pathToPrint))

@@ -10,6 +10,7 @@ import ntpath
 import re
 from smbclientng.core.Module import Module
 from smbclientng.core.ModuleArgumentParser import ModuleArgumentParser
+from smbclientng.core.utils import windows_ls_entry
 
 
 class Find(Module):
@@ -180,9 +181,9 @@ class Find(Module):
                             pass
                         elif self.options.ls:
                             if entry.is_directory():
-                                print("%s" % (path + entry.get_longname() + ntpath.sep))
+                                windows_ls_entry(entry, (path + entry.get_longname() + ntpath.sep))
                             else:
-                                print("%s" % (path + entry.get_longname()))
+                                windows_ls_entry(entry, (path + entry.get_longname()))
                         else:
                             if entry.is_directory():
                                 print("%s" % (path + entry.get_longname() + ntpath.sep))

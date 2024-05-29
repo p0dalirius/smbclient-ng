@@ -17,7 +17,7 @@ import traceback
 from rich.console import Console
 from rich.table import Table
 from smbclientng.core.CommandCompleter import CommandCompleter
-from smbclientng.core.utils import b_filesize, unix_permissions
+from smbclientng.core.utils import b_filesize, unix_permissions, windows_ls_entry
 
 
 ## Decorators
@@ -406,27 +406,8 @@ class InteractiveShell(object):
         directory_contents = self.smbSession.list_contents(path=' '.join(arguments))
 
         for longname in sorted(directory_contents.keys(), key=lambda x:x.lower()):
-            entry = directory_contents[longname]
-
-            meta_string = ""
-            meta_string += ("d" if entry.is_directory() else "-")
-            meta_string += ("a" if entry.is_archive() else "-")
-            meta_string += ("c" if entry.is_compressed() else "-")
-            meta_string += ("h" if entry.is_hidden() else "-")
-            meta_string += ("n" if entry.is_normal() else "-")
-            meta_string += ("r" if entry.is_readonly() else "-")
-            meta_string += ("s" if entry.is_system() else "-")
-            meta_string += ("t" if entry.is_temporary() else "-")
-
-            size_str = b_filesize(entry.get_filesize())
-
-            date_str = datetime.datetime.fromtimestamp(entry.get_atime_epoch()).strftime("%Y-%m-%d %H:%M")
+            windows_ls_entry(directory_contents[longname])
             
-            if entry.is_directory():
-                print("%s %10s  %s  \x1b[1;96m%s\x1b[0m\\" % (meta_string, size_str, date_str, longname))
-            else:
-                print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (meta_string, size_str, date_str, longname))
-
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
