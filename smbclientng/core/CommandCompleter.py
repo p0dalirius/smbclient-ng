@@ -183,7 +183,7 @@ class CommandCompleter(object):
                             self.matches = [
                                 command + " " + s 
                                 for s in matching_entries
-                                if s and s.startswith(remainder)
+                                if s.lower().startswith(remainder.lower())
                             ]
 
                         elif command in ["get", "rm"]:
@@ -212,7 +212,7 @@ class CommandCompleter(object):
                             self.matches = [
                                 command + " " + s 
                                 for s in matching_entries
-                                if s.startswith(remainder)
+                                if s.lower().startswith(remainder.lower())
                             ]
 
                         elif command in ["lcd", "lls", "put", "lmkdir", "lrm", "lrmdir"]:
