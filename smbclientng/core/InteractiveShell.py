@@ -462,7 +462,7 @@ class InteractiveShell(object):
 
         self.smbSession.ping_smb_session()
         if self.smbSession.connected:
-            self.smbSession.close()
+            self.smbSession.close_smb_session()
             self.smbSession.init_smb_session()
         else:
             self.smbSession.init_smb_session()

@@ -61,10 +61,13 @@ class SMBSession(object):
         self.smbClient = None
         self.connected = False
 
+        self.available_shares = {}
         self.smb_share = None
         self.smb_cwd = ""
 
-    # Connect and disconnet SMB session
+        self.list_shares()
+
+    # Connect and disconnect SMB session
 
     def init_smb_session(self):
         """
@@ -275,9 +278,9 @@ class SMBSession(object):
             print("  ├─OS:")
             print("  │ ├─ \x1b[94mOS Name\x1b[0m \x1b[90m─────────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerOS()))
             print("  │ └─ \x1b[94mOS Version\x1b[0m \x1b[90m──────────────\x1b[0m : \x1b[93m%s.%s.%s\x1b[0m" % (self.smbClient.getServerOSMajor(), self.smbClient.getServerOSMinor(), self.smbClient.getServerOSBuild()))
-            print("  ├─SMB:")
-            print("  │ ├─ \x1b[94mSMB Signing Required\x1b[0m \x1b[90m────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.isSigningRequired()))
-            print("  │ ├─ \x1b[94mSMB Login Required\x1b[0m \x1b[90m──────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.isLoginRequired()))
+            print("  ├─Server:")
+            print("  │ ├─ \x1b[94mSigning Required\x1b[0m \x1b[90m────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.isSigningRequired()))
+            print("  │ ├─ \x1b[94mLogin Required\x1b[0m \x1b[90m──────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.isLoginRequired()))
             print("  │ ├─ \x1b[94mSupports NTLMv2\x1b[0m \x1b[90m─────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.doesSupportNTLMv2()))
             MaxReadSize = self.smbClient.getIOCapabilities()["MaxReadSize"]
             print("  │ ├─ \x1b[94mMax size of read chunk\x1b[0m \x1b[90m──\x1b[0m : \x1b[93m%d bytes (%s)\x1b[0m" % (MaxReadSize, b_filesize(MaxReadSize)))
@@ -286,8 +289,16 @@ class SMBSession(object):
             print("  └─")
 
         if share and self.smb_share is not None:
+            share_name = self.available_shares.get(self.smb_share.lower(), "")["name"]
+            share_comment = self.available_shares.get(self.smb_share.lower(), "")["comment"]
+            share_type = self.available_shares.get(self.smb_share.lower(), "")["type"]
+            share_type =', '.join([s.replace("STYPE_","") for s in share_type])
+            share_rawtype = self.available_shares.get(self.smb_share.lower(), "")["rawtype"]
             print("\n[+] Share:")
-            # print("│ " % self.smbClient.queryInfo())
+            print("  ├─ \x1b[94mName\x1b[0m \x1b[90m────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (share_name))
+            print("  ├─ \x1b[94mDescription\x1b[0m \x1b[90m─────\x1b[0m : \x1b[93m%s\x1b[0m" % (share_comment))
+            print("  ├─ \x1b[94mType\x1b[0m \x1b[90m────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (share_type))
+            print("  └─ \x1b[94mRaw type value\x1b[0m \x1b[90m──\x1b[0m : \x1b[93m%s\x1b[0m" % (share_rawtype))
 
     def list_contents(self, path=None):
         """
@@ -331,7 +342,7 @@ class SMBSession(object):
             dict: A dictionary containing information about each share available on the server.
         """
 
-        self.shares = {}
+        self.available_shares = {}
 
         if self.connected:
             if self.smbClient is not None:
@@ -344,17 +355,16 @@ class SMBSession(object):
                     sharecomment = share["shi1_remark"][:-1]
                     sharetype = share["shi1_type"]
 
-                    self.shares[sharename] = {
+                    self.available_shares[sharename.lower()] = {
                         "name": sharename, 
                         "type": STYPE_MASK(sharetype), 
                         "rawtype": sharetype, 
                         "comment": sharecomment
                     }
-
             else:
                 print("[!] Error: SMBSession.smbClient is None.")
 
-        return self.shares
+        return self.available_shares
 
     def mkdir(self, path=None):
         """

@@ -35,6 +35,10 @@ class CommandCompleter(object):
                 "description": ["Closes the SMB connection to the remote machine.", "Syntax: 'close'"], 
                 "subcommands": []
             },
+            "connect": {
+                "description": ["Connect to the remote machine (useful if connection timed out).", "Syntax: 'Connect'"], 
+                "subcommands": []
+            },
             "dir": {
                 "description": ["List the contents of the current working directory.", "Syntax: 'dir'"], 
                 "subcommands": []
