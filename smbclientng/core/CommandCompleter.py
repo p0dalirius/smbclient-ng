@@ -103,6 +103,10 @@ class CommandCompleter(object):
                 "description": ["Reconnect to the remote machine (useful if connection timed out).", "Syntax: 'reconnect'"], 
                 "subcommands": []
             },
+            "reset": {
+                "description": ["Reset the TTY output, useful if it was broken after printing a binary file on stdout.", "Syntax: 'reset'"], 
+                "subcommands": []
+            },
             "rmdir": {
                 "description": ["Removes a remote directory.", "Syntax: 'rmdir <directory>'"], 
                 "subcommands": []

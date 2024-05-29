@@ -160,16 +160,16 @@ class SMBSession(object):
             None
         """
 
-        try:
-            tmp_file_path = self.smb_cwd + ntpath.sep + path
-            matches = self.smbClient.listPath(
-                shareName=self.smb_share, 
-                path=tmp_file_path
-            )
-            for entry in matches:
-                if entry.is_directory():
-                    print("[>] Skipping '%s' because it is a directory." % tmp_file_path)
-                else:
+        tmp_file_path = self.smb_cwd + ntpath.sep + path
+        matches = self.smbClient.listPath(
+            shareName=self.smb_share, 
+            path=tmp_file_path
+        )
+        for entry in matches:
+            if entry.is_directory():
+                print("[>] Skipping '%s' because it is a directory." % tmp_file_path)
+            else:
+                try:
                     f = LocalFileIO(
                         mode="wb", 
                         path=entry.get_longname(),
@@ -182,11 +182,12 @@ class SMBSession(object):
                         callback=f.write
                     )
                     f.close()
-        except (BrokenPipeError, KeyboardInterrupt) as e:
-            print("\x1b[v\x1b[o\r[!] Interrupted.")
-            self.close_smb_session()
-            self.init_smb_session()
-                
+                except (BrokenPipeError, KeyboardInterrupt) as e:
+                    f.close()
+                    print("\x1b[v\x1b[o\r[!] Interrupted.")
+                    self.close_smb_session()
+                    self.init_smb_session()
+                        
         return None
 
     def get_file_recursively(self, path=None):

@@ -137,7 +137,7 @@ class LocalFileIO(object):
 
         if self.expected_size is not None:
             self.__progress.stop()
-
+        
         del self
 
     def set_error(self, message):

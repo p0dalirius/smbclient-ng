@@ -195,7 +195,11 @@ class InteractiveShell(object):
         # Reconnects the current SMB session
         elif command in ["connect", "reconnect"]:
             self.command_reconnect(arguments, command)
-        
+
+        # Reset the TTY output
+        elif command == "reset":
+            self.command_reset(arguments, command)
+
         # Removes a remote file
         elif command == "rm":
             self.command_rm(arguments, command)
@@ -466,6 +470,15 @@ class InteractiveShell(object):
             self.smbSession.init_smb_session()
         else:
             self.smbSession.init_smb_session()
+
+    def command_reset(self, arguments, command):
+        # Command arguments required   : No
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+        sys.stdout.write('\x1b[?25h') # Sets the cursor to on
+        sys.stdout.write('\x1b[v')  
+        sys.stdout.write('\x1b[o') # Reset
+        sys.stdout.flush()
 
     @command_arguments_required
     @active_smb_connection_needed
