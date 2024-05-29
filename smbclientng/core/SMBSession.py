@@ -231,6 +231,10 @@ class SMBSession(object):
                                 callback=f.write
                             )
                             f.close()
+                        except BrokenPipeError as err:
+                            f.set_error(message="[bold red]Failed downloading '%s': %s" % (f.path, err))
+                            f.close(remove=True)
+                            break
                         except Exception as err:
                             f.set_error(message="[bold red]Failed downloading '%s': %s" % (f.path, err))
                             f.close(remove=True)
@@ -615,10 +619,14 @@ class SMBSession(object):
                                 callback=f.read
                             )
                             f.close()
+
+                        except BrokenPipeError as err:
+                            f.set_error(message="[bold red]Failed uploading '%s': %s" % (f.path, err))
+                            f.close(remove=True)
+                            break
                         except Exception as err:
-                            print("[!] Failed to upload '%s': %s" % (local_file_path, err))
-                            if self.debug:
-                                traceback.print_exc()
+                            f.set_error(message="[bold red]Failed uploading '%s': %s" % (f.path, err))
+                            f.close(remove=True)
                 else:
                     print("[!] The specified localpath is a file. Use 'put <file>' instead.")
         else:
