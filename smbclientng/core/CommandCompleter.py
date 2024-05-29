@@ -158,9 +158,9 @@ class CommandCompleter(object):
                         if command == "use":
                             # Choose SMB Share to connect to
                             self.matches = [
-                                command + " " + s
+                                command + " " + s.lower()
                                 for s in self.smbSession.list_shares().keys()
-                                if s and s.startswith(remainder)
+                                if s.lower().startswith(remainder.lower())
                             ]
 
                         elif command in ["cd", "dir", "ls", "mkdir", "rmdir", "tree"]:
@@ -212,7 +212,7 @@ class CommandCompleter(object):
                             self.matches = [
                                 command + " " + s 
                                 for s in matching_entries
-                                if s and s.startswith(remainder)
+                                if s.startswith(remainder)
                             ]
 
                         elif command in ["lcd", "lls", "put", "lmkdir", "lrm", "lrmdir"]:
@@ -240,7 +240,7 @@ class CommandCompleter(object):
                             self.matches = [
                                 command + " " + s
                                 for s in matching_entries
-                                if s and s.startswith(remainder)
+                                if s.startswith(remainder)
                             ]
                             
                         else:
@@ -248,7 +248,7 @@ class CommandCompleter(object):
                             self.matches = [
                                 command + " " + s
                                 for s in self.commands[command]["subcommands"]
-                                if s and s.startswith(remainder)
+                                if s.startswith(remainder)
                             ]
                     else:
                         # Unknown subcommand, skipping autocomplete
