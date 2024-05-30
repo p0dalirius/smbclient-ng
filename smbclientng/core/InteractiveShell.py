@@ -322,20 +322,33 @@ class InteractiveShell(object):
         # SMB share needed             : No
 
         if len(arguments) == 0:
-            directory_contents = os.listdir(path='.')
+            path = '.'
         else:
-            directory_contents = os.listdir(path=' '.join(arguments))
+            path = ' '.join(arguments)
 
-        for entryname in sorted(directory_contents):
-            rights_str = unix_permissions(entryname)
-            size_str = b_filesize(os.path.getsize(filename=entryname))
-            date_str = datetime.datetime.fromtimestamp(os.path.getmtime(filename=entryname)).strftime("%Y-%m-%d %H:%M")
+        # lls <directory>
+        if os.path.isdir(path):
+            directory_contents = os.listdir(path=path)
+            for entryname in sorted(directory_contents):
+                path_to_file = path + os.path.sep + entryname
+                rights_str = unix_permissions(path_to_file)
+                size_str = b_filesize(os.path.getsize(filename=path_to_file))
+                date_str = datetime.datetime.fromtimestamp(os.path.getmtime(filename=path_to_file)).strftime("%Y-%m-%d %H:%M")
 
-            if os.path.isdir(s=entryname):
-                print("%s %10s  %s  \x1b[1;96m%s\x1b[0m%s" % (rights_str, size_str, date_str, entryname, os.path.sep))
-            else:
-                print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, entryname))
-    
+                if os.path.isdir(s=entryname):
+                    print("%s %10s  %s  \x1b[1;96m%s\x1b[0m%s" % (rights_str, size_str, date_str, entryname, os.path.sep))
+                else:
+                    print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, entryname))
+        # lls <file>
+        elif os.path.isfile(path):
+            rights_str = unix_permissions(path)
+            size_str = b_filesize(os.path.getsize(filename=path))
+            date_str = datetime.datetime.fromtimestamp(os.path.getmtime(filename=path)).strftime("%Y-%m-%d %H:%M")
+            print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, os.path.basename(path)))
+
+        else:
+            print("[!] No such file or directory.")
+
     @command_arguments_required
     def command_lmkdir(self, arguments, command):
         # Command arguments required   : Yes

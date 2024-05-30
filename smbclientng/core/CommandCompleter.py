@@ -229,9 +229,8 @@ class CommandCompleter(object):
                             # Current dir
                             if len(path.strip()) == 0:
                                 path = "."
-                            print("path =", path)
+
                             directory_contents = os.listdir(path=path + os.path.sep)
-                            print(directory_contents)
                             matching_entries = []
                             for entry in directory_contents:
                                 if entry not in [".",".."]:

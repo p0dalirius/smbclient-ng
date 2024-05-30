@@ -9,7 +9,6 @@
     <br>
 </p>
 
-
 ## Features
 
 - [x] `cd`: Change the current working directory. 
@@ -36,6 +35,13 @@
 - [x] `use`: Use a SMB share.
 - [x] `tree`: Displays a tree view of the nested subfolders.
 
+## Install
+
+To install `smbclient-ng`, you can use pip. Run the following command in your terminal:
+
+```
+python3 -m pip install smbclientng
+```
 
 ## Demonstration
 

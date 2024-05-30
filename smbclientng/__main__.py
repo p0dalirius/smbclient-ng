@@ -11,7 +11,7 @@ from smbclientng.core.SMBSession import SMBSession
 from smbclientng.core.InteractiveShell import InteractiveShell
 
 
-VERSION = "1.1"
+VERSION = "1.2"
 
 
 def parseArgs():

@@ -19,6 +19,10 @@ build:
 	python3 -m pip uninstall smbclientng --yes --break-system-packages
 	python3 -m pip install .[build] --break-system-packages
 
-upload: build
+dist:
+	python3 setup.py bdist
+	python3 setup.py bdist_wheel
+
+upload: dist
 	python3 -m pip install .[twine] --break-system-packages
-	python3 -m twine upload dist/*
+	python3 -m twine upload dist/*.whl
