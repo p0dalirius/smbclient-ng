@@ -11,29 +11,33 @@
 
 ## Features
 
-- [x] `cd`: Change the current working directory. 
-- [x] `close`: Closes the SMB connection to the remote machine. 
-- [x] `dir`: List the contents of the current working directory. 
-- [x] `exit`: Exits the smbclient-ng script. 
-- [x] `get`: Get a remote file to a local directory. (`get -r` to recursively download a remote directory to local).
-- [x] `help`: Displays this help message. 
-- [x] `info`: Get information about the server and or the share. 
-- [x] `lcd`: Changes the current local directory. 
-- [x] `lls`: Lists the contents of the current local directory. 
-- [x] `lmkdir`: Creates a new local directory. 
-- [x] `lpwd`: Shows the current local directory. 
-- [x] `lrm`: Removes a local file. 
-- [x] `lrmdir`: Removes a local directory. 
-- [x] `ls`: List the contents of the current remote working directory. 
-- [x] `mkdir`: Creates a new remote directory. 
-- [x] `module`: Loads a specific module for additional functionalities. 
-- [x] `put`: Put a local file to a remote directory. (`put -r` to recursively upload a local directory to remote).
-- [x] `rm`: Removes a remote file. 
-- [x] `rmdir`: Removes a local directory. 
-- [x] `reconnect`: Reconnect to the remote machine (useful if connection timed out). 
-- [x] `shares`: Lists the SMB shares served by the remote machine. 
-- [x] `use`: Use a SMB share.
-- [x] `tree`: Displays a tree view of the nested subfolders.
+- [x] `cd`: Change the current working directory. Syntax: `cd <directory>`
+- [x] `close`: Closes the SMB connection to the remote machine. Syntax: `close`
+- [x] `connect`: Connect to the remote machine (useful if connection timed out). Syntax: `connect`
+- [x] `dir`: List the contents of the current working directory. Syntax: `dir`
+- [x] `exit`: Exits the smbclient-ng script. Syntax: `exit`
+- [x] `get`: Get a remote file. Syntax: `get [-r] <directory or file>`
+- [x] `help`: Displays this help message. Syntax: `help`
+- [x] `info`: Get information about the server and or the share. Syntax: `info [server|share]`
+- [x] `lcd`: Changes the current local directory. Syntax: `lcd <directory>`
+- [x] `lls`: Lists the contents of the current local directory. Syntax: `lls`
+- [x] `lmkdir`: Creates a new local directory. Syntax: `lmkdir <directory>`
+- [x] `lpwd`: Shows the current local directory. Syntax: `lpwd`
+- [x] `lrm`: Removes a local file. Syntax: `lrm <file>`
+- [x] `lrmdir`: Removes a local directory. Syntax: `lrmdir <directory>`
+- [x] `ls`: List the contents of the current remote working directory. Syntax: `ls`
+- [x] `ltree`: Displays a tree view of the local directories. Syntax: `ltree [directory]`
+- [x] `mkdir`: Creates a new remote directory. Syntax: `mkdir <directory>`
+- [x] `module`: Loads a specific module for additional functionalities. Syntax: `module <name>`
+- [x] `put`: Put a local file or directory in a remote directory. Syntax: `put [-r] <directory or file>`
+- [x] `reconnect`: Reconnect to the remote machine (useful if connection timed out). Syntax: `reconnect`
+- [x] `reset`: Reset the TTY output, useful if it was broken after printing a binary file on stdout. Syntax: `reset`
+- [x] `rmdir`: Removes a remote directory. Syntax: `rmdir <directory>`
+- [x] `rm`: Removes a remote file. Syntax: `rm <file>`
+- [x] `shares`: Lists the SMB shares served by the remote machine. Syntax: `shares`
+- [x] `use`: Use a SMB share. Syntax: `use <sharename>`
+- [x] `tree`: Displays a tree view of the remote directories. Syntax: `tree [directory]`
+
 
 ## Install
 

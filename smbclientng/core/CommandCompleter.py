@@ -27,107 +27,185 @@ class CommandCompleter(object):
 
     commands = {
         "cd": {
-            "description": ["Change the current working directory.", "Syntax: 'cd <directory>'"], 
+            "description": [
+                "Change the current working directory.", 
+                "Syntax: 'cd <directory>'"
+            ], 
             "subcommands": []
         },
         "close": {
-            "description": ["Closes the SMB connection to the remote machine.", "Syntax: 'close'"], 
+            "description": [
+                "Closes the SMB connection to the remote machine.", 
+                "Syntax: 'close'"
+            ], 
             "subcommands": []
         },
         "connect": {
-            "description": ["Connect to the remote machine (useful if connection timed out).", "Syntax: 'Connect'"], 
+            "description": [
+                "Connect to the remote machine (useful if connection timed out).", 
+                "Syntax: 'connect'"
+            ], 
             "subcommands": []
         },
         "dir": {
-            "description": ["List the contents of the current working directory.", "Syntax: 'dir'"], 
+            "description": [
+                "List the contents of the current working directory.",
+                "Syntax: 'dir'"
+            ], 
             "subcommands": []
         },
         "exit": {
-            "description": ["Exits the smbclient-ng script.", "Syntax: 'exit'"], 
+            "description": [
+                "Exits the smbclient-ng script.",
+                "Syntax: 'exit'"
+            ], 
             "subcommands": []
         },
         "get": {
-            "description": ["Get a remote file.", "Syntax: 'get [-r] <directory or file>'"], 
+            "description": [
+                "Get a remote file.",
+                "Syntax: 'get [-r] <directory or file>'"
+            ], 
             "subcommands": []
         },
         "help": {
-            "description": ["Displays this help message.", "Syntax: 'help'"], 
+            "description": [
+                "Displays this help message.",
+                "Syntax: 'help'"
+            ], 
             "subcommands": ["format"]
         },
         "info": {
-            "description": ["Get information about the server and or the share.", "Syntax: 'info [server|share]'"], 
+            "description": [
+                "Get information about the server and or the share.",
+                "Syntax: 'info [server|share]'"
+            ], 
             "subcommands": ["server", "share"]
         },
         "lcd": {
-            "description": ["Changes the current local directory.", "Syntax: 'lcd <directory>'"], 
+            "description": [
+                "Changes the current local directory.",
+                "Syntax: 'lcd <directory>'"
+            ], 
             "subcommands": []
         },
         "lls": {
-            "description": ["Lists the contents of the current local directory.", "Syntax: 'lls'"], 
+            "description": [
+                "Lists the contents of the current local directory.", 
+                "Syntax: 'lls'"
+            ],
             "subcommands": []
         },
         "lmkdir": {
-            "description": ["Creates a new local directory.", "Syntax: 'lmkdir <directory>'"], 
+            "description": [
+                "Creates a new local directory.", 
+                "Syntax: 'lmkdir <directory>'"
+            ],
             "subcommands": []
         },
         "lpwd": {
-            "description": ["Shows the current local directory.", "Syntax: 'lpwd'"], 
+            "description": [
+                "Shows the current local directory.", 
+                "Syntax: 'lpwd'"
+            ],
             "subcommands": []
         },
         "lrm": {
-            "description": ["Removes a local file.", "Syntax: 'lrm <file>'"], 
+            "description": [
+                "Removes a local file.", 
+                "Syntax: 'lrm <file>'"
+            ], 
             "subcommands": []
         },
         "lrmdir": {
-            "description": ["Removes a local directory.", "Syntax: 'lrmdir <directory>'"], 
+            "description": [
+                "Removes a local directory.", 
+                "Syntax: 'lrmdir <directory>'"
+            ], 
             "subcommands": []
         },
         "ls": {
-            "description": ["List the contents of the current remote working directory.", "Syntax: 'ls'"], 
+            "description": [
+                "List the contents of the current remote working directory.", 
+                "Syntax: 'ls'"
+            ], 
             "subcommands": []
         },
         "ltree": {
-            "description": ["Displays a tree view of the local directories.", "Syntax: ltree [directory]"], 
+            "description": [
+                "Displays a tree view of the local directories.",
+                "Syntax: 'ltree [directory]'"
+            ], 
             "subcommands": []
         },
         "mkdir": {
-            "description": ["Creates a new remote directory.", "Syntax: 'mkdir <directory>'"], 
+            "description": [
+                "Creates a new remote directory.", 
+                "Syntax: 'mkdir <directory>'"
+            ], 
             "subcommands": []
         },
         "module": {
-            "description": ["Loads a specific module for additional functionalities.", "Syntax: 'module <name>'"], 
+            "description": [
+                "Loads a specific module for additional functionalities.",
+                "Syntax: 'module <name>'"
+            ], 
             "subcommands": []
         },
         "put": {
-            "description": ["Put a local file or directory in a remote directory.", "Syntax: 'put [-r] <directory or file>'"], 
+            "description": [
+                "Put a local file or directory in a remote directory.", 
+                "Syntax: 'put [-r] <directory or file>'"
+            ], 
             "subcommands": []
         },
         "reconnect": {
-            "description": ["Reconnect to the remote machine (useful if connection timed out).", "Syntax: 'reconnect'"], 
+            "description": [
+                "Reconnect to the remote machine (useful if connection timed out).", 
+                "Syntax: 'reconnect'"
+            ], 
             "subcommands": []
         },
         "reset": {
-            "description": ["Reset the TTY output, useful if it was broken after printing a binary file on stdout.", "Syntax: 'reset'"], 
+            "description": [
+                "Reset the TTY output, useful if it was broken after printing a binary file on stdout.",
+                "Syntax: 'reset'"
+            ], 
             "subcommands": []
         },
         "rmdir": {
-            "description": ["Removes a remote directory.", "Syntax: 'rmdir <directory>'"], 
+            "description": [
+                "Removes a remote directory.", 
+                "Syntax: 'rmdir <directory>'"
+            ], 
             "subcommands": []
         },
         "rm": {
-            "description": ["Removes a remote file.", "Syntax: 'rm <file>'"], 
+            "description": [
+                "Removes a remote file.", 
+                "Syntax: 'rm <file>'"
+            ], 
             "subcommands": []
         },
         "shares": {
-            "description": ["Lists the SMB shares served by the remote machine.", "Syntax: 'shares'"], 
+            "description": [
+                "Lists the SMB shares served by the remote machine.", 
+                "Syntax: 'shares'"
+            ], 
             "subcommands": []
         },
         "use": {
-            "description": ["Use a SMB share.", "Syntax: use <sharename>"], 
+            "description": [
+                "Use a SMB share.", 
+                "Syntax: 'use <sharename>'"
+            ], 
             "subcommands": []
         },
         "tree": {
-            "description": ["Displays a tree view of the remote directories.", "Syntax: tree [directory]"], 
+            "description": [
+                "Displays a tree view of the remote directories.",
+                "Syntax: 'tree [directory]'"
+            ], 
             "subcommands": []
         },
     }
