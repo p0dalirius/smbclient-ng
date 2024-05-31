@@ -441,7 +441,7 @@ class InteractiveShell(object):
         directory_contents = self.smbSession.list_contents(path=' '.join(arguments))
 
         for longname in sorted(directory_contents.keys(), key=lambda x:x.lower()):
-            windows_ls_entry(directory_contents[longname])
+            windows_ls_entry(directory_contents[longname], self.config)
             
     @command_arguments_required
     @active_smb_connection_needed

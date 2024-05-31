@@ -148,8 +148,10 @@ def windows_ls_entry(entry, config, pathToPrint=None):
         str: A string representing the metadata of the entry, including attributes like directory, archive, compressed, hidden, normal, readonly, system, and temporary.
     """
     
-    if pathToPrint is None:
-        pathToPrint = entry
+    if pathToPrint is not None:
+        pathToPrint = pathToPrint + ntpath.sep + entry.get_longname()
+    else:
+        pathToPrint = entry.get_longname()
 
     meta_string = ""
     meta_string += ("d" if entry.is_directory() else "-")
