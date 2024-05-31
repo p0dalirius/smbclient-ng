@@ -645,12 +645,12 @@ class InteractiveShell(object):
             if self.config.no_colors:
                 connected_dot = "[v]"
             else:
-                connected_dot = "\x1b[1;92m⏺ \x1b[0m"
+                connected_dot = "\x1b[1;92m⏺\x1b[0m"
         else:
             if self.config.no_colors:
                 connected_dot = "[x]"
             else:
-                connected_dot = "\x1b[1;91m⏺ \x1b[0m"
+                connected_dot = "\x1b[1;91m⏺\x1b[0m"
         
         if self.smbSession.smb_share is None:
             if self.config.no_colors:
