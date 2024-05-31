@@ -20,9 +20,9 @@ class Module(object):
     smbSession = None
     options = None
 
-    def __init__(self, smbSession):
+    def __init__(self, smbSession, config):
         self.smbSession = smbSession
-        self.options = None
+        self.config = config
 
     def parseArgs(self):
         raise NotImplementedError("Subclasses must implement this method")

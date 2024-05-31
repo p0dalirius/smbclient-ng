@@ -23,10 +23,6 @@ class Find(Module):
     name = "find"
     description = "Search for files in a directory hierarchy"
 
-    def __init__(self, smbSession):
-        super(Find, self).__init__(smbSession)
-        self.smbSession = smbSession
-
     def parseArgs(self, arguments):
         parser = ModuleArgumentParser(prog=self.name, description=self.description)
 

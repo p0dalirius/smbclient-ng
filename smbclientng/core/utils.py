@@ -137,7 +137,7 @@ def STYPE_MASK(stype_value):
     return flags
 
 
-def windows_ls_entry(entry, pathToPrint=None):
+def windows_ls_entry(entry, config, pathToPrint=None):
     """
     This function generates a metadata string based on the attributes of the provided entry object.
     
@@ -166,6 +166,12 @@ def windows_ls_entry(entry, pathToPrint=None):
     date_str = datetime.datetime.fromtimestamp(entry.get_atime_epoch()).strftime("%Y-%m-%d %H:%M")
     
     if entry.is_directory():
-        print("%s %10s  %s  \x1b[1;96m%s\x1b[0m\\" % (meta_string, size_str, date_str, pathToPrint))
+        if config.no_colors:
+            print("%s %10s  %s  %s\\" % (meta_string, size_str, date_str, pathToPrint))
+        else:
+            print("%s %10s  %s  \x1b[1;96m%s\x1b[0m\\" % (meta_string, size_str, date_str, pathToPrint))
     else:
-        print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (meta_string, size_str, date_str, pathToPrint))
+        if config.no_colors:
+            print("%s %10s  %s  %s" % (meta_string, size_str, date_str, pathToPrint))
+        else:
+            print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (meta_string, size_str, date_str, pathToPrint))

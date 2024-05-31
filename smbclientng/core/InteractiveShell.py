@@ -447,7 +447,7 @@ class InteractiveShell(object):
         module_name = arguments[0]
 
         if module_name in self.modules.keys():
-            module = self.modules[module_name](self.smbSession)
+            module = self.modules[module_name](self.smbSession, self.config)
             module.run(' '.join(arguments[1:]))
         else:
             print("[!] Module '%s' does not exist." % module_name)
