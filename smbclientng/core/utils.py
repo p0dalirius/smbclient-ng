@@ -4,10 +4,12 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 23 may 2024
 
+
+import datetime
 import os
+import ntpath
 import re
 import stat
-import datetime
 
 
 # Extracted from p0dalirius/sectools library
