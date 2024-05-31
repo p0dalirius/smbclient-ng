@@ -41,10 +41,10 @@ class SMBSession(object):
             Initializes the SMB session by connecting to the server and authenticating using the specified method.
     """
 
-    def __init__(self, address, domain, username, password, lmhash, nthash, use_kerberos=False, kdcHost=None, debug=False):
+    def __init__(self, address, domain, username, password, lmhash, nthash, use_kerberos=False, kdcHost=None, config=None):
         super(SMBSession, self).__init__()
-
-        self.debug = debug
+        # Objects
+        self.config = config
 
         # Target server
         self.address = address
@@ -82,7 +82,7 @@ class SMBSession(object):
             bool: True if the connection and authentication are successful, False otherwise.
         """
 
-        if self.debug:
+        if self.config.debug:
             print("[debug] [>] Connecting to remote SMB server '%s' ... " % self.address)
         self.smbClient = impacket.smbconnection.SMBConnection(
             remoteName=self.address,
@@ -92,7 +92,7 @@ class SMBSession(object):
 
         self.connected = False
         if self.use_kerberos:
-            if self.debug:
+            if self.config.debug:
                 print("[debug] [>] Authenticating as '%s\\%s' with kerberos ... " % (self.domain, self.username))
             self.connected = self.smbClient.kerberosLogin(
                 user=self.username,
@@ -105,7 +105,7 @@ class SMBSession(object):
             )
 
         else:
-            if self.debug:
+            if self.config.debug:
                 print("[debug] [>] Authenticating as '%s\\%s' with NTLM ... " % (self.domain, self.username))
             self.connected = self.smbClient.login(
                 user=self.username,
@@ -174,7 +174,7 @@ class SMBSession(object):
                         mode="wb", 
                         path=entry.get_longname(),
                         expected_size=entry.get_filesize(), 
-                        debug=self.debug
+                        debug=self.config.debug
                     )
                     self.smbClient.getFile(
                         shareName=self.smb_share, 
@@ -223,7 +223,7 @@ class SMBSession(object):
                             mode="wb",
                             path=remote_smb_path + ntpath.sep + entry_file.get_longname(), 
                             expected_size=entry_file.get_filesize(),
-                            debug=self.debug
+                            debug=self.config.debug
                         )
                         try:
                             self.smbClient.getFile(
@@ -410,7 +410,7 @@ class SMBSession(object):
                         pass
                     else:
                         print("[!] Failed to create directory '%s': %s" % (tmp_path, err))
-                        if self.debug:
+                        if self.config.debug:
                             traceback.print_exc()
         else:
             pass
@@ -555,7 +555,7 @@ class SMBSession(object):
                     f = LocalFileIO(
                         mode="rb", 
                         path=localpath, 
-                        debug=self.debug
+                        debug=self.config.debug
                     )
                     self.smbClient.putFile(
                         shareName=self.smb_share, 
@@ -569,7 +569,7 @@ class SMBSession(object):
                     self.init_smb_session()
                 except Exception as err:
                     print("[!] Failed to upload '%s': %s" % (localfile, err))
-                    if self.debug:
+                    if self.config.debug:
                         traceback.print_exc()
             else:
                 print("[!] The specified localpath is a directory. Use 'put -r <directory>' instead.")
@@ -612,7 +612,7 @@ class SMBSession(object):
                             f = LocalFileIO(
                                 mode="rb", 
                                 path=local_dir_path + os.path.sep + local_file_path, 
-                                debug=self.debug
+                                debug=self.config.debug
                             )
                             self.smbClient.putFile(
                                 shareName=self.smb_share, 
@@ -651,7 +651,7 @@ class SMBSession(object):
             )
         except Exception as err:
             print("[!] Failed to remove directory '%s': %s" % (path, err))
-            if self.debug:
+            if self.config.debug:
                 traceback.print_exc()
 
     def rm(self, path=None):
@@ -672,7 +672,7 @@ class SMBSession(object):
             )
         except Exception as err:
             print("[!] Failed to remove file '%s': %s" % (path, err))
-            if self.debug:
+            if self.config.debug:
                 traceback.print_exc()
 
     def tree(self, path=None):

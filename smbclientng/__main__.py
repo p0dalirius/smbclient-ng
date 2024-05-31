@@ -6,9 +6,10 @@
 
 import argparse
 import sys
-from smbclientng.core.utils import parse_lm_nt_hashes
-from smbclientng.core.SMBSession import SMBSession
+from smbclientng.core.Config import Config
 from smbclientng.core.InteractiveShell import InteractiveShell
+from smbclientng.core.SMBSession import SMBSession
+from smbclientng.core.utils import parse_lm_nt_hashes
 
 
 VERSION = "1.2"
@@ -24,8 +25,8 @@ def parseArgs():
     """ % ("v"+VERSION))
 
     parser = argparse.ArgumentParser(add_help=True, description="smbclient-ng, a fast and user friendly way to interact with SMB shares.")
-    parser.add_argument("--debug", dest="debug", action="store_true", default=False, help="Debug mode")
-
+    parser.add_argument("--debug", dest="debug", action="store_true", default=False, help="Debug mode.")
+    parser.add_argument("--no-colors", dest="no_colors", action="store_true", default=False, help="No colors mode.")
     parser.add_argument("--target", action="store", metavar="ip address", required=True, type=str, help="IP Address of the SMB Server to connect to.")  
 
     authconn = parser.add_argument_group("Authentication & connection")
@@ -66,6 +67,10 @@ def main():
         print("[!] Specify KDC's Hostname of FQDN using the argument --kdcHost")
         exit()
 
+    config = Config()
+    config.debug = options.debug
+    config.colored_output = (not options.no_colors)
+
     smbSession = SMBSession(
         address=options.target,
         domain=options.auth_domain,
@@ -74,13 +79,13 @@ def main():
         lmhash=auth_lm_hash,
         nthash=auth_nt_hash,
         use_kerberos=options.use_kerberos,
-        debug=options.debug
+        config=config
     )
     smbSession.init_smb_session()
 
     shell = InteractiveShell(
         smbSession=smbSession, 
-        debug=options.debug
+        config=config
     )
     shell.run()
 

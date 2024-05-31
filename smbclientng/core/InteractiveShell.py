@@ -75,20 +75,16 @@ class InteractiveShell(object):
         run(self): Starts the command line interface loop, processing user input until exit.
     """
     
-    def __init__(self, smbSession, debug=False):
+    def __init__(self, smbSession, config):
+        # Objects
         self.smbSession = smbSession
-        self.debug = debug
-
-        self.smb_share = None
-        self.smb_cwd = ""
-
-        self.modules = {}
-
-        self.commandCompleterObject = CommandCompleter(smbSession=self.smbSession)
+        self.config = config
+        self.commandCompleterObject = CommandCompleter(smbSession=self.smbSession, config=self.config)
         readline.set_completer(self.commandCompleterObject.complete)
         readline.parse_and_bind("tab: complete")
         readline.set_completer_delims("\n")
-
+        # Additional modules
+        self.modules = {}
         self.__load_modules()
 
     def run(self):
@@ -123,7 +119,7 @@ class InteractiveShell(object):
                 running = False
 
             except Exception as e:
-                if self.debug:
+                if self.config.debug:
                     traceback.print_exc()
                 print("[!] Error: %s" % str(e))
 
@@ -336,16 +332,24 @@ class InteractiveShell(object):
                 date_str = datetime.datetime.fromtimestamp(os.path.getmtime(filename=path_to_file)).strftime("%Y-%m-%d %H:%M")
 
                 if os.path.isdir(s=entryname):
-                    print("%s %10s  %s  \x1b[1;96m%s\x1b[0m%s" % (rights_str, size_str, date_str, entryname, os.path.sep))
+                    if self.config.no_colors:
+                        print("%s %10s  %s  %s%s" % (rights_str, size_str, date_str, entryname, os.path.sep))
+                    else:
+                        print("%s %10s  %s  \x1b[1;96m%s\x1b[0m%s" % (rights_str, size_str, date_str, entryname, os.path.sep))
                 else:
-                    print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, entryname))
+                    if self.config.no_colors:
+                        print("%s %10s  %s  %s" % (rights_str, size_str, date_str, entryname))
+                    else:
+                        print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, entryname))
         # lls <file>
         elif os.path.isfile(path):
             rights_str = unix_permissions(path)
             size_str = b_filesize(os.path.getsize(filename=path))
             date_str = datetime.datetime.fromtimestamp(os.path.getmtime(filename=path)).strftime("%Y-%m-%d %H:%M")
-            print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, os.path.basename(path)))
-
+            if self.config.no_colors:
+                print("%s %10s  %s  %s" % (rights_str, size_str, date_str, os.path.basename(path)))
+            else:
+               print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, os.path.basename(path))) 
         else:
             print("[!] No such file or directory.")
 
@@ -593,7 +597,7 @@ class InteractiveShell(object):
         self.modules.clear()
 
         modules_dir = os.path.normpath(os.path.dirname(__file__) + os.path.sep + ".." + os.path.sep + "modules")
-        if self.debug:
+        if self.config.debug:
             print("[debug] Loading modules from %s ..." % modules_dir)
         sys.path.extend([modules_dir])
 
@@ -608,21 +612,42 @@ class InteractiveShell(object):
                     except AttributeError as e:
                         pass
 
-        if self.debug:
-            print("[debug] modules:", self.modules)
-        
+        if self.config.debug:
+            if len(self.modules.keys()) == 0:
+                print("[debug] Loaded 0 modules.")
+            elif len(self.modules.keys()) == 1:
+                print("[debug] Loaded 1 module:")
+            else:
+                print("[debug] Loaded %d modules:" % len(self.modules.keys()))
+            for modulename in sorted(self.modules.keys()):
+                print("[debug] %s : \"%s\"" % (module.name, module.description))
+
         if self.commandCompleterObject is not None:
             self.commandCompleterObject.commands["module"]["subcommands"] = list(self.modules.keys())
 
     def __prompt(self):
         self.smbSession.ping_smb_session()
         if self.smbSession.connected:
-            connected_dot = "\x1b[1;92m⏺ \x1b[0m"
+            if self.config.no_colors:
+                connected_dot = "[v]"
+            else:
+                connected_dot = "\x1b[1;92m⏺ \x1b[0m"
         else:
-            connected_dot = "\x1b[1;91m⏺ \x1b[0m"
+            if self.config.no_colors:
+                connected_dot = "[x]"
+            else:
+                connected_dot = "\x1b[1;91m⏺ \x1b[0m"
+        
         if self.smbSession.smb_share is None:
-            str_prompt = "%s[\x1b[1;94m\\\\%s\\\x1b[0m]> " % (connected_dot, self.smbSession.address)
+            if self.config.no_colors:
+                str_prompt = "%s[\\\\%s\\]> " % (connected_dot, self.smbSession.address)
+            else:
+                str_prompt = "%s[\x1b[1;94m\\\\%s\\\x1b[0m]> " % (connected_dot, self.smbSession.address)
         else:
             str_path = "\\\\%s\\%s\\%s" % (self.smbSession.address, self.smbSession.smb_share, self.smbSession.smb_cwd.lstrip(ntpath.sep))
-            str_prompt = "%s[\x1b[1;94m%s\x1b[0m]> " % (connected_dot, str_path)
+            if self.config.no_colors:
+                str_prompt = "%s[%s]> " % (connected_dot, str_path)
+            else:
+                str_prompt = "%s[\x1b[1;94m%s\x1b[0m]> " % (connected_dot, str_path)
+
         return str_prompt

@@ -128,8 +128,11 @@ class CommandCompleter(object):
         },
     }
 
-    def __init__(self, smbSession):
+    def __init__(self, smbSession, config):
+        # Objects
         self.smbSession = smbSession
+        self.config = config
+        # Pre computing for some commands 
         self.commands["help"]["subcommands"] = ["format"] + list(self.commands.keys())
         self.commands["help"]["subcommands"].remove("help")
 
@@ -295,30 +298,52 @@ class CommandCompleter(object):
                 self.print_help_format()
             else:
                 print("│")
-                command_str = command + " \x1b[90m" + "─"* (15 - len(command)) + "\x1b[0m"
-                if len(self.commands[command]["description"]) == 0:
-                    print("│ ■ %s\x1b[90m┤\x1b[0m  " % command_str)
-                elif len(self.commands[command]["description"]) == 1:
-                    print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
+                if self.config.no_colors:
+                    command_str = command + "─"* (15 - len(command))
+                    if len(self.commands[command]["description"]) == 0:
+                        print("│ ■ %s┤  " % command_str)
+                    elif len(self.commands[command]["description"]) == 1:
+                        print("│ ■ %s┤ %s " % (command_str, self.commands[command]["description"][0]))
+                    else:
+                        print("│ ■ %s┤ %s " % (command_str, self.commands[command]["description"][0]))
+                        for line in self.commands[command]["description"][1:]:
+                            print("│ %s│ %s " % (" "*(15+3), line))
                 else:
-                    print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
-                    for line in self.commands[command]["description"][1:]:
-                        print("│ %s\x1b[90m│\x1b[0m %s " % (" "*(15+3), line))
+                    command_str = command + " \x1b[90m" + "─"* (15 - len(command)) + "\x1b[0m"
+                    if len(self.commands[command]["description"]) == 0:
+                        print("│ ■ %s\x1b[90m┤\x1b[0m  " % command_str)
+                    elif len(self.commands[command]["description"]) == 1:
+                        print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
+                    else:
+                        print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
+                        for line in self.commands[command]["description"][1:]:
+                            print("│ %s\x1b[90m│\x1b[0m %s " % (" "*(15+2), line))
                 print("│")
         # Generic help
         else:
             print("│")
             commands = sorted(self.commands.keys())
             for command in commands:
-                command_str = command + " \x1b[90m" + "─"* (15 - len(command)) + "\x1b[0m"
-                if len(self.commands[command]["description"]) == 0:
-                    print("│ ■ %s\x1b[90m┤\x1b[0m  " % command_str)
-                elif len(self.commands[command]["description"]) == 1:
-                    print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
+                if self.config.no_colors:
+                    command_str = command + "─"* (15 - len(command))
+                    if len(self.commands[command]["description"]) == 0:
+                        print("│ ■ %s┤  " % command_str)
+                    elif len(self.commands[command]["description"]) == 1:
+                        print("│ ■ %s┤ %s " % (command_str, self.commands[command]["description"][0]))
+                    else:
+                        print("│ ■ %s┤ %s " % (command_str, self.commands[command]["description"][0]))
+                        for line in self.commands[command]["description"][1:]:
+                            print("│ %s│ %s " % (" "*(15+2), line))
                 else:
-                    print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
-                    for line in self.commands[command]["description"][1:]:
-                        print("│ %s\x1b[90m│\x1b[0m %s " % (" "*(15+3), line))
+                    command_str = command + " \x1b[90m" + "─"* (15 - len(command)) + "\x1b[0m"
+                    if len(self.commands[command]["description"]) == 0:
+                        print("│ ■ %s\x1b[90m┤\x1b[0m  " % command_str)
+                    elif len(self.commands[command]["description"]) == 1:
+                        print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
+                    else:
+                        print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
+                        for line in self.commands[command]["description"][1:]:
+                            print("│ %s\x1b[90m│\x1b[0m %s " % (" "*(15+3), line))
                 print("│")
 
     def print_help_format(self):
