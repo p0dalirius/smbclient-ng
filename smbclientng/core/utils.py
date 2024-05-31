@@ -149,7 +149,7 @@ def windows_ls_entry(entry, config, pathToPrint=None):
     """
     
     if pathToPrint is None:
-        pathToPrint = entry.get_longname()
+        pathToPrint = entry
 
     meta_string = ""
     meta_string += ("d" if entry.is_directory() else "-")
@@ -175,3 +175,115 @@ def windows_ls_entry(entry, config, pathToPrint=None):
             print("%s %10s  %s  %s" % (meta_string, size_str, date_str, pathToPrint))
         else:
             print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (meta_string, size_str, date_str, pathToPrint))
+
+
+def local_tree(path, config):
+    def recurse_action(base_dir="", path=[], prompt=[]):
+        bars = ["│   ", "├── ", "└── "]
+
+        local_path = os.path.normpath(base_dir + os.path.sep + os.path.sep.join(path) + os.path.sep)
+
+        entries = []
+        try:
+            entries = os.listdir(local_path)
+        except Exception as err:
+            if config.no_colors:
+                print("%s%s" % (''.join(prompt+[bars[2]]), err))
+            else:
+                print("%s\x1b[1;91m%s\x1b[0m" % (''.join(prompt+[bars[2]]), err))
+            return 
+
+        entries = sorted(entries)
+
+        # 
+        if len(entries) > 1:
+            index = 0
+            for entry in entries:
+                index += 1
+                # This is the first entry 
+                if index == 0:
+                    if os.path.isdir(local_path + os.path.sep + entry):
+                        if config.no_colors:
+                            print("%s%s%s" % (''.join(prompt+[bars[1]]), entry, os.path.sep))
+                        else:
+                            print("%s\x1b[1;96m%s\x1b[0m%s" % (''.join(prompt+[bars[1]]), entry, os.path.sep))
+                        recurse_action(
+                            base_dir=base_dir, 
+                            path=path+[entry],
+                            prompt=prompt+["│   "]
+                        )
+                    else:
+                        if config.no_colors:
+                            print("%s%s" % (''.join(prompt+[bars[1]]), entry))
+                        else:
+                            print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[1]]), entry))
+
+                # This is the last entry
+                elif index == len(entries):
+                    if os.path.isdir(local_path + os.path.sep + entry):
+                        if config.no_colors:
+                            print("%s%s%s" % (''.join(prompt+[bars[2]]), entry, os.path.sep))
+                        else:
+                            print("%s\x1b[1;96m%s\x1b[0m%s" % (''.join(prompt+[bars[2]]), entry, os.path.sep))
+                        recurse_action(
+                            base_dir=base_dir, 
+                            path=path+[entry],
+                            prompt=prompt+["    "]
+                        )
+                    else:
+                        if config.no_colors:
+                            print("%s%s" % (''.join(prompt+[bars[2]]), entry))
+                        else:
+                            print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[2]]), entry))
+                    
+                # These are entries in the middle
+                else:
+                    if os.path.isdir(local_path + os.path.sep + entry):
+                        if config.no_colors:
+                            print("%s%s%s" % (''.join(prompt+[bars[1]]), entry, os.path.sep))
+                        else:
+                            print("%s\x1b[1;96m%s\x1b[0m%s" % (''.join(prompt+[bars[1]]), entry, os.path.sep))
+                        recurse_action(
+                            base_dir=base_dir, 
+                            path=path+[entry],
+                            prompt=prompt+["│   "]
+                        )
+                    else:
+                        if config.no_colors:
+                            print("%s%s" % (''.join(prompt+[bars[1]]), entry))
+                        else:
+                            print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[1]]), entry))
+
+        # 
+        elif len(entries) == 1:
+            entry = entries[0]
+            if os.path.isdir(local_path + os.path.sep + entry):
+                if config.no_colors:
+                    print("%s%s%s" % (''.join(prompt+[bars[2]]), entry, os.path.sep))
+                else:
+                    print("%s\x1b[1;96m%s\x1b[0m%s" % (''.join(prompt+[bars[2]]), entry, os.path.sep))
+                recurse_action(
+                    base_dir=base_dir, 
+                    path=path+[entry],
+                    prompt=prompt+["    "]
+                )
+            else:
+                if config.no_colors:
+                    print("%s%s" % (''.join(prompt+[bars[2]]), entry))
+                else:
+                    print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[2]]), entry))
+
+    # Entrypoint
+    try:
+        if config.no_colors:
+            print("%s%s" % (path, os.path.sep))
+        else:
+            print("\x1b[1;96m%s\x1b[0m%s" % (path, os.path.sep))
+        recurse_action(
+            base_dir=os.getcwd(),
+            path=[path],
+            prompt=[""]
+        )
+    except (BrokenPipeError, KeyboardInterrupt) as e:
+        print("[!] Interrupted.")
+

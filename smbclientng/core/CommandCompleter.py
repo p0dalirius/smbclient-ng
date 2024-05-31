@@ -86,6 +86,10 @@ class CommandCompleter(object):
             "description": ["List the contents of the current remote working directory.", "Syntax: 'ls'"], 
             "subcommands": []
         },
+        "ltree": {
+            "description": ["Displays a tree view of the local directories.", "Syntax: ltree [directory]"], 
+            "subcommands": []
+        },
         "mkdir": {
             "description": ["Creates a new remote directory.", "Syntax: 'mkdir <directory>'"], 
             "subcommands": []
@@ -123,7 +127,7 @@ class CommandCompleter(object):
             "subcommands": []
         },
         "tree": {
-            "description": ["Displays a tree view of the nested subfolders.", "Syntax: tree [directory]"], 
+            "description": ["Displays a tree view of the remote directories.", "Syntax: tree [directory]"], 
             "subcommands": []
         },
     }

@@ -17,7 +17,7 @@ import traceback
 from rich.console import Console
 from rich.table import Table
 from smbclientng.core.CommandCompleter import CommandCompleter
-from smbclientng.core.utils import b_filesize, unix_permissions, windows_ls_entry
+from smbclientng.core.utils import b_filesize, unix_permissions, windows_ls_entry, local_tree
 
 
 ## Decorators
@@ -172,6 +172,10 @@ class InteractiveShell(object):
         elif command == "lmkdir":
             self.command_lmkdir(arguments, command)
 
+        # Shows the current local directory
+        elif command == "lpwd":
+            self.command_lpwd(arguments, command)
+
         # Removes a local file
         elif command == "lrm":
             self.command_lrm(arguments, command)
@@ -181,10 +185,10 @@ class InteractiveShell(object):
             self.command_lrmdir(arguments, command)
 
         # Shows the current local directory
-        elif command == "lpwd":
-            self.command_lpwd(arguments, command)
+        elif command == "ltree":
+            self.command_ltree(arguments, command)
 
-        # 
+        # Modules
         elif command == "module":
             self.command_module(arguments, command)
 
@@ -373,6 +377,13 @@ class InteractiveShell(object):
             if not os.path.exists(tmp_path):
                 os.mkdir(path=tmp_path)
 
+    def command_lpwd(self, arguments, command):
+        # Command arguments required   : No
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+
+        print(os.getcwd())
+
     @command_arguments_required
     def command_lrm(self, arguments, command):
         # Command arguments required   : Yes
@@ -409,12 +420,15 @@ class InteractiveShell(object):
         else:
             print("[!] Path '%s' does not exist." % path)
 
-    def command_lpwd(self, arguments, command):
+    def command_ltree(self, arguments, command):
         # Command arguments required   : No
         # Active SMB connection needed : No
         # SMB share needed             : No
 
-        print(os.getcwd())
+        if len(arguments) == 0:
+            local_tree(path='.', config=self.config)
+        else:
+            local_tree(path=' '.join(arguments), config=self.config)
 
     @active_smb_connection_needed
     @smb_share_is_set
