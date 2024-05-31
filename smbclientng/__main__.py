@@ -69,7 +69,7 @@ def main():
 
     config = Config()
     config.debug = options.debug
-    config.colored_output = (not options.no_colors)
+    config.no_colors = options.no_colors
 
     smbSession = SMBSession(
         address=options.target,
