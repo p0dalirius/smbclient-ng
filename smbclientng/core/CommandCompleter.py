@@ -24,110 +24,112 @@ class CommandCompleter(object):
     Methods:
         __init__(self, smbSession): Initializes the CommandCompleter with an SMBSession.
     """
+
+    commands = {
+        "cd": {
+            "description": ["Change the current working directory.", "Syntax: 'cd <directory>'"], 
+            "subcommands": []
+        },
+        "close": {
+            "description": ["Closes the SMB connection to the remote machine.", "Syntax: 'close'"], 
+            "subcommands": []
+        },
+        "connect": {
+            "description": ["Connect to the remote machine (useful if connection timed out).", "Syntax: 'Connect'"], 
+            "subcommands": []
+        },
+        "dir": {
+            "description": ["List the contents of the current working directory.", "Syntax: 'dir'"], 
+            "subcommands": []
+        },
+        "exit": {
+            "description": ["Exits the smbclient-ng script.", "Syntax: 'exit'"], 
+            "subcommands": []
+        },
+        "get": {
+            "description": ["Get a remote file.", "Syntax: 'get [-r] <directory or file>'"], 
+            "subcommands": []
+        },
+        "help": {
+            "description": ["Displays this help message.", "Syntax: 'help'"], 
+            "subcommands": ["format"]
+        },
+        "info": {
+            "description": ["Get information about the server and or the share.", "Syntax: 'info [server|share]'"], 
+            "subcommands": ["server", "share"]
+        },
+        "lcd": {
+            "description": ["Changes the current local directory.", "Syntax: 'lcd <directory>'"], 
+            "subcommands": []
+        },
+        "lls": {
+            "description": ["Lists the contents of the current local directory.", "Syntax: 'lls'"], 
+            "subcommands": []
+        },
+        "lmkdir": {
+            "description": ["Creates a new local directory.", "Syntax: 'lmkdir <directory>'"], 
+            "subcommands": []
+        },
+        "lpwd": {
+            "description": ["Shows the current local directory.", "Syntax: 'lpwd'"], 
+            "subcommands": []
+        },
+        "lrm": {
+            "description": ["Removes a local file.", "Syntax: 'lrm <file>'"], 
+            "subcommands": []
+        },
+        "lrmdir": {
+            "description": ["Removes a local directory.", "Syntax: 'lrmdir <directory>'"], 
+            "subcommands": []
+        },
+        "ls": {
+            "description": ["List the contents of the current remote working directory.", "Syntax: 'ls'"], 
+            "subcommands": []
+        },
+        "mkdir": {
+            "description": ["Creates a new remote directory.", "Syntax: 'mkdir <directory>'"], 
+            "subcommands": []
+        },
+        "module": {
+            "description": ["Loads a specific module for additional functionalities.", "Syntax: 'module <name>'"], 
+            "subcommands": []
+        },
+        "put": {
+            "description": ["Put a local file or directory in a remote directory.", "Syntax: 'put [-r] <directory or file>'"], 
+            "subcommands": []
+        },
+        "reconnect": {
+            "description": ["Reconnect to the remote machine (useful if connection timed out).", "Syntax: 'reconnect'"], 
+            "subcommands": []
+        },
+        "reset": {
+            "description": ["Reset the TTY output, useful if it was broken after printing a binary file on stdout.", "Syntax: 'reset'"], 
+            "subcommands": []
+        },
+        "rmdir": {
+            "description": ["Removes a remote directory.", "Syntax: 'rmdir <directory>'"], 
+            "subcommands": []
+        },
+        "rm": {
+            "description": ["Removes a remote file.", "Syntax: 'rm <file>'"], 
+            "subcommands": []
+        },
+        "shares": {
+            "description": ["Lists the SMB shares served by the remote machine.", "Syntax: 'shares'"], 
+            "subcommands": []
+        },
+        "use": {
+            "description": ["Use a SMB share.", "Syntax: use <sharename>"], 
+            "subcommands": []
+        },
+        "tree": {
+            "description": ["Displays a tree view of the nested subfolders.", "Syntax: tree [directory]"], 
+            "subcommands": []
+        },
+    }
+
     def __init__(self, smbSession):
         self.smbSession = smbSession
-        self.commands = {
-            "cd": {
-                "description": ["Change the current working directory.", "Syntax: 'cd <directory>'"], 
-                "subcommands": []
-            },
-            "close": {
-                "description": ["Closes the SMB connection to the remote machine.", "Syntax: 'close'"], 
-                "subcommands": []
-            },
-            "connect": {
-                "description": ["Connect to the remote machine (useful if connection timed out).", "Syntax: 'Connect'"], 
-                "subcommands": []
-            },
-            "dir": {
-                "description": ["List the contents of the current working directory.", "Syntax: 'dir'"], 
-                "subcommands": []
-            },
-            "exit": {
-                "description": ["Exits the smbclient-ng script.", "Syntax: 'exit'"], 
-                "subcommands": []
-            },
-            "get": {
-                "description": ["Get a remote file.", "Syntax: 'get [-r] <directory or file>'"], 
-                "subcommands": []
-            },
-            "help": {
-                "description": ["Displays this help message.", "Syntax: 'help'"], 
-                "subcommands": ["format"]
-            },
-            "info": {
-                "description": ["Get information about the server and or the share.", "Syntax: 'info [server|share]'"], 
-                "subcommands": ["server", "share"]
-            },
-            "lcd": {
-                "description": ["Changes the current local directory.", "Syntax: 'lcd <directory>'"], 
-                "subcommands": []
-            },
-            "lls": {
-                "description": ["Lists the contents of the current local directory.", "Syntax: 'lls'"], 
-                "subcommands": []
-            },
-            "lmkdir": {
-                "description": ["Creates a new local directory.", "Syntax: 'lmkdir <directory>'"], 
-                "subcommands": []
-            },
-            "lpwd": {
-                "description": ["Shows the current local directory.", "Syntax: 'lpwd'"], 
-                "subcommands": []
-            },
-            "lrm": {
-                "description": ["Removes a local file.", "Syntax: 'lrm <file>'"], 
-                "subcommands": []
-            },
-            "lrmdir": {
-                "description": ["Removes a local directory.", "Syntax: 'lrmdir <directory>'"], 
-                "subcommands": []
-            },
-            "ls": {
-                "description": ["List the contents of the current remote working directory.", "Syntax: 'ls'"], 
-                "subcommands": []
-            },
-            "mkdir": {
-                "description": ["Creates a new remote directory.", "Syntax: 'mkdir <directory>'"], 
-                "subcommands": []
-            },
-            "module": {
-                "description": ["Loads a specific module for additional functionalities.", "Syntax: 'module <name>'"], 
-                "subcommands": []
-            },
-            "put": {
-                "description": ["Put a local file or directory in a remote directory.", "Syntax: 'put [-r] <directory or file>'"], 
-                "subcommands": []
-            },
-            "reconnect": {
-                "description": ["Reconnect to the remote machine (useful if connection timed out).", "Syntax: 'reconnect'"], 
-                "subcommands": []
-            },
-            "reset": {
-                "description": ["Reset the TTY output, useful if it was broken after printing a binary file on stdout.", "Syntax: 'reset'"], 
-                "subcommands": []
-            },
-            "rmdir": {
-                "description": ["Removes a remote directory.", "Syntax: 'rmdir <directory>'"], 
-                "subcommands": []
-            },
-            "rm": {
-                "description": ["Removes a remote file.", "Syntax: 'rm <file>'"], 
-                "subcommands": []
-            },
-            "shares": {
-                "description": ["Lists the SMB shares served by the remote machine.", "Syntax: 'shares'"], 
-                "subcommands": []
-            },
-            "use": {
-                "description": ["Use a SMB share.", "Syntax: use <sharename>"], 
-                "subcommands": []
-            },
-            "tree": {
-                "description": ["Displays a tree view of the nested subfolders.", "Syntax: tree [directory]"], 
-                "subcommands": []
-            },
-        }
         self.commands["help"]["subcommands"] = ["format"] + list(self.commands.keys())
         self.commands["help"]["subcommands"].remove("help")
 
@@ -144,6 +146,7 @@ class CommandCompleter(object):
         Returns:
             str: The next completion suggestion based on the user"s input state.
         """
+
         if state == 0:
             
             # No text typed yet, need the list of commands available
@@ -267,11 +270,26 @@ class CommandCompleter(object):
             return None
 
     def print_help(self, command=None):
-        if command != None:
+        """
+        Prints help information for a specific command or all commands if no command is specified.
+
+        This method displays the help information for the command passed as an argument. If no command is specified,
+        it prints the help information for all available commands. The help information includes the command syntax,
+        description, and any subcommands associated with it. This method is designed to provide users with the necessary
+        guidance on how to use the commands in the smbclient-ng shell.
+
+        Args:
+            command (str, optional): The command to display help information for. If None, help for all commands is displayed.
+
+        Returns:
+            None
+        """
+
+        if command is not None:
             if command not in list(self.commands.keys())+["format"]:
                 command = None
 
-        if command != None:
+        if command is not None:
             if command == "format":
                 self.print_help_format()
             else:
