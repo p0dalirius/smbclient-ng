@@ -288,7 +288,8 @@ class CommandCompleter(object):
         if command is not None:
             if command not in list(self.commands.keys())+["format"]:
                 command = None
-
+        
+        # Print help for a specific command
         if command is not None:
             if command == "format":
                 self.print_help_format()
@@ -304,7 +305,7 @@ class CommandCompleter(object):
                     for line in self.commands[command]["description"][1:]:
                         print("│ %s\x1b[90m│\x1b[0m %s " % (" "*(15+3), line))
                 print("│")
-
+        # Generic help
         else:
             print("│")
             commands = sorted(self.commands.keys())
@@ -321,6 +322,13 @@ class CommandCompleter(object):
                 print("│")
 
     def print_help_format(self):
+        """
+        Prints the help information for the 'format' used in remote 'ls' and 'dir' commands.
+
+        This function displays the format of file attributes used in the smbclient-ng shell. It explains the meaning
+        of each character in the file attribute string, such as whether a file is read-only, hidden, or a directory.
+        """
+
         print("File attributes format:\n")
         print("\x1b[1mdachnrst\x1b[0m")
         print("\x1b[90m│││││││└──>\x1b[0m Temporary")
