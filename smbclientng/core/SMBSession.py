@@ -84,41 +84,46 @@ class SMBSession(object):
 
         if self.config.debug:
             print("[debug] [>] Connecting to remote SMB server '%s' ... " % self.address)
-        self.smbClient = impacket.smbconnection.SMBConnection(
-            remoteName=self.address,
-            remoteHost=self.address,
-            sess_port=int(445)
-        )
+        try:
+            self.smbClient = impacket.smbconnection.SMBConnection(
+                remoteName=self.address,
+                remoteHost=self.address,
+                sess_port=int(445)
+            )
+        except OSError as err:
+            print("[!] %s" % err)
+            self.smbClient = None
 
         self.connected = False
-        if self.use_kerberos:
-            if self.config.debug:
-                print("[debug] [>] Authenticating as '%s\\%s' with kerberos ... " % (self.domain, self.username))
-            self.connected = self.smbClient.kerberosLogin(
-                user=self.username,
-                password=self.password,
-                domain=self.domain,
-                lmhash=self.lmhash,
-                nthash=self.nthash,
-                aesKey=self.aesKey,
-                kdcHost=self.kdcHost
-            )
+        if self.smbClient is not None:
+            if self.use_kerberos:
+                if self.config.debug:
+                    print("[debug] [>] Authenticating as '%s\\%s' with kerberos ... " % (self.domain, self.username))
+                self.connected = self.smbClient.kerberosLogin(
+                    user=self.username,
+                    password=self.password,
+                    domain=self.domain,
+                    lmhash=self.lmhash,
+                    nthash=self.nthash,
+                    aesKey=self.aesKey,
+                    kdcHost=self.kdcHost
+                )
 
-        else:
-            if self.config.debug:
-                print("[debug] [>] Authenticating as '%s\\%s' with NTLM ... " % (self.domain, self.username))
-            self.connected = self.smbClient.login(
-                user=self.username,
-                password=self.password,
-                domain=self.domain,
-                lmhash=self.lmhash,
-                nthash=self.nthash
-            )
+            else:
+                if self.config.debug:
+                    print("[debug] [>] Authenticating as '%s\\%s' with NTLM ... " % (self.domain, self.username))
+                self.connected = self.smbClient.login(
+                    user=self.username,
+                    password=self.password,
+                    domain=self.domain,
+                    lmhash=self.lmhash,
+                    nthash=self.nthash
+                )
 
-        if self.connected:
-            print("[+] Successfully authenticated to '%s' as '%s\\%s'!" % (self.address, self.domain, self.username))
-        else:
-            print("[!] Failed to authenticate to '%s' as '%s\\%s'!" % (self.address, self.domain, self.username))
+            if self.connected:
+                print("[+] Successfully authenticated to '%s' as '%s\\%s'!" % (self.address, self.domain, self.username))
+            else:
+                print("[!] Failed to authenticate to '%s' as '%s\\%s'!" % (self.address, self.domain, self.username))
 
         return self.connected
 
@@ -273,25 +278,46 @@ class SMBSession(object):
         """
 
         if server:
-            print("[+] Server:")
-            print("  ├─NetBIOS:")
-            print("  │ ├─ \x1b[94mNetBIOS Hostname\x1b[0m \x1b[90m────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerName()))
-            print("  │ └─ \x1b[94mNetBIOS Domain\x1b[0m \x1b[90m──────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerDomain()))
-            print("  ├─DNS:")
-            print("  │ ├─ \x1b[94mDNS Hostname\x1b[0m \x1b[90m────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerDNSHostName()))
-            print("  │ └─ \x1b[94mDNS Domain\x1b[0m \x1b[90m──────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerDNSDomainName()))
-            print("  ├─OS:")
-            print("  │ ├─ \x1b[94mOS Name\x1b[0m \x1b[90m─────────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerOS()))
-            print("  │ └─ \x1b[94mOS Version\x1b[0m \x1b[90m──────────────\x1b[0m : \x1b[93m%s.%s.%s\x1b[0m" % (self.smbClient.getServerOSMajor(), self.smbClient.getServerOSMinor(), self.smbClient.getServerOSBuild()))
-            print("  ├─Server:")
-            print("  │ ├─ \x1b[94mSigning Required\x1b[0m \x1b[90m────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.isSigningRequired()))
-            print("  │ ├─ \x1b[94mLogin Required\x1b[0m \x1b[90m──────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.isLoginRequired()))
-            print("  │ ├─ \x1b[94mSupports NTLMv2\x1b[0m \x1b[90m─────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.doesSupportNTLMv2()))
-            MaxReadSize = self.smbClient.getIOCapabilities()["MaxReadSize"]
-            print("  │ ├─ \x1b[94mMax size of read chunk\x1b[0m \x1b[90m──\x1b[0m : \x1b[93m%d bytes (%s)\x1b[0m" % (MaxReadSize, b_filesize(MaxReadSize)))
-            MaxWriteSize = self.smbClient.getIOCapabilities()["MaxWriteSize"]
-            print("  │ └─ \x1b[94mMax size of write chunk\x1b[0m \x1b[90m─\x1b[0m : \x1b[93m%d bytes (%s)\x1b[0m" % (MaxWriteSize, b_filesize(MaxWriteSize)))
-            print("  └─")
+            if self.config.no_colors:
+                print("[+] Server:")
+                print("  ├─NetBIOS:")
+                print("  │ ├─ NetBIOS Hostname ──────── : %s" % (self.smbClient.getServerName()))
+                print("  │ └─ NetBIOS Domain ────────── : %s" % (self.smbClient.getServerDomain()))
+                print("  ├─DNS:")
+                print("  │ ├─ DNS Hostname ──────────── : %s" % (self.smbClient.getServerDNSHostName()))
+                print("  │ └─ DNS Domain ────────────── : %s" % (self.smbClient.getServerDNSDomainName()))
+                print("  ├─OS:")
+                print("  │ ├─ OS Name ───────────────── : %s" % (self.smbClient.getServerOS()))
+                print("  │ └─ OS Version ────────────── : %s.%s.%s" % (self.smbClient.getServerOSMajor(), self.smbClient.getServerOSMinor(), self.smbClient.getServerOSBuild()))
+                print("  ├─Server:")
+                print("  │ ├─ Signing Required ──────── : %s" % (self.smbClient.isSigningRequired()))
+                print("  │ ├─ Login Required ────────── : %s" % (self.smbClient.isLoginRequired()))
+                print("  │ ├─ Supports NTLMv2 ───────── : %s" % (self.smbClient.doesSupportNTLMv2()))
+                MaxReadSize = self.smbClient.getIOCapabilities()["MaxReadSize"]
+                print("  │ ├─ Max size of read chunk ── : %d bytes (%s)" % (MaxReadSize, b_filesize(MaxReadSize)))
+                MaxWriteSize = self.smbClient.getIOCapabilities()["MaxWriteSize"]
+                print("  │ └─ Max size of write chunk ─ : %d bytes (%s)" % (MaxWriteSize, b_filesize(MaxWriteSize)))
+                print("  └─")
+            else:
+                print("[+] Server:")
+                print("  ├─NetBIOS:")
+                print("  │ ├─ \x1b[94mNetBIOS Hostname\x1b[0m \x1b[90m────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerName()))
+                print("  │ └─ \x1b[94mNetBIOS Domain\x1b[0m \x1b[90m──────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerDomain()))
+                print("  ├─DNS:")
+                print("  │ ├─ \x1b[94mDNS Hostname\x1b[0m \x1b[90m────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerDNSHostName()))
+                print("  │ └─ \x1b[94mDNS Domain\x1b[0m \x1b[90m──────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerDNSDomainName()))
+                print("  ├─OS:")
+                print("  │ ├─ \x1b[94mOS Name\x1b[0m \x1b[90m─────────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.getServerOS()))
+                print("  │ └─ \x1b[94mOS Version\x1b[0m \x1b[90m──────────────\x1b[0m : \x1b[93m%s.%s.%s\x1b[0m" % (self.smbClient.getServerOSMajor(), self.smbClient.getServerOSMinor(), self.smbClient.getServerOSBuild()))
+                print("  ├─Server:")
+                print("  │ ├─ \x1b[94mSigning Required\x1b[0m \x1b[90m────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.isSigningRequired()))
+                print("  │ ├─ \x1b[94mLogin Required\x1b[0m \x1b[90m──────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.isLoginRequired()))
+                print("  │ ├─ \x1b[94mSupports NTLMv2\x1b[0m \x1b[90m─────────\x1b[0m : \x1b[93m%s\x1b[0m" % (self.smbClient.doesSupportNTLMv2()))
+                MaxReadSize = self.smbClient.getIOCapabilities()["MaxReadSize"]
+                print("  │ ├─ \x1b[94mMax size of read chunk\x1b[0m \x1b[90m──\x1b[0m : \x1b[93m%d bytes (%s)\x1b[0m" % (MaxReadSize, b_filesize(MaxReadSize)))
+                MaxWriteSize = self.smbClient.getIOCapabilities()["MaxWriteSize"]
+                print("  │ └─ \x1b[94mMax size of write chunk\x1b[0m \x1b[90m─\x1b[0m : \x1b[93m%d bytes (%s)\x1b[0m" % (MaxWriteSize, b_filesize(MaxWriteSize)))
+                print("  └─")
 
         if share and self.smb_share is not None:
             share_name = self.available_shares.get(self.smb_share.lower(), "")["name"]
@@ -299,11 +325,18 @@ class SMBSession(object):
             share_type = self.available_shares.get(self.smb_share.lower(), "")["type"]
             share_type =', '.join([s.replace("STYPE_","") for s in share_type])
             share_rawtype = self.available_shares.get(self.smb_share.lower(), "")["rawtype"]
-            print("\n[+] Share:")
-            print("  ├─ \x1b[94mName\x1b[0m \x1b[90m────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (share_name))
-            print("  ├─ \x1b[94mDescription\x1b[0m \x1b[90m─────\x1b[0m : \x1b[93m%s\x1b[0m" % (share_comment))
-            print("  ├─ \x1b[94mType\x1b[0m \x1b[90m────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (share_type))
-            print("  └─ \x1b[94mRaw type value\x1b[0m \x1b[90m──\x1b[0m : \x1b[93m%s\x1b[0m" % (share_rawtype))
+            if self.config.no_colors:
+                print("\n[+] Share:")
+                print("  ├─ Name ──────────── : %s" % (share_name))
+                print("  ├─ Description ───── : %s" % (share_comment))
+                print("  ├─ Type ──────────── : %s" % (share_type))
+                print("  └─ Raw type value ── : %s" % (share_rawtype))
+            else:
+                print("\n[+] Share:")
+                print("  ├─ \x1b[94mName\x1b[0m \x1b[90m────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (share_name))
+                print("  ├─ \x1b[94mDescription\x1b[0m \x1b[90m─────\x1b[0m : \x1b[93m%s\x1b[0m" % (share_comment))
+                print("  ├─ \x1b[94mType\x1b[0m \x1b[90m────────────\x1b[0m : \x1b[93m%s\x1b[0m" % (share_type))
+                print("  └─ \x1b[94mRaw type value\x1b[0m \x1b[90m──\x1b[0m : \x1b[93m%s\x1b[0m" % (share_rawtype))
 
     def list_contents(self, path=None):
         """
@@ -702,7 +735,10 @@ class SMBSession(object):
             except impacket.smbconnection.SessionError as err:
                 code, const, text = err.getErrorCode(), err.getErrorString()[0], err.getErrorString()[1]
                 errmsg = "Error 0x%08x (%s): %s" % (code, const, text)
-                print("%s\x1b[1;91m%s\x1b[0m" % (''.join(prompt+[bars[2]]), errmsg))
+                if self.config.no_colors:
+                    print("%s%s" % (''.join(prompt+[bars[2]]), errmsg))
+                else:
+                    print("%s\x1b[1;91m%s\x1b[0m" % (''.join(prompt+[bars[2]]), errmsg))
                 return 
 
             entries = [e for e in entries if e.get_longname() not in [".", ".."]]
@@ -716,55 +752,82 @@ class SMBSession(object):
                     # This is the first entry 
                     if index == 0:
                         if entry.is_directory():
-                            print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                            if self.config.no_colors:
+                                print("%s%s\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                            else:
+                                print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
                             recurse_action(
                                 base_dir=base_dir, 
                                 path=path+[entry.get_longname()],
                                 prompt=prompt+["│   "]
                             )
                         else:
-                            print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                            if self.config.no_colors:
+                                print("%s%s" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                            else:
+                                print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[1]]), entry.get_longname()))
 
                     # This is the last entry
                     elif index == len(entries):
                         if entry.is_directory():
-                            print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+                            if self.config.no_colors:
+                                print("%s%s\\" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+                            else:
+                                print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[2]]), entry.get_longname()))
                             recurse_action(
                                 base_dir=base_dir, 
                                 path=path+[entry.get_longname()],
                                 prompt=prompt+["    "]
                             )
                         else:
-                            print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+                            if self.config.no_colors:
+                                print("%s%s" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+                            else:
+                                print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[2]]), entry.get_longname()))
                         
                     # These are entries in the middle
                     else:
                         if entry.is_directory():
-                            print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                            if self.config.no_colors:
+                                print("%s%s\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                            else:
+                                print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
                             recurse_action(
                                 base_dir=base_dir, 
                                 path=path+[entry.get_longname()],
                                 prompt=prompt+["│   "]
                             )
                         else:
-                            print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                            if self.config.no_colors:
+                                print("%s%s" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                            else:
+                                print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[1]]), entry.get_longname()))
 
             # 
             elif len(entries) == 1:
                 entry = entries[0]
                 if entry.is_directory():
-                    print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+                    if self.config.no_colors:
+                        print("%s%s\\" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+                    else:
+                        print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[2]]), entry.get_longname()))
                     recurse_action(
                         base_dir=base_dir, 
                         path=path+[entry.get_longname()],
                         prompt=prompt+["    "]
                     )
                 else:
-                    print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+                    if self.config.no_colors:
+                        print("%s%s" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+                    else:
+                        print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[2]]), entry.get_longname()))
 
         # Entrypoint
         try:
-            print("\x1b[1;96m%s\x1b[0m\\" % path)
+            if self.config.no_colors:
+                print("%s\\" % path)
+            else:
+                print("\x1b[1;96m%s\x1b[0m\\" % path)
             recurse_action(
                 base_dir=self.smb_cwd, 
                 path=[path],
