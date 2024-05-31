@@ -182,7 +182,7 @@ class Find(Module):
                             if entry.is_directory():
                                 self.smbSession.get_file_recursively(path=(path + entry.get_longname() + ntpath.sep))
                             else:
-                                self.smbSession.get_file(path=(path + entry.get_longname() + ntpath.sep))
+                                self.smbSession.get_file(path=(path + entry.get_longname() + ntpath.sep), keepRemotePath=True)
                         # Output formats
                         if self.options.ls:
                             if entry.is_directory():

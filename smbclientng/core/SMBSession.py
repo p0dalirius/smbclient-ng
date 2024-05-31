@@ -150,7 +150,7 @@ class SMBSession(object):
 
     # Operations
 
-    def get_file(self, path=None):
+    def get_file(self, path=None, keepRemotePath=False):
         """
         Retrieves a file from the specified path on the SMB share.
 
@@ -170,16 +170,22 @@ class SMBSession(object):
             shareName=self.smb_share, 
             path=tmp_file_path
         )
+        
         for entry in matches:
             if entry.is_directory():
                 print("[>] Skipping '%s' because it is a directory." % tmp_file_path)
             else:
                 try:
+                    if ntpath.sep in path:
+                        outputfile = ntpath.dirname(path) + ntpath.sep + entry.get_longname()
+                    else:
+                        outputfile = entry.get_longname()
                     f = LocalFileIO(
                         mode="wb", 
-                        path=entry.get_longname(),
+                        path=outputfile,
                         expected_size=entry.get_filesize(), 
-                        debug=self.config.debug
+                        debug=self.config.debug,
+                        keepRemotePath=keepRemotePath
                     )
                     self.smbClient.getFile(
                         shareName=self.smb_share, 

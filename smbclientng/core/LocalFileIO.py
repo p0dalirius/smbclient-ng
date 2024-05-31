@@ -27,18 +27,21 @@ class LocalFileIO(object):
         read(self, size): Reads data from the file up to the specified size and updates the progress bar if expected size is provided.
     """
 
-    def __init__(self, mode, path=None, expected_size=None, debug=False):
+    def __init__(self, mode, path=None, expected_size=None, keepRemotePath=False, debug=False):
         super(LocalFileIO, self).__init__()
-
         self.mode = mode
-        self.path = path.replace(ntpath.sep, '/')
+        # Convert remote path format to local operating system path format 
+        self.path = path.replace(ntpath.sep, os.path.sep)
         self.dir = None
         self.debug = False
         self.expected_size = expected_size
+        self.keepRemotePath = keepRemotePath
 
         # Write to local (read remote)
         if self.mode in ["wb"]:
-            self.dir = './' + os.path.dirname(self.path)
+            self.dir = '.' + os.path.sep
+            if keepRemotePath:
+                self.dir += os.path.dirname(self.path)
 
             if not os.path.exists(self.dir):
                 if self.debug:
@@ -47,8 +50,8 @@ class LocalFileIO(object):
 
             if self.debug:
                 print("[debug] Openning local '%s' with mode '%s'" % (self.path, self.mode))
-
-            self.fd = open(self.path, self.mode)
+            
+            self.fd = open(self.dir + os.path.sep + os.path.basename(self.path), self.mode)
 
         # Write to remote (read local)
         elif self.mode in ["rb"]:
@@ -57,7 +60,6 @@ class LocalFileIO(object):
 
             if self.debug:
                 print("[debug] Openning local '%s' with mode '%s'" % (self.path, self.mode))
-
             self.fd = open(self.path, self.mode)
 
             if self.expected_size is None:
