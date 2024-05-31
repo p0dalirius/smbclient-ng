@@ -177,9 +177,14 @@ class Find(Module):
                                     do_print_entry = (entry.get_longname().lower() == self.options.iname.lower())
 
                     if do_print_entry:
+                        # Actions on matches
                         if self.options.download:
-                            pass
-                        elif self.options.ls:
+                            if entry.is_directory():
+                                self.smbSession.get_file_recursively(path=(path + entry.get_longname() + ntpath.sep))
+                            else:
+                                self.smbSession.get_file(path=(path + entry.get_longname() + ntpath.sep))
+                        # Output formats
+                        if self.options.ls:
                             if entry.is_directory():
                                 windows_ls_entry(entry, (path + entry.get_longname() + ntpath.sep))
                             else:
