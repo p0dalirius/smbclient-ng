@@ -150,6 +150,52 @@ class SMBSession(object):
 
     # Operations
 
+    def find(self, paths=[], callback=None):
+        def recurse_action(paths=[], depth=0, callback=None):
+            if callback is None:
+                return []
+            next_directories_to_explore = []
+            for path in paths:
+                remote_smb_path = ntpath.normpath(self.smb_cwd + ntpath.sep + path)
+                entries = []
+                
+                try:
+                    entries = self.smbClient.listPath(
+                        shareName=self.smb_share, 
+                        path=(remote_smb_path + ntpath.sep + '*')
+                    )
+                except impacket.smbconnection.SessionError as err:
+                    continue 
+                # Remove dot names
+                entries = [e for e in entries if e.get_longname() not in [".", ".."]]
+                # Sort the entries ignoring case
+                entries = sorted(entries, key=lambda x:x.get_longname().lower())
+                
+                for entry in entries:
+                    if entry.is_directory():
+                        callback(entry, path + entry.get_longname() + ntpath.sep)
+                    else:
+                        callback(entry, path + entry.get_longname())
+
+                # Next directories to explore
+                for entry in entries:
+                    if entry.is_directory():
+                        next_directories_to_explore.append(path + entry.get_longname() + ntpath.sep)
+            
+            return next_directories_to_explore
+        # 
+        if callback is not None:
+            depth = 0
+            while len(paths) != 0:
+                paths = recurse_action(
+                    paths=paths,
+                    depth=depth,
+                    callback=callback
+                )
+                depth = depth + 1
+        else:
+            print("[!] SMBSession.find(), callback function cannot be None.")
+
     def get_file(self, path=None, keepRemotePath=False):
         """
         Retrieves a file from the specified path on the SMB share.

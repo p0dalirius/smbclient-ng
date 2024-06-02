@@ -71,144 +71,122 @@ class Find(Module):
 
         return self.options
 
-    def __recurse_action(self, paths=[], depth=0):
+    def __find_callback(self, entry, fullpath):
+        # Documentation for __find_callback function
         """
-        Recursively searches for files in a directory hierarchy and prints the results based on specified criteria.
+        This function serves as a callback for the find operation. It applies filters based on the command line arguments
+        and decides whether to print, download, or list the entry in 'ls -dils' format if it matches the specified filters.
 
         Args:
-            base_dir (str): The base directory to start the search from.
-            paths (list): List of paths to search within the base directory.
-            depth (int): The current depth level in the directory hierarchy.
+            entry (SMBEntry): The current file or directory entry being processed.
+            fullpath (str): The full path to the entry.
 
-        Returns:
-            None
+        The function checks against filters such as file name, case sensitivity, file type, and size. If the entry matches
+        the filters, it will perform actions like printing the entry's details, downloading the entry, or listing the entry
+        based on the options provided in the command line arguments.
         """
 
-        next_directories_to_explore = []
-
-        for path in paths:
-            remote_smb_path = ntpath.normpath(self.smbSession.smb_cwd + ntpath.sep + path)
-
-            entries = []
-            try:
-                entries = self.smbSession.smbClient.listPath(
-                    shareName=self.smbSession.smb_share, 
-                    path=(remote_smb_path + ntpath.sep + '*')
-                )
-            except impacket.smbconnection.SessionError as err:
-                continue 
-            # Remove dot names
-            entries = [e for e in entries if e.get_longname() not in [".", ".."]]
-            # Sort the entries ignoring case
-            entries = sorted(entries, key=lambda x:x.get_longname().lower())
-
-            # Match and print results
-            do_print_results = True
-            if self.options.mindepth is not None:
-                if depth < self.options.mindepth:
-                    do_print_results = False
-            if self.options.maxdepth is not None:
-                if depth > self.options.maxdepth:
-                    do_print_results = False
-            
-            if do_print_results:
-                for entry in entries:
-                    do_print_entry = False
-                    # Print directory
-                    if entry.is_directory():
-                        if (self.options.type == 'd' or self.options.type is None):
-                            # No name filtering
-                            if self.options.name is None and self.options.iname is None:
-                                do_print_entry = True
-                            
-                            # Filtering on names case sensitive
-                            elif self.options.name is not None:
-                                if '*' in self.options.name:
-                                    regex = self.options.name
-                                    regex = regex.replace('.', '\\.')
-                                    regex = regex.replace('*', '.*')
-                                    regex = '^' + regex + '$'
-                                    if re.match(regex, entry.get_longname()):
-                                        do_print_entry = True
-                                    else:
-                                        do_print_entry = False
-                                else:
-                                    do_print_entry = (entry.get_longname().lower() == self.options.name.lower())
-                            
-                            # Filtering on names case insensitive  
-                            elif self.options.iname is not None:
-                                if '*' in self.options.iname:
-                                    regex = self.options.iname
-                                    regex = regex.replace('.', '\\.')
-                                    regex = regex.replace('*', '.*')
-                                    regex = '^' + regex + '$'
-                                    if re.match(regex, entry.get_longname(), re.IGNORECASE):
-                                        do_print_entry = True
-                                    else:
-                                        do_print_entry = False
-                                else:
-                                    do_print_entry = (entry.get_longname().lower() == self.options.iname.lower())
-                                    
-                    # Print file
-                    else:
-                        if (self.options.type == 'f' or self.options.type is None):
-                            # No name filtering
-                            if self.options.name is None and self.options.iname is None:
-                                do_print_entry = True
-                            
-                            # Filtering on names case sensitive
-                            elif self.options.name is not None:
-                                if '*' in self.options.name:
-                                    regex = self.options.name
-                                    regex = regex.replace('.', '\\.')
-                                    regex = regex.replace('*', '.*')
-                                    regex = '^' + regex + '$'
-                                    if re.match(regex, entry.get_longname()):
-                                        do_print_entry = True
-                                    else:
-                                        do_print_entry = False
-                                else:
-                                    do_print_entry = (entry.get_longname().lower() == self.options.name.lower())
-                            
-                            # Filtering on names case insensitive
-                            elif self.options.iname is not None:
-                                if '*' in self.options.iname:
-                                    regex = self.options.iname
-                                    regex = regex.replace('.', '\\.')
-                                    regex = regex.replace('*', '.*')
-                                    regex = '^' + regex + '$'
-                                    if re.match(regex, entry.get_longname(), re.IGNORECASE):
-                                        do_print_entry = True
-                                    else:
-                                        do_print_entry = False
-                                else:
-                                    do_print_entry = (entry.get_longname().lower() == self.options.iname.lower())
-
-                    if do_print_entry:
-                        # Actions on matches
-                        if self.options.download:
-                            if entry.is_directory():
-                                self.smbSession.get_file_recursively(path=(path + entry.get_longname() + ntpath.sep))
-                            else:
-                                self.smbSession.get_file(path=(path + entry.get_longname() + ntpath.sep), keepRemotePath=True)
-                        # Output formats
-                        if self.options.ls:
-                            if entry.is_directory():
-                                windows_ls_entry(entry, (path + entry.get_longname() + ntpath.sep))
-                            else:
-                                windows_ls_entry(entry, (path + entry.get_longname()))
-                        else:
-                            if entry.is_directory():
-                                print("%s" % (path + entry.get_longname() + ntpath.sep))
-                            else:
-                                print("%s" % (path + entry.get_longname()))
-
-            # Next directories to explore
-            for entry in entries:
-                if entry.is_directory():
-                    next_directories_to_explore.append(path + entry.get_longname() + ntpath.sep)
+        # Match and print results
+        do_print_results = True
+        if self.options.mindepth is not None:
+            if depth < self.options.mindepth:
+                do_print_results = False
+        if self.options.maxdepth is not None:
+            if depth > self.options.maxdepth:
+                do_print_results = False
         
-        return next_directories_to_explore
+        if do_print_results:
+            do_print_entry = False
+            # Print directory
+            if entry.is_directory():
+                if (self.options.type == 'd' or self.options.type is None):
+                    # No name filtering
+                    if self.options.name is None and self.options.iname is None:
+                        do_print_entry = True
+                    
+                    # Filtering on names case sensitive
+                    elif self.options.name is not None:
+                        if '*' in self.options.name:
+                            regex = self.options.name
+                            regex = regex.replace('.', '\\.')
+                            regex = regex.replace('*', '.*')
+                            regex = '^' + regex + '$'
+                            if re.match(regex, entry.get_longname()):
+                                do_print_entry = True
+                            else:
+                                do_print_entry = False
+                        else:
+                            do_print_entry = (entry.get_longname().lower() == self.options.name.lower())
+                    
+                    # Filtering on names case insensitive  
+                    elif self.options.iname is not None:
+                        if '*' in self.options.iname:
+                            regex = self.options.iname
+                            regex = regex.replace('.', '\\.')
+                            regex = regex.replace('*', '.*')
+                            regex = '^' + regex + '$'
+                            if re.match(regex, entry.get_longname(), re.IGNORECASE):
+                                do_print_entry = True
+                            else:
+                                do_print_entry = False
+                        else:
+                            do_print_entry = (entry.get_longname().lower() == self.options.iname.lower())
+                            
+            # Print file
+            else:
+                if (self.options.type == 'f' or self.options.type is None):
+                    # No name filtering
+                    if self.options.name is None and self.options.iname is None:
+                        do_print_entry = True
+                    
+                    # Filtering on names case sensitive
+                    elif self.options.name is not None:
+                        if '*' in self.options.name:
+                            regex = self.options.name
+                            regex = regex.replace('.', '\\.')
+                            regex = regex.replace('*', '.*')
+                            regex = '^' + regex + '$'
+                            if re.match(regex, entry.get_longname()):
+                                do_print_entry = True
+                            else:
+                                do_print_entry = False
+                        else:
+                            do_print_entry = (entry.get_longname().lower() == self.options.name.lower())
+                    
+                    # Filtering on names case insensitive
+                    elif self.options.iname is not None:
+                        if '*' in self.options.iname:
+                            regex = self.options.iname
+                            regex = regex.replace('.', '\\.')
+                            regex = regex.replace('*', '.*')
+                            regex = '^' + regex + '$'
+                            if re.match(regex, entry.get_longname(), re.IGNORECASE):
+                                do_print_entry = True
+                            else:
+                                do_print_entry = False
+                        else:
+                            do_print_entry = (entry.get_longname().lower() == self.options.iname.lower())
+
+            if do_print_entry:
+                # Actions on matches
+                if self.options.download:
+                    if entry.is_directory():
+                        self.smbSession.get_file_recursively(path=fullpath)
+                    else:
+                        self.smbSession.get_file(path=fullpath, keepRemotePath=True)
+                # Output formats
+                if self.options.ls:
+                    if entry.is_directory():
+                        windows_ls_entry(entry, fullpath)
+                    else:
+                        windows_ls_entry(entry, fullpath)
+                else:
+                    if entry.is_directory():
+                        print("%s" % fullpath)
+                    else:
+                        print("%s" % fullpath)
+                        
+        return None
 
     def run(self, arguments):
         """
@@ -233,14 +211,10 @@ class Find(Module):
                     next_directories_to_explore.append(ntpath.normpath(path) + ntpath.sep)
                 next_directories_to_explore = sorted(list(set(next_directories_to_explore)))
                 
-                depth = 0
-                
-                while len(next_directories_to_explore) != 0:
-                    next_directories_to_explore = self.__recurse_action(
-                        paths=next_directories_to_explore,
-                        depth=depth
-                    )
-                    depth = depth + 1
+                self.smbSession.find(
+                    paths=next_directories_to_explore,
+                    callback=self.__find_callback
+                )
 
             except (BrokenPipeError, KeyboardInterrupt) as e:
                 print("[!] Interrupted.")
