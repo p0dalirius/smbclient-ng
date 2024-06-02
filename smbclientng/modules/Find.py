@@ -41,7 +41,7 @@ class Find(Module):
         # Adding positional arguments
         parser.add_argument("paths", metavar="PATH", type=str, nargs="*", default=[], help="The starting point(s) for the search.")
 
-        # Adding tests, actions, and options for expressions (incomplete for brevity)
+        # Adding options for filtering
         parser.add_argument("-name", type=str, help="Base of file name (the path with the leading directories removed).")
         parser.add_argument("-iname", type=str, help="Like -name, but the match is case insensitive.")
         parser.add_argument("-type", type=str, default=None, help="File type (e.g., f for regular file, d for directory).")
@@ -54,7 +54,7 @@ class Find(Module):
         parser.add_argument("-ls", action="store_true", default=False, help="List current file in ls -dils format on standard output.")
         parser.add_argument("-download", action="store_true", default=False, help="List current file in ls -dils format on standard output.")
 
-        # Other options (incomplete for brevity)
+        # Other options
         parser.add_argument("-maxdepth", type=int, help="Descend at most levels (a non-negative integer) levels of directories below the command line arguments.")
         parser.add_argument("-mindepth", type=int, help="Do not apply any tests or actions at levels less than levels (a non-negative integer).")
 

