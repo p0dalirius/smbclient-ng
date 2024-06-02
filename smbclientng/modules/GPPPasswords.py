@@ -106,7 +106,7 @@ class GPPPasswords(Module):
                 gppp_found = True
             else:
                 if self.config.debug:
-                    print("[debug] No cpassword was found in %s" % filename)
+                    print("[debug] No cpassword was found in %s" % pathtofile)
     
         if gppp_found:
             try:
