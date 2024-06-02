@@ -113,7 +113,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     author_email="podalirius@protonmail.com",
-    packages=["smbclientng", "smbclientng.core", "smbclientng.modules", "smbclientng.tests"],
+    packages=["smbclientng", "smbclientng.core", "smbclientng.modules"],
     package_data={'smbclientng': ['smbclientng/']},
     include_package_data=True,
     license="GPL3",
