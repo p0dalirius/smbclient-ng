@@ -110,7 +110,7 @@ class SMBSession(object):
                         aesKey=self.aesKey,
                         kdcHost=self.kdcHost
                     )
-                except impacket.smbconnection.SessionError as e:
+                except impacket.smbconnection.SessionError as err:
                     if self.config.debug:
                         traceback.print_exc()
                     print("[!] Could not login: %s" % err)
