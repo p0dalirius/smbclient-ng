@@ -608,7 +608,7 @@ class InteractiveShell(object):
     # Private functions =======================================================
 
     def __load_modules(self):
-        
+
 
         self.modules.clear()
 

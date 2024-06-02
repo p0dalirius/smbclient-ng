@@ -82,6 +82,8 @@ class SMBSession(object):
             bool: True if the connection and authentication are successful, False otherwise.
         """
 
+        self.connected = False
+
         if self.config.debug:
             print("[debug] [>] Connecting to remote SMB server '%s' ... " % self.address)
         try:
@@ -94,31 +96,42 @@ class SMBSession(object):
             print("[!] %s" % err)
             self.smbClient = None
 
-        self.connected = False
         if self.smbClient is not None:
             if self.use_kerberos:
                 if self.config.debug:
                     print("[debug] [>] Authenticating as '%s\\%s' with kerberos ... " % (self.domain, self.username))
-                self.connected = self.smbClient.kerberosLogin(
-                    user=self.username,
-                    password=self.password,
-                    domain=self.domain,
-                    lmhash=self.lmhash,
-                    nthash=self.nthash,
-                    aesKey=self.aesKey,
-                    kdcHost=self.kdcHost
-                )
+                try:
+                    self.connected = self.smbClient.kerberosLogin(
+                        user=self.username,
+                        password=self.password,
+                        domain=self.domain,
+                        lmhash=self.lmhash,
+                        nthash=self.nthash,
+                        aesKey=self.aesKey,
+                        kdcHost=self.kdcHost
+                    )
+                except impacket.smbconnection.SessionError as e:
+                    if self.config.debug:
+                        traceback.print_exc()
+                    print("[!] Could not login: %s" % err)
+                    self.connected = False
 
             else:
                 if self.config.debug:
                     print("[debug] [>] Authenticating as '%s\\%s' with NTLM ... " % (self.domain, self.username))
-                self.connected = self.smbClient.login(
-                    user=self.username,
-                    password=self.password,
-                    domain=self.domain,
-                    lmhash=self.lmhash,
-                    nthash=self.nthash
-                )
+                try:
+                    self.connected = self.smbClient.login(
+                        user=self.username,
+                        password=self.password,
+                        domain=self.domain,
+                        lmhash=self.lmhash,
+                        nthash=self.nthash
+                    )
+                except impacket.smbconnection.SessionError as err:
+                    if self.config.debug:
+                        traceback.print_exc()
+                    print("[!] Could not login: %s" % err)
+                    self.connected = False
 
             if self.connected:
                 print("[+] Successfully authenticated to '%s' as '%s\\%s'!" % (self.address, self.domain, self.username))
@@ -142,9 +155,11 @@ class SMBSession(object):
             if self.connected:
                 self.smbClient.close()
                 self.connected = False
-                print("[+] SMB connection closed successfully.")
+                if self.config.debug:
+                    print("[+] SMB connection closed successfully.")
             else:
-                print("[!] No active SMB connection to close.")
+                if self.config.debug:
+                    print("[!] No active SMB connection to close.")
         else:
             raise Exception("SMB client is not initialized.")
 
@@ -616,7 +631,6 @@ class SMBSession(object):
 
         try:
             self.smbClient.getSMBServer().echo()
-            self.connected = True
         except Exception as e:
             self.connected = False
         return self.connected
