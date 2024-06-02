@@ -188,9 +188,9 @@ class SMBSession(object):
                 
                 for entry in entries:
                     if entry.is_directory():
-                        callback(entry, path + entry.get_longname() + ntpath.sep)
+                        callback(entry, path + entry.get_longname() + ntpath.sep, depth)
                     else:
-                        callback(entry, path + entry.get_longname())
+                        callback(entry, path + entry.get_longname(), depth)
 
                 # Next directories to explore
                 for entry in entries:

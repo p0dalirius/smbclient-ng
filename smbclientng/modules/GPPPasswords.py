@@ -22,7 +22,18 @@ from xml.dom import minidom
 
 class GPPPasswords(Module):
     """
-    
+    GPPPasswords is a module designed to search and retrieve stored Group Policy Preferences (GPP) passwords from specified network shares. 
+    It leverages the SMB protocol to access files across the network, parse them, and extract credentials that are often stored within Group Policy Preferences files.
+
+    This module is particularly useful in penetration testing scenarios where discovering stored credentials can lead to further system access or reveal poor security practices.
+
+    Attributes:
+        name (str): The name of the module, used in command line invocation.
+        description (str): A brief description of what the module does.
+
+    Methods:
+        parseArgs(arguments): Parses and handles command line arguments for the module.
+        parse_xmlfile_content(pathtofile): Parses the content of an XML file to extract credentials.
     """
 
     name = "gpppasswords"
@@ -63,6 +74,18 @@ class GPPPasswords(Module):
         return self.options
 
     def parse_xmlfile_content(self, pathtofile):
+        """
+        Parses the content of an XML file to extract credentials related to Group Policy Preferences.
+
+        This method attempts to retrieve and parse the content of the specified XML file from the SMB share. It looks for credentials stored within the XML structure, specifically targeting the 'cpassword' attribute which is commonly used for storing encrypted passwords in Group Policy Preferences files.
+
+        Args:
+            pathtofile (str): The path to the XML file on the SMB share.
+
+        Returns:
+            list: A list of dictionaries, each containing details about found credentials such as username, encrypted and decrypted passwords, and other relevant attributes.
+        """
+
         results = []
         fh = io.BytesIO()
         try:
@@ -148,6 +171,18 @@ class GPPPasswords(Module):
         return results
 
     def decrypt_password(self, pw_enc_b64):
+        """
+        Decrypts a password from its Base64 encoded form using a known AES key and IV.
+
+        This method takes a Base64 encoded string which is encrypted using AES-CBC with a fixed key and IV as per Microsoft's published details. It decodes the Base64 string, decrypts it using the AES key and IV, and returns the plaintext password.
+
+        Args:
+            pw_enc_b64 (str): The Base64 encoded string of the encrypted password.
+
+        Returns:
+            str: The decrypted password in plaintext, or an empty string if input is empty or decryption fails.
+        """
+
         if len(pw_enc_b64) != 0:
             # Thank you Microsoft for publishing the key :)
             # https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gppref/2c15cbf0-f086-4c74-8b70-1f2fa45dd4be
@@ -167,7 +202,21 @@ class GPPPasswords(Module):
             # cpassword is empty, cannot decrypt anything.
             return ""
 
-    def __find_callback(self, entry, fullpath):
+    def __find_callback(self, entry, fullpath, depth):
+        """
+        Callback function for SMB session find method. This function is called for each entry found in the search.
+
+        This function checks if the entry is a file with an '.xml' extension. If it is, it parses the XML content to extract relevant data such as usernames and passwords. It then prints the file path and the extracted data if the current depth is within the specified minimum and maximum depth range.
+
+        Args:
+            entry (SMBEntry): The current file or directory entry being processed.
+            fullpath (str): The full path to the current entry.
+            depth (int): Depth of the path.
+            
+        Returns:
+            None: This function does not return any value.
+        """
+
         # Match and print results
         do_print_results = True
         if self.options.mindepth is not None:

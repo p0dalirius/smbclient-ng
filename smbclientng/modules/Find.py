@@ -71,7 +71,7 @@ class Find(Module):
 
         return self.options
 
-    def __find_callback(self, entry, fullpath):
+    def __find_callback(self, entry, fullpath, depth):
         # Documentation for __find_callback function
         """
         This function serves as a callback for the find operation. It applies filters based on the command line arguments
