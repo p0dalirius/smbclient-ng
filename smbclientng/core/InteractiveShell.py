@@ -608,6 +608,8 @@ class InteractiveShell(object):
     # Private functions =======================================================
 
     def __load_modules(self):
+        
+
         self.modules.clear()
 
         modules_dir = os.path.normpath(os.path.dirname(__file__) + os.path.sep + ".." + os.path.sep + "modules")
@@ -640,6 +642,17 @@ class InteractiveShell(object):
             self.commandCompleterObject.commands["module"]["subcommands"] = list(self.modules.keys())
 
     def __prompt(self):
+        """
+        Prints the command prompt for the interactive shell.
+
+        This method constructs and returns the command prompt string based on the current state of the SMB session.
+        The prompt indicates the connection status with a visual symbol and displays the current working directory
+        or the SMB share path. The prompt appearance changes based on whether colors are enabled in the configuration.
+
+        Returns:
+            str: The formatted command prompt string.
+        """
+
         self.smbSession.ping_smb_session()
         if self.smbSession.connected:
             if self.config.no_colors:

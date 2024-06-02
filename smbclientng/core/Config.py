@@ -8,6 +8,21 @@ import platform
 
 
 class Config(object):
+    """
+    Configuration handler for smbclientng.
+
+    This class manages the configuration settings for the smbclientng tool, including debug and color output settings.
+    It provides a structured way to access and modify these settings throughout the application.
+
+    Attributes:
+        _debug (bool): Flag to enable or disable debug mode.
+        _no_colors (bool): Flag to enable or disable colored output, depending on the platform.
+
+    Methods:
+        debug: Property to get or set the debug mode.
+        no_colors: Property to get or set the colored output preference.
+    """
+
     def __init__(self, debug=False, no_colors=None):
         self._debug = debug
 

@@ -52,6 +52,22 @@ def parseArgs():
 
 
 def main():
+    """
+    Main function to execute the smbclient-ng tool.
+
+    This function handles the command-line arguments, initializes the SMB session,
+    and starts the interactive shell. It also manages the authentication process
+    using either password or hashes, and sets up the session configuration based
+    on the provided command-line options.
+
+    If Kerberos authentication is specified, it ensures that the KDC host is provided.
+    It exits with an error message if necessary conditions are not met for the session
+    to start properly.
+
+    The function also handles debug mode outputs and exits cleanly, providing feedback
+    about the session termination if debug mode is enabled.
+    """
+
     options = parseArgs()
 
     # Parse hashes

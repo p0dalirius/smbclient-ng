@@ -24,6 +24,18 @@ class Find(Module):
     description = "Search for files in a directory hierarchy"
 
     def parseArgs(self, arguments):
+        """
+        Parses the command line arguments provided to the module.
+
+        This method initializes the argument parser with the module's name and description, and defines all the necessary arguments that the module accepts. It then parses the provided command line arguments based on these definitions.
+
+        Args:
+            arguments (str): A string of command line arguments.
+
+        Returns:
+            ModuleArgumentParser.Namespace | None: The parsed arguments as a Namespace object if successful, None if there are no arguments or help is requested.
+        """
+
         parser = ModuleArgumentParser(prog=self.name, description=self.description)
 
         # Adding positional arguments

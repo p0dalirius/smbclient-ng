@@ -12,9 +12,27 @@ import re
 import stat
 
 
-# Extracted from p0dalirius/sectools library
-# Src: https://github.com/p0dalirius/sectools/blob/7bb3f5cb7815ad4d4845713c8739e2e2b0ea4e75/sectools/windows/crypto.py#L11-L24
 def parse_lm_nt_hashes(lm_nt_hashes_string):
+    """
+    Parse the input string containing LM and NT hash values and return them separately.
+
+    This function takes a string containing LM and NT hash values, typically separated by a colon (:).
+    It returns the LM and NT hash values as separate strings. If only one hash value is provided, it is
+    assumed to be the NT hash and the LM hash is set to its default value. If no valid hash values are
+    found, both return values are empty strings.
+
+    Args:
+        lm_nt_hashes_string (str): A string containing LM and NT hash values separated by a colon.
+
+    Returns:
+        tuple: A tuple containing two strings (lm_hash_value, nt_hash_value).
+               - lm_hash_value: The LM hash value or its default if not provided.
+               - nt_hash_value: The NT hash value or its default if not provided.
+    
+    Extracted from p0dalirius/sectools library
+    Src: https://github.com/p0dalirius/sectools/blob/7bb3f5cb7815ad4d4845713c8739e2e2b0ea4e75/sectools/windows/crypto.py#L11-L24
+    """
+
     lm_hash_value, nt_hash_value = "", ""
     if lm_nt_hashes_string is not None:
         matched = re.match("([0-9a-f]{32})?(:)?([0-9a-f]{32})?", lm_nt_hashes_string.strip().lower())
@@ -44,6 +62,7 @@ def b_filesize(l):
     Returns:
         str: A string representing the file size in a more readable format, including the appropriate unit.
     """
+
     units = ['B','kB','MB','GB','TB','PB']
     for k in range(len(units)):
         if l < (1024**(k+1)):
@@ -67,6 +86,7 @@ def unix_permissions(entryname):
              three groups of 'r', 'w', 'x' (read, write, execute permissions) for owner, group,
              and others respectively.
     """
+
     mode = os.lstat(entryname).st_mode
     permissions = []
 
@@ -182,6 +202,17 @@ def windows_ls_entry(entry, config, pathToPrint=None):
 
 
 def local_tree(path, config):
+    """
+    This function recursively lists the contents of a directory in a tree-like format.
+
+    Parameters:
+        path (str): The path to the directory to list.
+        config (object): Configuration settings which may affect the output, such as whether to use colors.
+
+    Returns:
+        None: This function does not return anything but prints the directory tree to the console.
+    """
+
     def recurse_action(base_dir="", path=[], prompt=[]):
         bars = ["│   ", "├── ", "└── "]
 
