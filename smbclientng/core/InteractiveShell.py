@@ -636,7 +636,7 @@ class InteractiveShell(object):
             else:
                 print("[debug] Loaded %d modules:" % len(self.modules.keys()))
             for modulename in sorted(self.modules.keys()):
-                print("[debug] %s : \"%s\"" % (module.name, module.description))
+                print("[debug] %s : \"%s\" (%s)" % (self.modules[modulename].name, self.modules[modulename].description, self.modules[modulename]))
 
         if self.commandCompleterObject is not None:
             self.commandCompleterObject.commands["module"]["subcommands"] = list(self.modules.keys())
