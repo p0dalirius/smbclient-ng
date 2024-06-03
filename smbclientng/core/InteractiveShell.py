@@ -629,9 +629,9 @@ class InteractiveShell(object):
                 is_hidden = bool(sharename.endswith('$'))
                 types = ', '.join([s.replace("STYPE_","") for s in shares[sharename]["type"]])
                 if is_hidden:
-                    table.add_row(sharename, str(is_hidden), types, shares[sharename]["comment"])
+                    table.add_row(shares[sharename], str(is_hidden), types, shares[sharename]["comment"])
                 else:
-                    table.add_row(sharename, str(is_hidden), types, shares[sharename]["comment"])
+                    table.add_row(shares[sharename], str(is_hidden), types, shares[sharename]["comment"])
 
             Console().print(table)
         else:
