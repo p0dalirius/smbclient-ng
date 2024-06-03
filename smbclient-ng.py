@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # File name          : smbclient-ng.py
 # Author             : Podalirius (@podalirius_)
-# Date created       : 24 Jul 2022
+# Date created       : 23 may 2024
 
 
 from smbclientng.__main__ import main

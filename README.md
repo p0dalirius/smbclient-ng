@@ -4,6 +4,7 @@
     smbclient-ng, a fast and user friendly way to interact with SMB shares.
     <br>
     <img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/p0dalirius/smbclient-ng">
+    <img alt="PyPI" src="https://img.shields.io/pypi/v/smbclientng">
     <a href="https://twitter.com/intent/follow?screen_name=podalirius_" title="Follow"><img src="https://img.shields.io/twitter/follow/podalirius_?label=Podalirius&style=social"></a>
     <a href="https://www.youtube.com/c/Podalirius_?sub_confirmation=1" title="Subscribe"><img alt="YouTube Channel Subscribers" src="https://img.shields.io/youtube/channel/subscribers/UCF_x5O7CSfr82AfNVTKOv_A?style=social"></a>
     <br>
@@ -11,6 +12,8 @@
 
 ## Features
 
+- [x] `bat`: Pretty prints the contents of a file. Syntax: `bat <file>`
+- [x] `cat`: Get the contents of a file. Syntax: `cat <file>`
 - [x] `cd`: Change the current working directory. Syntax: `cd <directory>`
 - [x] `close`: Closes the SMB connection to the remote machine. Syntax: `close`
 - [x] `connect`: Connect to the remote machine (useful if connection timed out). Syntax: `connect`
@@ -61,7 +64,7 @@ $ smbclientng -h
 / __| '_ ` _ \| '_ \ / __| | |/ _ \ '_ \| __|____| '_ \ / _` |
 \__ \ | | | | | |_) | (__| | |  __/ | | | ||_____| | | | (_| |
 |___/_| |_| |_|_.__/ \___|_|_|\___|_| |_|\__|    |_| |_|\__, |
-    by @podalirius_                               v1.1  |___/  
+    by @podalirius_                               v1.3  |___/  
     
 usage: smbclientng [-h] [--debug] --target ip address [--kdcHost FQDN KDC] [-d DOMAIN] [-u USER]
                    [--no-pass | -p PASSWORD | -H [LMHASH:]NTHASH | --aes-key hex key] [-k]
