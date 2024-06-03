@@ -443,9 +443,11 @@ class SMBSession(object):
             dict: A dictionary with file and directory names as keys and their SMB entry objects as values.
         """
         
-        if path is None or len(path) == 0:
-            path = self.smb_cwd
-        path = path.rstrip(ntpath.sep) + ntpath.sep + "*"
+        dest_path = [self.smb_cwd.rstrip(ntpath.sep),]
+        if path is not None and len(path) > 0:
+            dest_path.append(path.rstrip(ntpath.sep))
+        dest_path.append('*')
+        path = ntpath.sep.join(dest_path)
 
         contents = {}
         entries = self.smbClient.listPath(
