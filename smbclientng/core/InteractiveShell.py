@@ -5,6 +5,7 @@
 # Date created       : 23 may 2024
 
 
+import charset_normalizer
 import datetime
 import impacket
 from importlib import import_module
@@ -132,6 +133,10 @@ class InteractiveShell(object):
         elif command == "help":
             self.command_help(arguments, command)
 
+        # Cat the contents of a file
+        elif command == "cat":
+            self.command_cat(arguments, command)
+
         # Closes the current SMB session
         elif command == "close":
             self.command_close(arguments, command)
@@ -233,6 +238,27 @@ class InteractiveShell(object):
         path = ' '.join(arguments)
         try:
             self.smbSession.set_cwd(path=path)
+        except impacket.smbconnection.SessionError as e:
+            print("[!] SMB Error: %s" % e)
+
+    @command_arguments_required
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def command_cat(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
+
+        path = ' '.join(arguments)
+        try:
+            rawcontents = self.smbSession.read_file(path=path)
+            if rawcontents is not None:
+                encoding = charset_normalizer.detect(rawcontents)["encoding"]
+                if encoding is not None:
+                    filecontent = rawcontents.decode(encoding).rstrip()
+                    print(filecontent)
+                else:
+                    print("[!] Could not detect charset of '%s'." % path)
         except impacket.smbconnection.SessionError as e:
             print("[!] SMB Error: %s" % e)
 

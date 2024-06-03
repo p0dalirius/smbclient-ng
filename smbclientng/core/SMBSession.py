@@ -5,6 +5,7 @@
 # Date created       : 20 may 2024
 
 
+import io
 import impacket.smbconnection
 import ntpath
 import os
@@ -164,6 +165,27 @@ class SMBSession(object):
             raise Exception("SMB client is not initialized.")
 
     # Operations
+
+    def read_file(self, path=None):
+        if self.path_isfile(path=path):
+            tmp_file_path = self.smb_cwd + ntpath.sep + path
+            matches = self.smbClient.listPath(
+                shareName=self.smb_share, 
+                path=tmp_file_path
+            )
+
+            fh = io.BytesIO()
+            try:
+                # opening the files in streams instead of mounting shares allows 
+                # for running the script from unprivileged containers
+                self.smbClient.getFile(self.smb_share, tmp_file_path, fh.write)
+            except impacket.smbconnection.SessionError as e:
+                return None
+            rawdata = fh.getvalue()
+            fh.close()
+            return rawdata
+        else:
+            print("[!] Remote path '%s' is not a file." % path)
 
     def find(self, paths=[], callback=None):
         def recurse_action(paths=[], depth=0, callback=None):
@@ -602,10 +624,12 @@ class SMBSession(object):
 
         if path is not None:
             path = path.replace('*','')
+            search_dir = ntpath.normpath(self.smb_cwd + ntpath.sep + path)
+            search_dir = ntpath.dirname(search_dir) + ntpath.sep + '*'
             try:
                 contents = self.smbClient.listPath(
                     shareName=self.smb_share,
-                    path=ntpath.normpath(self.smb_cwd + ntpath.sep + path + ntpath.sep)
+                    path=search_dir
                 )
                 # Filter on files
                 contents = [
