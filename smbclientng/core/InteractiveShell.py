@@ -17,6 +17,7 @@ import sys
 import traceback
 from rich.console import Console
 from rich.table import Table
+from rich.syntax import Syntax
 from smbclientng.core.CommandCompleter import CommandCompleter
 from smbclientng.core.utils import b_filesize, unix_permissions, windows_ls_entry, local_tree
 
@@ -226,6 +227,35 @@ class InteractiveShell(object):
             self.command_use(arguments, command)
 
     # Commands ================================================================
+
+    @command_arguments_required
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def command_bat(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
+
+        path = ' '.join(arguments)
+        try:
+            rawcontents = self.smbSession.read_file(path=path)
+            if rawcontents is not None:
+                encoding = charset_normalizer.detect(rawcontents)["encoding"]
+                if encoding is not None:
+                    filecontent = rawcontents.decode(encoding).rstrip()
+                    lexer = Syntax.guess_lexer(path=ntpath.basename(path), code=filecontent)
+                    # Some trickery for the files undetected by the lexer
+                    if lexer == "default":
+                        if '<?xml' in filecontent:
+                            lexer = "xml"
+                        elif '<html>' in filecontent:
+                            lexer = "html"
+                    syntax = Syntax(code=filecontent, line_numbers=True, lexer=lexer)
+                    Console().print(syntax)
+                else:
+                    print("[!] Could not detect charset of '%s'." % path)
+        except impacket.smbconnection.SessionError as e:
+            print("[!] SMB Error: %s" % e)
 
     @command_arguments_required
     @active_smb_connection_needed
