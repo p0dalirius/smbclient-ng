@@ -26,6 +26,13 @@ class CommandCompleter(object):
     """
 
     commands = {
+        "bat": {
+            "description": [
+                "Pretty prints the contents of a file.", 
+                "Syntax: 'bat <file>'"
+            ], 
+            "subcommands": []
+        },
         "cat": {
             "description": [
                 "Get the contents of a file.", 

@@ -135,6 +135,10 @@ class InteractiveShell(object):
             self.command_help(arguments, command)
 
         # Cat the contents of a file
+        elif command == "bat":
+            self.command_bat(arguments, command)
+
+        # Cat the contents of a file
         elif command == "cat":
             self.command_cat(arguments, command)
 
