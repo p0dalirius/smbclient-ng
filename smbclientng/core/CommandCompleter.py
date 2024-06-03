@@ -26,6 +26,13 @@ class CommandCompleter(object):
     """
 
     commands = {
+        "cat": {
+            "description": [
+                "Get the contents of a file.", 
+                "Syntax: 'cat <file>'"
+            ], 
+            "subcommands": []
+        },
         "cd": {
             "description": [
                 "Change the current working directory.", 
@@ -389,7 +396,7 @@ class CommandCompleter(object):
                     else:
                         print("│ ■ %s┤ %s " % (command_str, self.commands[command]["description"][0]))
                         for line in self.commands[command]["description"][1:]:
-                            print("│ %s│ %s " % (" "*(15+3), line))
+                            print("│ %s│ %s " % (" "*(15+2), line))
                 else:
                     command_str = command + " \x1b[90m" + "─"* (15 - len(command)) + "\x1b[0m"
                     if len(self.commands[command]["description"]) == 0:
@@ -399,7 +406,7 @@ class CommandCompleter(object):
                     else:
                         print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
                         for line in self.commands[command]["description"][1:]:
-                            print("│ %s\x1b[90m│\x1b[0m %s " % (" "*(15+2), line))
+                            print("│ %s\x1b[90m│\x1b[0m %s " % (" "*(15+3), line))
                 print("│")
         # Generic help
         else:
