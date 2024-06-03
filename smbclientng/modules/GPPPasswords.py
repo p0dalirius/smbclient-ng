@@ -230,12 +230,17 @@ class GPPPasswords(Module):
             if (not entry.is_directory()) and (entry.get_longname().lower().endswith('.xml')):
                 data = self.parse_xmlfile_content(fullpath)
                 if data is not None:
-                    print("[+] %s" % fullpath)
-                    for entry in data:
-                        print("  | username: %s" % entry["attributes"]["username"])
-                        print("  | password: %s" % entry["attributes"]["password"])  
-                        if len(data) > 1:
-                            print("|")
+                    if len(data) != 0:
+                        print("[+] %s" % fullpath)
+                        for entry in data:
+                            if self.config.no_colors:
+                                print("  | username: '%s'" % entry["attributes"]["username"])
+                                print("  | password: '%s'" % entry["attributes"]["password"])
+                            else:
+                                print("  | \x1b[94musername\x1b[0m: '\x1b[93m%s\x1b[0m'" % entry["attributes"]["username"])
+                                print("  | \x1b[94mpassword\x1b[0m: '\x1b[93m%s\x1b[0m'" % entry["attributes"]["password"])
+                            if len(data) > 1:
+                                print("|")
         return None
 
     def run(self, arguments):
