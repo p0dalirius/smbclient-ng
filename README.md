@@ -64,7 +64,7 @@ $ smbclientng -h
 / __| '_ ` _ \| '_ \ / __| | |/ _ \ '_ \| __|____| '_ \ / _` |
 \__ \ | | | | | |_) | (__| | |  __/ | | | ||_____| | | | (_| |
 |___/_| |_| |_|_.__/ \___|_|_|\___|_| |_|\__|    |_| |_|\__, |
-    by @podalirius_                               v1.3  |___/  
+    by @podalirius_                             v1.3.1  |___/  
     
 usage: smbclientng [-h] [--debug] --target ip address [--kdcHost FQDN KDC] [-d DOMAIN] [-u USER]
                    [--no-pass | -p PASSWORD | -H [LMHASH:]NTHASH | --aes-key hex key] [-k]

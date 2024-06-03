@@ -6,7 +6,7 @@
 
 import setuptools
 
-VERSION = "1.3"
+VERSION = "1.3.1"
 
 long_description = """
 <p align="center">

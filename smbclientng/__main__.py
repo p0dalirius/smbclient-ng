@@ -12,7 +12,7 @@ from smbclientng.core.SMBSession import SMBSession
 from smbclientng.core.utils import parse_lm_nt_hashes
 
 
-VERSION = "1.3"
+VERSION = "1.3.1"
 
 
 def parseArgs():
