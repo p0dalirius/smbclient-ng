@@ -186,6 +186,10 @@ class InteractiveShell(object):
         elif command == "lpwd":
             self.command_lpwd(arguments, command)
 
+        # Renames a local file
+        elif command == "lrename":
+            self.command_lrename(arguments, command)
+        
         # Removes a local file
         elif command == "lrm":
             self.command_lrm(arguments, command)
@@ -445,6 +449,17 @@ class InteractiveShell(object):
         print(os.getcwd())
 
     @command_arguments_required
+    def command_lrename(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+
+        if len(arguments) == 2:
+            os.rename(src=arguments[0], dst=arguments[1])
+        else:
+            self.commandCompleterObject.print_help(command=command)
+
+    @command_arguments_required
     def command_lrm(self, arguments, command):
         # Command arguments required   : Yes
         # Active SMB connection needed : No
@@ -668,7 +683,6 @@ class InteractiveShell(object):
     # Private functions =======================================================
 
     def __load_modules(self):
-
 
         self.modules.clear()
 

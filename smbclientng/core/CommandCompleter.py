@@ -124,6 +124,13 @@ class CommandCompleter(object):
             ],
             "subcommands": []
         },
+        "lrename": {
+            "description": [
+                "Renames a local file.", 
+                "Syntax: 'lrename <oldfilename> <newfilename>'"
+            ], 
+            "subcommands": []
+        },
         "lrm": {
             "description": [
                 "Removes a local file.", 
