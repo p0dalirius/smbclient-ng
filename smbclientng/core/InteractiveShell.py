@@ -149,6 +149,10 @@ class InteractiveShell(object):
         # Change directory in the current share
         elif command == "cd":
             self.command_cd(arguments, command)
+        
+        # debug
+        elif command == "debug":
+            self.command_debug(arguments, command)
 
         # Get a file
         elif command == "get":
@@ -219,6 +223,10 @@ class InteractiveShell(object):
             self.command_rmdir(arguments, command)
 
         # List shares
+        elif command == "sizeof":
+            self.command_sizeof(arguments, command)
+
+        # List shares
         elif command == "shares":
             self.command_shares(arguments, command)
         
@@ -231,6 +239,12 @@ class InteractiveShell(object):
             self.command_use(arguments, command)
 
     # Commands ================================================================
+
+    def command_debug(self, arguments, command):
+        try:
+            pass
+        except Exception as e:
+            traceback.print_exc()
 
     @command_arguments_required
     @active_smb_connection_needed
@@ -610,6 +624,71 @@ class InteractiveShell(object):
                 print("[!] Cannot delete '%s': This is a file, use 'rm <file>' instead." % path)
         else:
             print("[!] Remote directory '%s' does not exist." % path)
+
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def command_sizeof(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
+
+        class RecursiveSizeOfPrint(object):
+            def __init__(self, entry, smbSession, config):
+                self.entry = entry
+                self.config = config
+                self.smbSession = smbSession
+                self.size = 0
+            
+            def update(self, entry, fullpath, depth):
+                self.size += entry.get_filesize()
+                self.print(end='\r')
+            
+            def print(self, end='\n'):
+                #
+                if self.entry.is_directory():
+                    if self.config.no_colors:
+                        path = "%s\\" % self.entry.get_longname()
+                    else:
+                        path = "\x1b[1;96m%s\x1b[0m\\" % self.entry.get_longname()
+                # 
+                else:
+                    if self.config.no_colors:
+                        path = "%s" % self.entry.get_longname()
+                    else:
+                        path = "\x1b[1m%s\x1b[0m" % self.entry.get_longname()
+                print("%10s  %s" % (b_filesize(self.size), path), end=end)
+
+        entries = []
+        if len(arguments) == 0:
+            entries = self.smbSession.list_contents()
+            entries = [entry for name, entry in entries.items() if name not in ['.', '..']]
+        else:
+            entry = self.smbSession.get_entry(path=' '.join(arguments))
+            entries = []
+            if entry is not None:
+                entries = [entry]
+            else:
+                print("[!] Path '%s' does not exist." % ' '.join(arguments))
+
+        total = 0
+        for entry in entries:
+            rsop = RecursiveSizeOfPrint(entry=entry, smbSession=self.smbSession, config=self.config)
+            # Directory
+            if entry.is_directory():
+                self.smbSession.find(
+                    paths=[entry.get_longname()],
+                    callback=rsop.update
+                )
+            # File
+            else:
+                rsop.update(entry=entry, fullpath=entry.get_longname(), depth=0)
+            # Close the print
+            rsop.print()
+            total += rsop.size
+        
+        if len(entries) > 1:
+            print("──────────────────────")
+            print("     total  %s" % b_filesize(total))
 
     @active_smb_connection_needed
     def command_shares(self, arguments, command):

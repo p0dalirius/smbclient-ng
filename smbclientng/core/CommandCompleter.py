@@ -61,6 +61,13 @@ class CommandCompleter(object):
             ], 
             "subcommands": []
         },
+        "debug": {
+            "description": [
+                "Command for dev debugging.",
+                "Syntax: 'debug'"
+            ], 
+            "subcommands": []
+        },
         "dir": {
             "description": [
                 "List the contents of the current working directory.",
@@ -201,6 +208,13 @@ class CommandCompleter(object):
             ], 
             "subcommands": []
         },
+        "sizeof": {
+            "description": [
+                "Recursively compute the size of a folder.", 
+                "Syntax: 'sizeof [directory|file]'"
+            ], 
+            "subcommands": []
+        },
         "shares": {
             "description": [
                 "Lists the SMB shares served by the remote machine.", 
@@ -292,7 +306,7 @@ class CommandCompleter(object):
                                 if s.lower().startswith(remainder.lower())
                             ]
 
-                        elif command in ["bat", "cat", "get", "rm"]:
+                        elif command in ["bat", "cat", "debug", "get", "rm"]:
                             # Choose local files and directories
                             path = ""
                             if '\\' in remainder.strip() or '/' in remainder.strip():
