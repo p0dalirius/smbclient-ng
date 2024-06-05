@@ -191,7 +191,9 @@ class SMBSession(object):
         def recurse_action(paths=[], depth=0, callback=None):
             if callback is None:
                 return []
+            
             next_directories_to_explore = []
+
             for path in paths:
                 remote_smb_path = ntpath.normpath(self.smb_cwd + ntpath.sep + path)
                 entries = []
@@ -210,14 +212,14 @@ class SMBSession(object):
                 
                 for entry in entries:
                     if entry.is_directory():
-                        callback(entry, path + entry.get_longname() + ntpath.sep, depth)
+                        callback(entry, path + ntpath.sep + entry.get_longname() + ntpath.sep, depth)
                     else:
-                        callback(entry, path + entry.get_longname(), depth)
+                        callback(entry, path + ntpath.sep + entry.get_longname(), depth)
 
                 # Next directories to explore
                 for entry in entries:
                     if entry.is_directory():
-                        next_directories_to_explore.append(path + entry.get_longname() + ntpath.sep)
+                        next_directories_to_explore.append(path + ntpath.sep + entry.get_longname() + ntpath.sep)
             
             return next_directories_to_explore
         # 
@@ -351,6 +353,30 @@ class SMBSession(object):
             print("\x1b[v\x1b[o\r[!] Interrupted.")
             self.close_smb_session()
             self.init_smb_session()
+
+    def get_entry(self, path=None):
+        """
+        Retrieves information about a specific entry located at the provided path on the SMB share.
+
+        This method checks if the specified path exists on the SMB share. If the path exists, it retrieves the details of the entry at that path, including the directory name and file name. If the entry is found, it returns the entry object; otherwise, it returns None.
+
+        Args:
+            path (str): The path of the entry to retrieve information about.
+
+        Returns:
+            Entry: An object representing the entry at the specified path, or None if the entry is not found.
+        """
+
+        if self.path_exists(path=path):
+            matches = self.smbClient.listPath(shareName=self.smb_share, path=path)
+
+            if len(matches) == 1:
+                return matches[0]
+            else:
+                return None
+            
+        else:
+            return None 
 
     def info(self, share=True, server=True):
         """
