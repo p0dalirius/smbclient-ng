@@ -110,6 +110,13 @@ class CommandCompleter(object):
             ], 
             "subcommands": []
         },
+        "lcp": {
+            "description": [
+                "Create a copy of a local file.",
+                "Syntax: 'lcp <srcfile> <dstfile>'"
+            ], 
+            "subcommands": []
+        },
         "lls": {
             "description": [
                 "Lists the contents of the current local directory.", 
@@ -342,7 +349,7 @@ class CommandCompleter(object):
                                 if s.lower().startswith(remainder.lower())
                             ]
 
-                        elif command in ["lcd", "lls", "put", "lmkdir", "lrm", "lrmdir"]:
+                        elif command in ["lcd", "lcp", "lls", "lrm", "put", "lmkdir", "lrm", "lrmdir"]:
                             # Choose directory
                             path = ""
                             if os.path.sep in remainder.strip():

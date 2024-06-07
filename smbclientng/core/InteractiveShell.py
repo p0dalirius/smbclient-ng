@@ -178,6 +178,10 @@ class InteractiveShell(object):
         elif command == "lcd":
             self.command_lcd(arguments, command)
 
+        # Creates a copy of a local file
+        elif command == "lcp":
+            self.command_lcp(arguments, command)
+
         # Lists the contents of the current local directory
         elif command == "lls":
             self.command_lls(arguments, command)
@@ -393,6 +397,25 @@ class InteractiveShell(object):
                 print("[!] Path '%s' is not a directory." % path)
         else:
             print("[!] Directory '%s' does not exists." % path)
+
+    @command_arguments_required
+    def command_lcp(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+
+        if len(arguments) == 2:
+            src_path = arguments[0]
+            dst_path = arguments[1]
+            if os.path.exists(path=src_path):
+                try:
+                    shutil.copyfile(src=src_path, dst=dst_path)
+                except shutil.SameFileError as err:
+                    print("[!] Error: %s" % err)
+            else:
+                print("[!] File '%s' does not exists." % src_path)
+        else:
+            self.commandCompleterObject.print_help(command=command)
 
     def command_lls(self, arguments, command):
         # Command arguments required   : No
