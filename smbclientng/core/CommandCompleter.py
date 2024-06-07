@@ -28,14 +28,14 @@ class CommandCompleter(object):
     commands = {
         "bat": {
             "description": [
-                "Pretty prints the contents of a file.", 
+                "Pretty prints the contents of a remote file.", 
                 "Syntax: 'bat <file>'"
             ], 
             "subcommands": []
         },
         "cat": {
             "description": [
-                "Get the contents of a file.", 
+                "Get the contents of a remote file.", 
                 "Syntax: 'cat <file>'"
             ], 
             "subcommands": []
@@ -102,6 +102,20 @@ class CommandCompleter(object):
                 "Syntax: 'info [server|share]'"
             ], 
             "subcommands": ["server", "share"]
+        },
+        "lbat": {
+            "description": [
+                "Pretty prints the contents of a local file.", 
+                "Syntax: 'lbat <file>'"
+            ], 
+            "subcommands": []
+        },
+        "lcat": {
+            "description": [
+                "Get the contents of a local file.", 
+                "Syntax: 'lcat <file>'"
+            ], 
+            "subcommands": []
         },
         "lcd": {
             "description": [
