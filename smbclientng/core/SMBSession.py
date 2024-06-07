@@ -65,6 +65,7 @@ class SMBSession(object):
         self.available_shares = {}
         self.smb_share = None
         self.smb_cwd = ""
+        self.smb_tree_id = None
 
         self.list_shares()
 
@@ -977,6 +978,8 @@ class SMBSession(object):
             if shareName.lower() in self.available_shares.keys():
                 # Doing this in order to keep the case of the share adevertised by the remote machine
                 self.smb_share = self.available_shares[shareName.lower()]["name"]
+                # Connects the tree
+                self.smb_tree_id = self.smbClient.connectTree(self.smb_share)
             else:
                 print("[!] Could not set share '%s', it does not exist remotely." % shareName)
 

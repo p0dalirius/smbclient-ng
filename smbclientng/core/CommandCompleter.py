@@ -201,6 +201,13 @@ class CommandCompleter(object):
             ], 
             "subcommands": []
         },
+        "mount": {
+            "description": [
+                "Creates a mount point of the remote share on the local machine.",
+                "Syntax: 'mount <remote_path> <local_mountpoint>'"
+            ], 
+            "subcommands": []
+        },
         "put": {
             "description": [
                 "Put a local file or directory in a remote directory.", 

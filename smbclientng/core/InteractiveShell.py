@@ -222,6 +222,10 @@ class InteractiveShell(object):
         elif command == "module":
             self.command_module(arguments, command)
 
+        # Creates a mount point of the remote share on the local machine
+        elif command == "mount":
+            self.command_mount(arguments, command)
+
         # Reconnects the current SMB session
         elif command in ["connect", "reconnect"]:
             self.command_reconnect(arguments, command)
@@ -639,6 +643,35 @@ class InteractiveShell(object):
             module.run(' '.join(arguments[1:]))
         else:
             print("[!] Module '%s' does not exist." % module_name)
+
+    @command_arguments_required
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def command_mount(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
+
+        if len(arguments) == 2:
+            remote_path = arguments[0]
+            if not remote_path.startswith(ntpath.sep):
+                remote_path = self.smbSession.smb_cwd + ntpath.sep + remote_path
+
+            local_mount_point = arguments[1]
+
+            if self.config.debug:
+                print("[debug] Trying to mount remote '%s' onto local '%s'" % (remote_path, local_mount_point))
+
+            try:
+                self.smbSession.smbClient.createMountPoint(
+                    self.smbSession.smb_tree_id, # Tree ID
+                    remote_path, # Remote path
+                    local_mount_point # Local path
+                )
+            except (impacket.smbconnection.SessionError, impacket.smb3.SessionError) as e:
+                self.smbSession.smbClient.removeMountPoint(self.smbSession.smb_tree_id, remote_path)
+        else:
+            self.commandCompleterObject.print_help(command=command)
 
     @command_arguments_required
     @active_smb_connection_needed
