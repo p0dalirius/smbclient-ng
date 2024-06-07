@@ -174,6 +174,10 @@ class InteractiveShell(object):
         elif command == "put":
             self.command_put(arguments, command)
 
+        # Shows the content of a local file
+        elif command == "lcat":
+            self.command_lcat(arguments, command)
+
         # Changes the current local directory
         elif command == "lcd":
             self.command_lcd(arguments, command)
@@ -380,6 +384,29 @@ class InteractiveShell(object):
                 share=print_share_info,
                 server=print_server_info
             )
+        except impacket.smbconnection.SessionError as e:
+            print("[!] SMB Error: %s" % e)
+
+    @command_arguments_required
+    def command_lcat(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+
+        path = ' '.join(arguments)
+        try:
+            if os.path.exists(path=path):
+                f = open(path, 'rb')
+                rawcontents = f.read()
+                if rawcontents is not None:
+                    encoding = charset_normalizer.detect(rawcontents)["encoding"]
+                    if encoding is not None:
+                        filecontent = rawcontents.decode(encoding).rstrip()
+                        print(filecontent)
+                    else:
+                        print("[!] Could not detect charset of '%s'." % path)
+            else:
+                print("[!] Local file '%s' does not exist." % path)
         except impacket.smbconnection.SessionError as e:
             print("[!] SMB Error: %s" % e)
 
