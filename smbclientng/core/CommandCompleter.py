@@ -257,17 +257,24 @@ class CommandCompleter(object):
             ], 
             "subcommands": []
         },
-        "use": {
-            "description": [
-                "Use a SMB share.", 
-                "Syntax: 'use <sharename>'"
-            ], 
-            "subcommands": []
-        },
         "tree": {
             "description": [
                 "Displays a tree view of the remote directories.",
                 "Syntax: 'tree [directory]'"
+            ], 
+            "subcommands": []
+        },
+        "umount": {
+            "description": [
+                "Removes a mount point of the remote share on the local machine.",
+                "Syntax: 'umount <remote_path>'"
+            ], 
+            "subcommands": []
+        },
+        "use": {
+            "description": [
+                "Use a SMB share.", 
+                "Syntax: 'use <sharename>'"
             ], 
             "subcommands": []
         },

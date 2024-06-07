@@ -863,6 +863,23 @@ class InteractiveShell(object):
 
     @command_arguments_required
     @active_smb_connection_needed
+    @smb_share_is_set
+    def command_umount(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
+
+        remote_path = arguments[0]
+        if not remote_path.startswith(ntpath.sep):
+            remote_path = self.smbSession.smb_cwd + ntpath.sep + remote_path
+
+        if self.config.debug:
+            print("[debug] Trying to unmount remote '%s'" % (remote_path))
+        
+        self.smbSession.smbClient.removeMountPoint(self.smbSession.smb_tree_id, remote_path)
+
+    @command_arguments_required
+    @active_smb_connection_needed
     def command_use(self, arguments, command):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
