@@ -186,6 +186,10 @@ class InteractiveShell(object):
         elif command == "lcp":
             self.command_lcp(arguments, command)
 
+        # Pretty prints the content of a local file
+        elif command == "lbat":
+            self.command_lbat(arguments, command)
+
         # Lists the contents of the current local directory
         elif command == "lls":
             self.command_lls(arguments, command)
@@ -443,6 +447,37 @@ class InteractiveShell(object):
                 print("[!] File '%s' does not exists." % src_path)
         else:
             self.commandCompleterObject.print_help(command=command)
+
+    @command_arguments_required
+    def command_lbat(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+
+        path = ' '.join(arguments)
+        try:
+            if os.path.exists(path=path):
+                f = open(path, 'rb')
+                rawcontents = f.read()
+                if rawcontents is not None:
+                    encoding = charset_normalizer.detect(rawcontents)["encoding"]
+                    if encoding is not None:
+                        filecontent = rawcontents.decode(encoding).rstrip()
+                        lexer = Syntax.guess_lexer(path=ntpath.basename(path), code=filecontent)
+                        # Some trickery for the files undetected by the lexer
+                        if lexer == "default":
+                            if '<?xml' in filecontent:
+                                lexer = "xml"
+                            elif '<html>' in filecontent:
+                                lexer = "html"
+                        syntax = Syntax(code=filecontent, line_numbers=True, lexer=lexer)
+                        Console().print(syntax)
+                    else:
+                        print("[!] Could not detect charset of '%s'." % path)
+            else:
+                print("[!] Local file '%s' does not exist." % path)
+        except impacket.smbconnection.SessionError as e:
+            print("[!] SMB Error: %s" % e)
 
     def command_lls(self, arguments, command):
         # Command arguments required   : No

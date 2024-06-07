@@ -103,9 +103,16 @@ class CommandCompleter(object):
             ], 
             "subcommands": ["server", "share"]
         },
+        "lbat": {
+            "description": [
+                "Pretty prints the contents of a local file.", 
+                "Syntax: 'lbat <file>'"
+            ], 
+            "subcommands": []
+        },
         "lcat": {
             "description": [
-                "Get the contents of a remote file.", 
+                "Get the contents of a local file.", 
                 "Syntax: 'lcat <file>'"
             ], 
             "subcommands": []
