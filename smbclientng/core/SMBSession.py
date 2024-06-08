@@ -10,6 +10,7 @@ import impacket.smbconnection
 import ntpath
 import os
 import re
+import sys
 import traceback
 from smbclientng.core.LocalFileIO import LocalFileIO
 from smbclientng.core.utils import b_filesize, STYPE_MASK
@@ -65,6 +66,7 @@ class SMBSession(object):
         self.available_shares = {}
         self.smb_share = None
         self.smb_cwd = ""
+        self.smb_tree_id = None
 
         self.list_shares()
 
@@ -565,6 +567,32 @@ class SMBSession(object):
         else:
             pass
 
+    def mount(self, local_mount_point, remote_path):
+
+        if not os.path.exists(local_mount_point):
+            pass
+
+        if sys.platform.startswith('win'):
+            remote_path = remote_path.replace('/',ntpath.sep)
+            command = f"net use {local_mount_point} \\\\{self.address}\\{self.smb_share}\\{remote_path}"
+        
+        elif sys.platform.startswith('linux'):
+            remote_path = remote_path.replace(ntpath.sep,'/')
+            command = f"mount -t cifs //{self.address}/{self.smb_share}/{remote_path} {local_mount_point} -o username={self.username},password={self.password}"
+        
+        elif sys.platform.startswith('darwin'):
+            remote_path = remote_path.replace(ntpath.sep,'/')
+            command = f"mount_smbfs //{self.username}:{self.password}@{self.address}/{self.smb_share}/{remote_path} {local_mount_point}"
+        
+        else:
+            command = None
+            print("[!] Unsupported platform for mounting SMB share.")
+        
+        if command is not None:
+            if self.config.debug:
+                print("[debug] Executing: %s" % command)
+            os.system(command)
+
     def path_exists(self, path=None):
         """
         Checks if the specified path exists on the SMB share.
@@ -956,6 +984,25 @@ class SMBSession(object):
             self.close_smb_session()
             self.init_smb_session()
 
+    def umount(self, local_mount_point):
+        if os.path.exists(local_mount_point):
+            if sys.platform.startswith('win'):
+                command = f"net use {local_mount_point} /delete"
+
+            elif sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
+                command = f"umount {local_mount_point}"
+
+            else:
+                command = None
+                print("[!] Unsupported platform for unmounting SMB share.")
+        
+            if command is not None:
+                if self.config.debug:
+                    print("[debug] Executing: %s" % command)
+                os.system(command)
+        else:
+            print("[!] Cannot unmount a non existing path.")        
+
     # Setter / Getter
 
     def set_share(self, shareName):
@@ -977,6 +1024,8 @@ class SMBSession(object):
             if shareName.lower() in self.available_shares.keys():
                 # Doing this in order to keep the case of the share adevertised by the remote machine
                 self.smb_share = self.available_shares[shareName.lower()]["name"]
+                # Connects the tree
+                self.smb_tree_id = self.smbClient.connectTree(self.smb_share)
             else:
                 print("[!] Could not set share '%s', it does not exist remotely." % shareName)
 

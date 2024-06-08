@@ -222,6 +222,10 @@ class InteractiveShell(object):
         elif command == "module":
             self.command_module(arguments, command)
 
+        # Creates a mount point of the remote share on the local machine
+        elif command == "mount":
+            self.command_mount(arguments, command)
+
         # Reconnects the current SMB session
         elif command in ["connect", "reconnect"]:
             self.command_reconnect(arguments, command)
@@ -643,6 +647,31 @@ class InteractiveShell(object):
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
+    def command_mount(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
+
+        if len(arguments) == 2:
+            remote_path = arguments[0]
+            if not remote_path.startswith(ntpath.sep):
+                remote_path = self.smbSession.smb_cwd + ntpath.sep + remote_path
+
+            local_mount_point = arguments[1]
+
+            if self.config.debug:
+                print("[debug] Trying to mount remote '%s' onto local '%s'" % (remote_path, local_mount_point))
+
+            try:
+                self.smbSession.mount(local_mount_point, remote_path)
+            except (impacket.smbconnection.SessionError, impacket.smb3.SessionError) as e:
+                self.smbSession.umount(local_mount_point)
+        else:
+            self.commandCompleterObject.print_help(command=command)
+
+    @command_arguments_required
+    @active_smb_connection_needed
+    @smb_share_is_set
     def command_put(self, arguments, command):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
@@ -828,6 +857,21 @@ class InteractiveShell(object):
         else:
             self.smbSession.tree(path=' '.join(arguments))
 
+    @command_arguments_required
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def command_umount(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
+
+        local_mount_point = arguments[0]
+
+        if self.config.debug:
+            print("[debug] Trying to unmount local mount point '%s'" % (local_mount_point))
+        
+        self.smbSession.mount(local_mount_point)
+        
     @command_arguments_required
     @active_smb_connection_needed
     def command_use(self, arguments, command):

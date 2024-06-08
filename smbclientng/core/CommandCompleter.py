@@ -201,6 +201,13 @@ class CommandCompleter(object):
             ], 
             "subcommands": []
         },
+        "mount": {
+            "description": [
+                "Creates a mount point of the remote share on the local machine.",
+                "Syntax: 'mount <remote_path> <local_mountpoint>'"
+            ], 
+            "subcommands": []
+        },
         "put": {
             "description": [
                 "Put a local file or directory in a remote directory.", 
@@ -250,17 +257,24 @@ class CommandCompleter(object):
             ], 
             "subcommands": []
         },
-        "use": {
-            "description": [
-                "Use a SMB share.", 
-                "Syntax: 'use <sharename>'"
-            ], 
-            "subcommands": []
-        },
         "tree": {
             "description": [
                 "Displays a tree view of the remote directories.",
                 "Syntax: 'tree [directory]'"
+            ], 
+            "subcommands": []
+        },
+        "umount": {
+            "description": [
+                "Removes a mount point of the remote share on the local machine.",
+                "Syntax: 'umount <remote_path>'"
+            ], 
+            "subcommands": []
+        },
+        "use": {
+            "description": [
+                "Use a SMB share.", 
+                "Syntax: 'use <sharename>'"
             ], 
             "subcommands": []
         },
