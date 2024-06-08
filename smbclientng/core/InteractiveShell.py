@@ -663,13 +663,9 @@ class InteractiveShell(object):
                 print("[debug] Trying to mount remote '%s' onto local '%s'" % (remote_path, local_mount_point))
 
             try:
-                self.smbSession.smbClient.createMountPoint(
-                    self.smbSession.smb_tree_id, # Tree ID
-                    remote_path, # Remote path
-                    local_mount_point # Local path
-                )
+                self.smbSession.mount(local_mount_point, remote_path)
             except (impacket.smbconnection.SessionError, impacket.smb3.SessionError) as e:
-                self.smbSession.smbClient.removeMountPoint(self.smbSession.smb_tree_id, remote_path)
+                self.smbSession.umount(local_mount_point)
         else:
             self.commandCompleterObject.print_help(command=command)
 
@@ -869,15 +865,13 @@ class InteractiveShell(object):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        remote_path = arguments[0]
-        if not remote_path.startswith(ntpath.sep):
-            remote_path = self.smbSession.smb_cwd + ntpath.sep + remote_path
+        local_mount_point = arguments[0]
 
         if self.config.debug:
-            print("[debug] Trying to unmount remote '%s'" % (remote_path))
+            print("[debug] Trying to unmount local mount point '%s'" % (local_mount_point))
         
-        self.smbSession.smbClient.removeMountPoint(self.smbSession.smb_tree_id, remote_path)
-
+        self.smbSession.mount(local_mount_point)
+        
     @command_arguments_required
     @active_smb_connection_needed
     def command_use(self, arguments, command):
