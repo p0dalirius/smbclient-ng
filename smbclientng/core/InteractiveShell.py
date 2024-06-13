@@ -825,21 +825,53 @@ class InteractiveShell(object):
         # Active SMB connection needed : Yes
         # SMB share needed             : No
 
+        do_check_rights = False
+        if len(arguments) != 0:
+            if arguments[0] == "rights":
+                do_check_rights = True
+
         shares = self.smbSession.list_shares()
         if len(shares.keys()) != 0:
             table = Table(title=None)
             table.add_column("Share")
-            table.add_column("Hidden")
+            table.add_column("Visibility")
             table.add_column("Type")
             table.add_column("Description", justify="left")
+            if do_check_rights:
+                table.add_column("Rights")
 
             for sharename in sorted(shares.keys()):
-                is_hidden = bool(sharename.endswith('$'))
                 types = ', '.join([s.replace("STYPE_","") for s in shares[sharename]["type"]])
+
+                is_hidden = bool(sharename.endswith('$'))
                 if is_hidden:
-                    table.add_row(shares[sharename]["name"], str(is_hidden), types, shares[sharename]["comment"])
+                    str_hidden = "[bold bright_blue]Hidden[/bold bright_blue]"
+                    str_sharename = "[bold bright_blue]" + shares[sharename]["name"] + "[/bold bright_blue]"
+                    str_types = "[bold bright_blue]" + types + "[/bold bright_blue]"
+                    str_comment = "[bold bright_blue]" + shares[sharename]["comment"] + "[/bold bright_blue]"
                 else:
-                    table.add_row(shares[sharename]["name"], str(is_hidden), types, shares[sharename]["comment"])
+                    str_hidden = "[bold bright_yellow]Visible[/bold bright_yellow]"
+                    str_sharename = "[bold bright_yellow]" + shares[sharename]["name"] + "[/bold bright_yellow]"
+                    str_types = "[bold bright_yellow]" + types + "[/bold bright_yellow]"
+                    str_comment = "[bold bright_yellow]" + shares[sharename]["comment"] + "[/bold bright_yellow]"
+
+                if do_check_rights:
+                    access_rights = self.smbSession.test_rights(sharename=shares[sharename]["name"])
+                    str_access_rights = "[bold yellow]NO ACCESS[/bold yellow]"
+                    if access_rights["readable"] and access_rights["writable"]:
+                        str_access_rights = "[bold green]READ[/bold green], [bold red]WRITE[/bold red]"
+                    elif access_rights["readable"]:
+                        str_access_rights = "[bold green]READ[/bold green]"
+                    elif access_rights["writable"]:
+                        # Without READ?? This should not happen IMHO
+                        str_access_rights = "[bold red]WRITE[/bold red]"
+                    else:
+                        str_access_rights = "[bold yellow]NO ACCESS[/bold yellow]"
+
+                if do_check_rights:
+                    table.add_row(str_sharename, str_hidden, str_types, str_comment, str_access_rights)
+                else:
+                    table.add_row(str_sharename, str_hidden, str_types, str_comment)
 
             Console().print(table)
         else:

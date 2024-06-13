@@ -255,7 +255,7 @@ class CommandCompleter(object):
                 "Lists the SMB shares served by the remote machine.", 
                 "Syntax: 'shares'"
             ], 
-            "subcommands": []
+            "subcommands": ["rights"]
         },
         "tree": {
             "description": [
