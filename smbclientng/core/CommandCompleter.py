@@ -112,7 +112,7 @@ class CommandCompleter(object):
         },
         "lcat": {
             "description": [
-                "Get the contents of a local file.", 
+                "Print the contents of a local file.", 
                 "Syntax: 'lcat <file>'"
             ], 
             "subcommands": []
@@ -267,7 +267,7 @@ class CommandCompleter(object):
         "umount": {
             "description": [
                 "Removes a mount point of the remote share on the local machine.",
-                "Syntax: 'umount <remote_path>'"
+                "Syntax: 'umount <local_mount_point>'"
             ], 
             "subcommands": []
         },

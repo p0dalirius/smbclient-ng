@@ -870,7 +870,7 @@ class InteractiveShell(object):
         if self.config.debug:
             print("[debug] Trying to unmount local mount point '%s'" % (local_mount_point))
         
-        self.smbSession.mount(local_mount_point)
+        self.smbSession.umount(local_mount_point)
         
     @command_arguments_required
     @active_smb_connection_needed

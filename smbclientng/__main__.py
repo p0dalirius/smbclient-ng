@@ -12,7 +12,7 @@ from smbclientng.core.SMBSession import SMBSession
 from smbclientng.core.utils import parse_lm_nt_hashes
 
 
-VERSION = "1.3.1"
+VERSION = "1.4"
 
 
 def parseArgs():
@@ -31,16 +31,16 @@ def parseArgs():
 
     authconn = parser.add_argument_group("Authentication & connection")
     authconn.add_argument("--kdcHost", dest="kdcHost", action="store", metavar="FQDN KDC", help="FQDN of KDC for Kerberos.")
-    authconn.add_argument("-d", "--domain", dest="auth_domain", metavar="DOMAIN", action="store", default='.', help="(FQDN) domain to authenticate to")
-    authconn.add_argument("-u", "--user", dest="auth_username", metavar="USER", action="store", help="user to authenticate with")
+    authconn.add_argument("-d", "--domain", dest="auth_domain", metavar="DOMAIN", action="store", default='.', help="(FQDN) domain to authenticate to.")
+    authconn.add_argument("-u", "--user", dest="auth_username", metavar="USER", action="store", help="User to authenticate with.")
 
     secret = parser.add_argument_group()
     cred = secret.add_mutually_exclusive_group()
-    cred.add_argument("--no-pass", action="store_true", help="Don't ask for password (useful for -k)")
-    cred.add_argument("-p", "--password", dest="auth_password", metavar="PASSWORD", action="store", help="password to authenticate with")
-    cred.add_argument("-H", "--hashes", dest="auth_hashes", action="store", metavar="[LMHASH:]NTHASH", help="NT/LM hashes, format is LMhash:NThash")
-    cred.add_argument("--aes-key", dest="auth_key", action="store", metavar="hex key", help="AES key to use for Kerberos Authentication (128 or 256 bits)")
-    secret.add_argument("-k", "--kerberos", dest="use_kerberos", action="store_true", help="Use Kerberos authentication. Grabs credentials from .ccache file (KRB5CCNAME) based on target parameters. If valid credentials cannot be found, it will use the ones specified in the command line")
+    cred.add_argument("--no-pass", action="store_true", help="Don't ask for password (useful for -k).")
+    cred.add_argument("-p", "--password", dest="auth_password", metavar="PASSWORD", action="store", help="Password to authenticate with.")
+    cred.add_argument("-H", "--hashes", dest="auth_hashes", action="store", metavar="[LMHASH:]NTHASH", help="NT/LM hashes, format is LMhash:NThash.")
+    cred.add_argument("--aes-key", dest="auth_key", action="store", metavar="hex key", help="AES key to use for Kerberos Authentication (128 or 256 bits).")
+    secret.add_argument("-k", "--kerberos", dest="use_kerberos", action="store_true", help="Use Kerberos authentication. Grabs credentials from .ccache file (KRB5CCNAME) based on target parameters. If valid credentials cannot be found, it will use the ones specified in the command line.")
 
     if len(sys.argv) == 1:
         parser.print_help()

@@ -574,6 +574,25 @@ class SMBSession(object):
             pass
 
     def mount(self, local_mount_point, remote_path):
+        """
+        Generates the command to mount an SMB share on different platforms.
+
+        This method takes the local mount point and the remote path of the SMB share and generates the appropriate mount command based on the platform.
+        It constructs the mount command using the provided parameters and executes it using the os.system() function.
+
+        Args:
+            local_mount_point (str): The local directory where the SMB share will be mounted.
+            remote_path (str): The remote path on the SMB share to be mounted.
+
+        Note:
+            - For Windows platform, the command uses 'net use' to mount the share.
+            - For Linux platform, the command uses 'mount' to mount the share.
+            - For macOS platform, the command uses 'mount_smbfs' to mount the share.
+            - If the platform is not supported, an error message is displayed.
+
+        Returns:
+            None
+        """
 
         if not os.path.exists(local_mount_point):
             pass
@@ -991,6 +1010,19 @@ class SMBSession(object):
             self.init_smb_session()
 
     def umount(self, local_mount_point):
+        """
+        Unmounts the specified local mount point of the remote share.
+
+        This method unmounts the specified local mount point of the remote share based on the platform.
+        It supports Windows, Linux, and macOS platforms for unmounting.
+
+        Parameters:
+            local_mount_point (str): The local mount point to unmount.
+
+        Raises:
+            None
+        """
+
         if os.path.exists(local_mount_point):
             if sys.platform.startswith('win'):
                 command = f"net use {local_mount_point} /delete"
