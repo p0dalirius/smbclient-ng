@@ -9,6 +9,7 @@ import io
 import impacket.smbconnection
 import ntpath
 import os
+import random
 import re
 import sys
 import traceback
@@ -1041,6 +1042,44 @@ class SMBSession(object):
         else:
             print("[!] Cannot unmount a non existing path.")        
 
+    # Other functions
+
+    def test_rights(self, sharename): 
+        """
+        Tests the read and write access rights of the current SMB session.
+
+        This method checks the read and write access rights of the current SMB session by attempting to list paths and create/delete temporary directories.
+        
+        Returns:
+            dict: A dictionary containing the read and write access rights status.
+                - "readable" (bool): Indicates if the session has read access rights.
+                - "writable" (bool): Indicates if the session has write access rights.
+        """
+
+        # Restore the current share
+        current_share = self.smb_share
+        self.set_share(shareName=sharename)
+
+        access_rights = {"readable": False, "writable": False}
+        try:
+            self.smbClient.listPath(self.smb_share, '*', password=None)
+            access_rights["readable"] = True
+        except impacket.smbconnection.SessionError as e:
+            access_rights["readable"] = False
+
+        try:
+            temp_dir = ntpath.normpath("\\" + ''.join([random.choice("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPRSTUVWXYZ0123456759") for k in range(16)]))
+            self.smbClient.createDirectory(self.smb_share, temp_dir)
+            self.smbClient.deleteDirectory(self.smb_share, temp_dir)
+            access_rights["writable"] = True
+        except impacket.smbconnection.SessionError as e:
+            access_rights["writable"] = False
+
+        # Restore the current share
+        self.set_share(shareName=current_share)
+
+        return access_rights
+
     # Setter / Getter
 
     def set_share(self, shareName):
@@ -1066,7 +1105,9 @@ class SMBSession(object):
                 self.smb_tree_id = self.smbClient.connectTree(self.smb_share)
             else:
                 print("[!] Could not set share '%s', it does not exist remotely." % shareName)
-
+        else:
+            self.smb_share = None
+            
     def set_cwd(self, path=None):
         """
         Sets the current working directory on the SMB share to the specified path.
