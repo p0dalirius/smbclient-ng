@@ -303,7 +303,12 @@ class SMBSession(object):
         """
         
         def recurse_action(base_dir="", path=[]):
-            remote_smb_path = base_dir + ntpath.sep.join(path)
+            if len(base_dir) == 0:
+                remote_smb_path = ntpath.sep.join(path)
+            else:
+                remote_smb_path = base_dir + ntpath.sep + ntpath.sep.join(path)
+            remote_smb_path = ntpath.normpath(remote_smb_path)
+
             entries = self.smbClient.listPath(
                 shareName=self.smb_share, 
                 path=remote_smb_path + '\\*'
@@ -321,6 +326,7 @@ class SMBSession(object):
                             mode="wb",
                             path=remote_smb_path + ntpath.sep + entry_file.get_longname(), 
                             expected_size=entry_file.get_filesize(),
+                            keepRemotePath=True,
                             debug=self.config.debug
                         )
                         try:
