@@ -1101,6 +1101,7 @@ class SMBSession(object):
             if shareName.lower() in self.available_shares.keys():
                 # Doing this in order to keep the case of the share adevertised by the remote machine
                 self.smb_share = self.available_shares[shareName.lower()]["name"]
+                self.smb_cwd = ""
                 # Connects the tree
                 self.smb_tree_id = self.smbClient.connectTree(self.smb_share)
             else:
