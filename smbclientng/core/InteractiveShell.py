@@ -723,7 +723,9 @@ class InteractiveShell(object):
         # SMB share needed             : Yes
 
         path = ' '.join(arguments)
-        if self.smbSession.path_exists(path):
+        if '*' in path:
+            self.smbSession.rm(path=path)
+        elif self.smbSession.path_exists(path):
             if self.smbSession.path_isfile(path):
                 try:
                     self.smbSession.rm(path=path)
