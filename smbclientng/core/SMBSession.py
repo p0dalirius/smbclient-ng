@@ -253,15 +253,35 @@ class SMBSession(object):
             None
         """
 
-        tmp_file_path = self.smb_cwd + ntpath.sep + path
+        # Parse path
+        path = path.replace('/', ntpath.sep)
+        if ntpath.sep in path:
+            tmp_search_path = ntpath.normpath(self.smb_cwd + ntpath.sep + ntpath.dirname(path))
+        else:
+            tmp_search_path = ntpath.normpath(self.smb_cwd + ntpath.sep)
+        # Parse filename
+        filename = ntpath.basename(path)
+
+        # Search for the file
         matches = self.smbClient.listPath(
             shareName=self.smb_share, 
-            path=tmp_file_path
-        )
-        
+            path=tmp_search_path + ntpath.sep + '*'
+        )   
+
+        # Filter the entries
+        matching_entries = []
         for entry in matches:
+            if entry.get_longname() == filename:
+                matching_entries.append(entry)
+            elif '*' in filename:
+                regexp = filename.replace('.', '\\.').replace('*', '.*')
+                if re.match(regexp, entry.get_longname()):
+                    matching_entries.append(entry)
+            
+        for entry in matching_entries:
             if entry.is_directory():
-                print("[>] Skipping '%s' because it is a directory." % tmp_file_path)
+                if self.config.debug:
+                    print("[debug] [>] Skipping '%s' because it is a directory." % tmp_file_path)
             else:
                 try:
                     if ntpath.sep in path:
@@ -277,7 +297,7 @@ class SMBSession(object):
                     )
                     self.smbClient.getFile(
                         shareName=self.smb_share, 
-                        pathName=tmp_file_path, 
+                        pathName=tmp_search_path + ntpath.sep + entry.get_longname(), 
                         callback=f.write
                     )
                     f.close()
