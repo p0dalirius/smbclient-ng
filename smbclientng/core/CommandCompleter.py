@@ -505,15 +505,26 @@ class CommandCompleter(object):
         This function displays the format of file attributes used in the smbclient-ng shell. It explains the meaning
         of each character in the file attribute string, such as whether a file is read-only, hidden, or a directory.
         """
-
-        print("File attributes format:\n")
-        print("\x1b[1mdachnrst\x1b[0m")
-        print("\x1b[90m│││││││└──>\x1b[0m Temporary")
-        print("\x1b[90m││││││└───>\x1b[0m System")
-        print("\x1b[90m│││││└────>\x1b[0m Read-Only")
-        print("\x1b[90m││││└─────>\x1b[0m Normal")
-        print("\x1b[90m│││└──────>\x1b[0m Hidden")
-        print("\x1b[90m││└───────>\x1b[0m Compressed")
-        print("\x1b[90m│└────────>\x1b[0m Archived")
-        print("\x1b[90m└─────────>\x1b[0m Directory")
+        if self.config.no_colors:
+            print("File attributes format:\n")
+            print("dachnrst")
+            print("│││││││└──> Temporary")
+            print("││││││└───> System")
+            print("│││││└────> Read-Only")
+            print("││││└─────> Normal")
+            print("│││└──────> Hidden")
+            print("││└───────> Compressed")
+            print("│└────────> Archived")
+            print("└─────────> Directory")
+        else:
+            print("File attributes format:\n")
+            print("dachnrst")
+            print("\x1b[90m│││││││└──>\x1b[0m Temporary")
+            print("\x1b[90m││││││└───>\x1b[0m System")
+            print("\x1b[90m│││││└────>\x1b[0m Read-Only")
+            print("\x1b[90m││││└─────>\x1b[0m Normal")
+            print("\x1b[90m│││└──────>\x1b[0m Hidden")
+            print("\x1b[90m││└───────>\x1b[0m Compressed")
+            print("\x1b[90m│└────────>\x1b[0m Archived")
+            print("\x1b[90m└─────────>\x1b[0m Directory")
 
