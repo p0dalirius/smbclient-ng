@@ -7,6 +7,7 @@
 
 import ntpath
 import os
+import shlex
 
 
 class CommandCompleter(object):
@@ -319,18 +320,24 @@ class CommandCompleter(object):
                     if command in self.commands.keys():
                         if command == "use":
                             # Choose SMB Share to connect to
-                            self.matches = [
-                                command + " " + s.lower()
-                                for s in self.smbSession.list_shares().keys()
-                                if s.lower().startswith(remainder.lower())
-                            ]
+                            shares = self.smbSession.list_shares()
+                            matching_entries = []
+                            for sharename in shares.keys():
+                                if sharename.lower().startswith(remainder.lower()):
+                                    matching_entries.append(shares[sharename]["name"])
+
+                            # Add quoting for shlex
+                            matching_entries = [shlex.quote(s) for s in matching_entries]
+
+                            # Final matches
+                            self.matches = [command + " " + m for m in matching_entries]
 
                         elif command in ["cd", "dir", "ls", "mkdir", "rmdir", "tree"]:
                             # Choose remote directory
                             path = ""
                             if '\\' in remainder.strip() or '/' in remainder.strip():
-                                path = remainder.strip().replace('/', ntpath.sep)
-                                path = ntpath.sep.join(path.split(ntpath.sep)[:-1]) 
+                                path = remainder.strip().replace(ntpath.sep, '/')
+                                path = '/'.join(path.split('/')[:-1]) 
 
                             directory_contents = self.smbSession.list_contents(path=path).items()
 
@@ -338,9 +345,12 @@ class CommandCompleter(object):
                             for _, entry in directory_contents:
                                 if entry.is_directory() and entry.get_longname() not in [".",".."]:
                                     if len(path) != 0:
-                                        matching_entries.append(path + ntpath.sep + entry.get_longname() + ntpath.sep)
+                                        matching_entries.append(path + '/' + entry.get_longname() + '/')
                                     else:
-                                        matching_entries.append(entry.get_longname() + ntpath.sep)
+                                        matching_entries.append(entry.get_longname() + '/')
+                            
+                            # Add quoting for shlex
+                            matching_entries = [shlex.quote(s) for s in matching_entries]
 
                             self.matches = [
                                 command + " " + s 
@@ -352,8 +362,8 @@ class CommandCompleter(object):
                             # Choose local files and directories
                             path = ""
                             if '\\' in remainder.strip() or '/' in remainder.strip():
-                                path = remainder.strip().replace('/', ntpath.sep)
-                                path = ntpath.sep.join(path.split(ntpath.sep)[:-1]) 
+                                path = remainder.strip().replace(ntpath.sep, '/')
+                                path = '/'.join(path.split('/')[:-1])
 
                             directory_contents = self.smbSession.list_contents(path=path).items()
 
@@ -362,12 +372,12 @@ class CommandCompleter(object):
                                 if entry.get_longname() not in [".",".."]:
                                     if len(path) != 0:
                                         if entry.is_directory():
-                                            matching_entries.append(path + ntpath.sep + entry.get_longname() + ntpath.sep)
+                                            matching_entries.append(path + '/' + entry.get_longname() + '/')
                                         else:
-                                            matching_entries.append(path + ntpath.sep + entry.get_longname())
+                                            matching_entries.append(path + '/' + entry.get_longname())
                                     else:
                                         if entry.is_directory():
-                                            matching_entries.append(entry.get_longname() + ntpath.sep)
+                                            matching_entries.append(entry.get_longname() + '/')
                                         else:
                                             matching_entries.append(entry.get_longname())
 
