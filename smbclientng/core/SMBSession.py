@@ -277,7 +277,9 @@ class SMBSession(object):
                 regexp = filename.replace('.', '\\.').replace('*', '.*')
                 if re.match(regexp, entry.get_longname()):
                     matching_entries.append(entry)
-            
+        
+        matching_entries = sorted(list(set(matching_entries)))
+
         for entry in matching_entries:
             if entry.is_directory():
                 if self.config.debug:
@@ -773,33 +775,60 @@ class SMBSession(object):
             localpath (str, optional): The local file path of the file to be uploaded. Defaults to None.
         """
 
-        if os.path.exists(localpath):
-            if os.path.isfile(localpath):
-                try:
-                    localfile = os.path.basename(localpath)
-                    f = LocalFileIO(
-                        mode="rb", 
-                        path=localpath, 
-                        debug=self.config.debug
-                    )
-                    self.smbClient.putFile(
-                        shareName=self.smb_share, 
-                        pathName=ntpath.normpath(self.smb_cwd + ntpath.sep + localfile + ntpath.sep), 
-                        callback=f.read
-                    )
-                    f.close()
-                except (BrokenPipeError, KeyboardInterrupt) as err:
-                    print("[!] Interrupted.")
-                    self.close_smb_session()
-                    self.init_smb_session()
-                except Exception as err:
-                    print("[!] Failed to upload '%s': %s" % (localfile, err))
-                    if self.config.debug:
-                        traceback.print_exc()
-            else:
-                print("[!] The specified localpath is a directory. Use 'put -r <directory>' instead.")
+        # Parse path
+        localpath = localpath.replace('/', os.path.sep)
+        if os.path.sep in localpath:
+            tmp_search_path = os.path.normpath(os.getcwd() + os.path.sep + os.path.dirname(localpath))
         else:
-            print("[!] The specified localpath does not exist.")
+            tmp_search_path = os.path.normpath(os.getcwd() + os.path.sep)
+        # Parse filename
+        filename = os.path.basename(localpath)
+
+        # Search for the file
+        matches = os.listdir(tmp_search_path)
+        # Filter the entries
+        matching_entries = []
+        for entry in matches:
+            if entry == filename:
+                matching_entries.append(entry)
+            elif '*' in filename:
+                regexp = filename.replace('.', '\\.').replace('*', '.*')
+                if re.match(regexp, entry):
+                    matching_entries.append(entry)
+
+        matching_entries = sorted(list(set(matching_entries)))
+
+        # Loop and upload
+        for localpath in matching_entries:
+            if os.path.exists(localpath):
+                if os.path.isfile(localpath):
+                    try:
+                        localfile = os.path.basename(localpath)
+                        f = LocalFileIO(
+                            mode="rb", 
+                            path=localpath, 
+                            debug=self.config.debug
+                        )
+                        self.smbClient.putFile(
+                            shareName=self.smb_share, 
+                            pathName=ntpath.normpath(self.smb_cwd + ntpath.sep + localfile + ntpath.sep), 
+                            callback=f.read
+                        )
+                        f.close()
+                    except (BrokenPipeError, KeyboardInterrupt) as err:
+                        print("[!] Interrupted.")
+                        self.close_smb_session()
+                        self.init_smb_session()
+                    except Exception as err:
+                        print("[!] Failed to upload '%s': %s" % (localfile, err))
+                        if self.config.debug:
+                            traceback.print_exc()
+                else:
+                    # [!] The specified localpath is a directory. Use 'put -r <directory>' instead.
+                    pass
+            else:
+                # [!] The specified localpath does not exist.
+                pass
 
     def put_file_recursively(self, localpath=None):
         """
