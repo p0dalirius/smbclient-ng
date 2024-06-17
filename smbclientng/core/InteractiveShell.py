@@ -987,7 +987,13 @@ class InteractiveShell(object):
             else:
                 str_prompt = "%s[\x1b[1;94m\\\\%s\\\x1b[0m]> " % (connected_dot, self.smbSession.address)
         else:
-            str_path = "\\\\%s\\%s\\%s" % (self.smbSession.address, self.smbSession.smb_share, self.smbSession.smb_cwd.lstrip(ntpath.sep))
+            if len(self.smbSession.smb_cwd) == 0:
+                current_path = ""
+            else:
+                current_path = self.smbSession.smb_cwd.strip(ntpath.sep) + ntpath.sep
+            
+            str_path = "\\\\%s\\%s\\%s" % (self.smbSession.address, self.smbSession.smb_share, current_path)
+
             if self.config.no_colors:
                 str_prompt = "%s[%s]> " % (connected_dot, str_path)
             else:
