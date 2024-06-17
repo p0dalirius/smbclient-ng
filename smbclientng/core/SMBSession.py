@@ -281,7 +281,7 @@ class SMBSession(object):
         for entry in matching_entries:
             if entry.is_directory():
                 if self.config.debug:
-                    print("[debug] [>] Skipping '%s' because it is a directory." % tmp_file_path)
+                    print("[debug] [>] Skipping '%s' because it is a directory." % (tmp_search_path + ntpath.sep + entry.get_longname()))
             else:
                 try:
                     if ntpath.sep in path:
