@@ -32,252 +32,288 @@ class CommandCompleter(object):
                 "Pretty prints the contents of a remote file.", 
                 "Syntax: 'bat <file>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["file"]
         },
         "cat": {
             "description": [
                 "Get the contents of a remote file.", 
                 "Syntax: 'cat <file>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["file"]
         },
         "cd": {
             "description": [
                 "Change the current working directory.", 
                 "Syntax: 'cd <directory>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["directory"]
         },
         "close": {
             "description": [
                 "Closes the SMB connection to the remote machine.", 
                 "Syntax: 'close'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": []
         },
         "connect": {
             "description": [
                 "Connect to the remote machine (useful if connection timed out).", 
                 "Syntax: 'connect'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": []
         },
         "debug": {
             "description": [
                 "Command for dev debugging.",
                 "Syntax: 'debug'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": []
         },
         "dir": {
             "description": [
                 "List the contents of the current working directory.",
                 "Syntax: 'dir'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": []
         },
         "exit": {
             "description": [
                 "Exits the smbclient-ng script.",
                 "Syntax: 'exit'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": []
         },
         "get": {
             "description": [
                 "Get a remote file.",
                 "Syntax: 'get [-r] <directory or file>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["file"]
         },
         "help": {
             "description": [
                 "Displays this help message.",
                 "Syntax: 'help'"
             ], 
-            "subcommands": ["format"]
+            "subcommands": ["format"],
+            "autocomplete": []
         },
         "info": {
             "description": [
                 "Get information about the server and or the share.",
                 "Syntax: 'info [server|share]'"
             ], 
-            "subcommands": ["server", "share"]
+            "subcommands": ["server", "share"],
+            "autocomplete": []
         },
         "lbat": {
             "description": [
                 "Pretty prints the contents of a local file.", 
                 "Syntax: 'lbat <file>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["file"]
         },
         "lcat": {
             "description": [
                 "Print the contents of a local file.", 
                 "Syntax: 'lcat <file>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["file"]
         },
         "lcd": {
             "description": [
                 "Changes the current local directory.",
                 "Syntax: 'lcd <directory>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["directory"]
         },
         "lcp": {
             "description": [
                 "Create a copy of a local file.",
                 "Syntax: 'lcp <srcfile> <dstfile>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["file"]
         },
         "lls": {
             "description": [
                 "Lists the contents of the current local directory.", 
                 "Syntax: 'lls'"
             ],
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["directory"]
         },
         "lmkdir": {
             "description": [
                 "Creates a new local directory.", 
                 "Syntax: 'lmkdir <directory>'"
             ],
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["directory"]
         },
         "lpwd": {
             "description": [
                 "Shows the current local directory.", 
                 "Syntax: 'lpwd'"
             ],
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": []
         },
         "lrename": {
             "description": [
                 "Renames a local file.", 
                 "Syntax: 'lrename <oldfilename> <newfilename>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["file"]
         },
         "lrm": {
             "description": [
                 "Removes a local file.", 
                 "Syntax: 'lrm <file>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["file"]
         },
         "lrmdir": {
             "description": [
                 "Removes a local directory.", 
                 "Syntax: 'lrmdir <directory>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["directory"]
         },
         "ls": {
             "description": [
                 "List the contents of the current remote working directory.", 
                 "Syntax: 'ls'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["directory"]
         },
         "ltree": {
             "description": [
                 "Displays a tree view of the local directories.",
                 "Syntax: 'ltree [directory]'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["directory"]
         },
         "mkdir": {
             "description": [
                 "Creates a new remote directory.", 
                 "Syntax: 'mkdir <directory>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["directory"]
         },
         "module": {
             "description": [
                 "Loads a specific module for additional functionalities.",
                 "Syntax: 'module <name>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": []
         },
         "mount": {
             "description": [
                 "Creates a mount point of the remote share on the local machine.",
                 "Syntax: 'mount <remote_path> <local_mountpoint>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["directory"]
         },
         "put": {
             "description": [
                 "Put a local file or directory in a remote directory.", 
                 "Syntax: 'put [-r] <directory or file>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["file"]
         },
         "reconnect": {
             "description": [
                 "Reconnect to the remote machine (useful if connection timed out).", 
                 "Syntax: 'reconnect'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": []
         },
         "reset": {
             "description": [
                 "Reset the TTY output, useful if it was broken after printing a binary file on stdout.",
                 "Syntax: 'reset'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": []
         },
         "rmdir": {
             "description": [
                 "Removes a remote directory.", 
                 "Syntax: 'rmdir <directory>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["directory"]
         },
         "rm": {
             "description": [
                 "Removes a remote file.", 
                 "Syntax: 'rm <file>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["file"]
         },
         "sizeof": {
             "description": [
                 "Recursively compute the size of a folder.", 
                 "Syntax: 'sizeof [directory|file]'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["directory"]
         },
         "shares": {
             "description": [
                 "Lists the SMB shares served by the remote machine.", 
                 "Syntax: 'shares'"
             ], 
-            "subcommands": ["rights"]
+            "subcommands": ["rights"],
+            "autocomplete": []
         },
         "tree": {
             "description": [
                 "Displays a tree view of the remote directories.",
                 "Syntax: 'tree [directory]'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["directory"]
         },
         "umount": {
             "description": [
                 "Removes a mount point of the remote share on the local machine.",
                 "Syntax: 'umount <local_mount_point>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["directory"]
         },
         "use": {
             "description": [
                 "Use a SMB share.", 
                 "Syntax: 'use <sharename>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["share"]
         },
     }
 
