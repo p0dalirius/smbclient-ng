@@ -33,7 +33,7 @@ class CommandCompleter(object):
                 "Syntax: 'bat <file>'"
             ], 
             "subcommands": [],
-            "autocomplete": ["file"]
+            "autocomplete": ["remote_file"]
         },
         "cat": {
             "description": [
@@ -41,7 +41,7 @@ class CommandCompleter(object):
                 "Syntax: 'cat <file>'"
             ], 
             "subcommands": [],
-            "autocomplete": ["file"]
+            "autocomplete": ["remote_file"]
         },
         "cd": {
             "description": [
@@ -49,7 +49,7 @@ class CommandCompleter(object):
                 "Syntax: 'cd <directory>'"
             ], 
             "subcommands": [],
-            "autocomplete": ["directory"]
+            "autocomplete": ["remote_directory"]
         },
         "close": {
             "description": [
@@ -81,7 +81,7 @@ class CommandCompleter(object):
                 "Syntax: 'dir'"
             ], 
             "subcommands": [],
-            "autocomplete": []
+            "autocomplete": ["remote_directory"]
         },
         "exit": {
             "description": [
@@ -97,7 +97,7 @@ class CommandCompleter(object):
                 "Syntax: 'get [-r] <directory or file>'"
             ], 
             "subcommands": [],
-            "autocomplete": ["file"]
+            "autocomplete": ["remote_file"]
         },
         "help": {
             "description": [
@@ -121,7 +121,7 @@ class CommandCompleter(object):
                 "Syntax: 'lbat <file>'"
             ], 
             "subcommands": [],
-            "autocomplete": ["file"]
+            "autocomplete": ["local_file"]
         },
         "lcat": {
             "description": [
@@ -129,7 +129,7 @@ class CommandCompleter(object):
                 "Syntax: 'lcat <file>'"
             ], 
             "subcommands": [],
-            "autocomplete": ["file"]
+            "autocomplete": ["local_file"]
         },
         "lcd": {
             "description": [
@@ -137,7 +137,7 @@ class CommandCompleter(object):
                 "Syntax: 'lcd <directory>'"
             ], 
             "subcommands": [],
-            "autocomplete": ["directory"]
+            "autocomplete": ["local_directory"]
         },
         "lcp": {
             "description": [
@@ -145,7 +145,7 @@ class CommandCompleter(object):
                 "Syntax: 'lcp <srcfile> <dstfile>'"
             ], 
             "subcommands": [],
-            "autocomplete": ["file"]
+            "autocomplete": ["remote_file"]
         },
         "lls": {
             "description": [
@@ -153,7 +153,7 @@ class CommandCompleter(object):
                 "Syntax: 'lls'"
             ],
             "subcommands": [],
-            "autocomplete": ["directory"]
+            "autocomplete": ["local_directory"]
         },
         "lmkdir": {
             "description": [
@@ -161,7 +161,7 @@ class CommandCompleter(object):
                 "Syntax: 'lmkdir <directory>'"
             ],
             "subcommands": [],
-            "autocomplete": ["directory"]
+            "autocomplete": ["local_directory"]
         },
         "lpwd": {
             "description": [
@@ -177,7 +177,7 @@ class CommandCompleter(object):
                 "Syntax: 'lrename <oldfilename> <newfilename>'"
             ], 
             "subcommands": [],
-            "autocomplete": ["file"]
+            "autocomplete": ["local_file"]
         },
         "lrm": {
             "description": [
@@ -185,7 +185,7 @@ class CommandCompleter(object):
                 "Syntax: 'lrm <file>'"
             ], 
             "subcommands": [],
-            "autocomplete": ["file"]
+            "autocomplete": ["local_file"]
         },
         "lrmdir": {
             "description": [
@@ -193,7 +193,7 @@ class CommandCompleter(object):
                 "Syntax: 'lrmdir <directory>'"
             ], 
             "subcommands": [],
-            "autocomplete": ["directory"]
+            "autocomplete": ["local_directory"]
         },
         "ls": {
             "description": [
@@ -201,7 +201,7 @@ class CommandCompleter(object):
                 "Syntax: 'ls'"
             ], 
             "subcommands": [],
-            "autocomplete": ["directory"]
+            "autocomplete": ["remote_directory"]
         },
         "ltree": {
             "description": [
@@ -209,7 +209,7 @@ class CommandCompleter(object):
                 "Syntax: 'ltree [directory]'"
             ], 
             "subcommands": [],
-            "autocomplete": ["directory"]
+            "autocomplete": ["local_directory"]
         },
         "mkdir": {
             "description": [
@@ -217,7 +217,7 @@ class CommandCompleter(object):
                 "Syntax: 'mkdir <directory>'"
             ], 
             "subcommands": [],
-            "autocomplete": ["directory"]
+            "autocomplete": ["remote_directory"]
         },
         "module": {
             "description": [
@@ -233,7 +233,7 @@ class CommandCompleter(object):
                 "Syntax: 'mount <remote_path> <local_mountpoint>'"
             ], 
             "subcommands": [],
-            "autocomplete": ["directory"]
+            "autocomplete": ["remote_directory"]
         },
         "put": {
             "description": [
@@ -241,7 +241,7 @@ class CommandCompleter(object):
                 "Syntax: 'put [-r] <directory or file>'"
             ], 
             "subcommands": [],
-            "autocomplete": ["file"]
+            "autocomplete": ["local_file"]
         },
         "reconnect": {
             "description": [
@@ -265,7 +265,7 @@ class CommandCompleter(object):
                 "Syntax: 'rmdir <directory>'"
             ], 
             "subcommands": [],
-            "autocomplete": ["directory"]
+            "autocomplete": ["remote_directory"]
         },
         "rm": {
             "description": [
@@ -273,7 +273,7 @@ class CommandCompleter(object):
                 "Syntax: 'rm <file>'"
             ], 
             "subcommands": [],
-            "autocomplete": ["file"]
+            "autocomplete": ["remote_file"]
         },
         "sizeof": {
             "description": [
@@ -281,7 +281,7 @@ class CommandCompleter(object):
                 "Syntax: 'sizeof [directory|file]'"
             ], 
             "subcommands": [],
-            "autocomplete": ["directory"]
+            "autocomplete": ["remote_directory"]
         },
         "shares": {
             "description": [
@@ -297,7 +297,7 @@ class CommandCompleter(object):
                 "Syntax: 'tree [directory]'"
             ], 
             "subcommands": [],
-            "autocomplete": ["directory"]
+            "autocomplete": ["remote_directory"]
         },
         "umount": {
             "description": [
@@ -305,7 +305,7 @@ class CommandCompleter(object):
                 "Syntax: 'umount <local_mount_point>'"
             ], 
             "subcommands": [],
-            "autocomplete": ["directory"]
+            "autocomplete": ["remote_directory"]
         },
         "use": {
             "description": [
@@ -344,7 +344,8 @@ class CommandCompleter(object):
             # No text typed yet, need the list of commands available
             if len(text) == 0:
                 self.matches = [s for s in self.commands.keys()]
-
+            
+            # Parsing a command
             elif len(text) != 0:
                 # This is for the main command
                 if text.count(" ") == 0:
@@ -353,8 +354,12 @@ class CommandCompleter(object):
                 # This is for subcommands
                 elif text.count(" ") >= 1:
                     command, remainder = text.split(" ", 1)
+
                     if command in self.commands.keys():
-                        if command == "use":
+                        self.matches = []
+
+                        # Autocomplete shares
+                        if "share" in self.commands[command]["autocomplete"]:
                             # Choose SMB Share to connect to
                             shares = self.smbSession.list_shares()
                             matching_entries = []
@@ -366,9 +371,10 @@ class CommandCompleter(object):
                             matching_entries = [shlex.quote(s) for s in matching_entries]
 
                             # Final matches
-                            self.matches = [command + " " + m for m in matching_entries]
+                            self.matches += [command + " " + m for m in matching_entries]
 
-                        elif command in ["cd", "dir", "ls", "mkdir", "rmdir", "tree"]:
+                        # Autocomplete directory
+                        if "remote_directory" in self.commands[command]["autocomplete"]:
                             # Choose remote directory
                             path = ""
                             if '\\' in remainder.strip() or '/' in remainder.strip():
@@ -388,42 +394,41 @@ class CommandCompleter(object):
                             # Add quoting for shlex
                             matching_entries = [shlex.quote(s) for s in matching_entries]
 
-                            self.matches = [
+                            self.matches += [
                                 command + " " + s 
                                 for s in matching_entries
                                 if s.lower().startswith(remainder.lower())
                             ]
 
-                        elif command in ["bat", "cat", "debug", "get", "rm"]:
-                            # Choose local files and directories
+                        # Autocomplete file
+                        if "remote_file" in self.commands[command]["autocomplete"]:
+                            # Choose remote file
                             path = ""
                             if '\\' in remainder.strip() or '/' in remainder.strip():
                                 path = remainder.strip().replace(ntpath.sep, '/')
-                                path = '/'.join(path.split('/')[:-1])
+                                path = '/'.join(path.split('/')[:-1]) 
 
                             directory_contents = self.smbSession.list_contents(path=path).items()
 
                             matching_entries = []
                             for _, entry in directory_contents:
-                                if entry.get_longname() not in [".",".."]:
+                                if not entry.is_directory() and entry.get_longname() not in [".",".."]:
                                     if len(path) != 0:
-                                        if entry.is_directory():
-                                            matching_entries.append(path + '/' + entry.get_longname() + '/')
-                                        else:
-                                            matching_entries.append(path + '/' + entry.get_longname())
+                                        matching_entries.append(path + '/' + entry.get_longname())
                                     else:
-                                        if entry.is_directory():
-                                            matching_entries.append(entry.get_longname() + '/')
-                                        else:
-                                            matching_entries.append(entry.get_longname())
+                                        matching_entries.append(entry.get_longname())
+                            
+                            # Add quoting for shlex
+                            matching_entries = [shlex.quote(s) for s in matching_entries]
 
-                            self.matches = [
+                            self.matches += [
                                 command + " " + s 
                                 for s in matching_entries
                                 if s.lower().startswith(remainder.lower())
                             ]
 
-                        elif command in ["lcd", "lcp", "lls", "lrm", "put", "lmkdir", "lrm", "lrmdir"]:
+                        # Autocomplete local_directory
+                        if "local_directory" in self.commands[command]["autocomplete"]:
                             # Choose directory
                             path = ""
                             if os.path.sep in remainder.strip():
@@ -441,18 +446,42 @@ class CommandCompleter(object):
                                     entry_path = path + os.path.sep + entry
                                     if os.path.isdir(entry_path):
                                         matching_entries.append(entry_path + os.path.sep)
-                                    else:
-                                        matching_entries.append(entry_path)
 
-                            self.matches = [
+                            self.matches += [
                                 command + " " + s
                                 for s in matching_entries
                                 if s.startswith(remainder)
                             ]
+
+                        # Autocomplete local_file
+                        if "local_file" in self.commands[command]["autocomplete"]:
+                            # Choose file
+                            path = ""
+                            if os.path.sep in remainder.strip():
+                                path = path.split(os.path.sep)[:-1]
+                                path = os.path.sep.join(path)
                             
+                            # Current dir
+                            if len(path.strip()) == 0:
+                                path = "."
+
+                            directory_contents = os.listdir(path=path + os.path.sep)
+                            matching_entries = []
+                            for entry in directory_contents:
+                                if entry not in [".",".."]:
+                                    entry_path = path + os.path.sep + entry
+                                    if not os.path.isdir(entry_path):
+                                        matching_entries.append(entry_path)
+
+                            self.matches += [
+                                command + " " + s
+                                for s in matching_entries
+                                if s.startswith(remainder)
+                            ]
+
                         else:
                             # Generic case for subcommands
-                            self.matches = [
+                            self.matches += [
                                 command + " " + s
                                 for s in self.commands[command]["subcommands"]
                                 if s.startswith(remainder)
