@@ -7,6 +7,7 @@
 
 import ntpath
 import os
+import shlex
 
 
 class CommandCompleter(object):
@@ -31,252 +32,288 @@ class CommandCompleter(object):
                 "Pretty prints the contents of a remote file.", 
                 "Syntax: 'bat <file>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["remote_file"]
         },
         "cat": {
             "description": [
                 "Get the contents of a remote file.", 
                 "Syntax: 'cat <file>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["remote_file"]
         },
         "cd": {
             "description": [
                 "Change the current working directory.", 
                 "Syntax: 'cd <directory>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["remote_directory"]
         },
         "close": {
             "description": [
                 "Closes the SMB connection to the remote machine.", 
                 "Syntax: 'close'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": []
         },
         "connect": {
             "description": [
                 "Connect to the remote machine (useful if connection timed out).", 
                 "Syntax: 'connect'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": []
         },
         "debug": {
             "description": [
                 "Command for dev debugging.",
                 "Syntax: 'debug'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": []
         },
         "dir": {
             "description": [
                 "List the contents of the current working directory.",
                 "Syntax: 'dir'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["remote_directory"]
         },
         "exit": {
             "description": [
                 "Exits the smbclient-ng script.",
                 "Syntax: 'exit'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": []
         },
         "get": {
             "description": [
                 "Get a remote file.",
                 "Syntax: 'get [-r] <directory or file>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["remote_file"]
         },
         "help": {
             "description": [
                 "Displays this help message.",
                 "Syntax: 'help'"
             ], 
-            "subcommands": ["format"]
+            "subcommands": ["format"],
+            "autocomplete": []
         },
         "info": {
             "description": [
                 "Get information about the server and or the share.",
                 "Syntax: 'info [server|share]'"
             ], 
-            "subcommands": ["server", "share"]
+            "subcommands": ["server", "share"],
+            "autocomplete": []
         },
         "lbat": {
             "description": [
                 "Pretty prints the contents of a local file.", 
                 "Syntax: 'lbat <file>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["local_file"]
         },
         "lcat": {
             "description": [
                 "Print the contents of a local file.", 
                 "Syntax: 'lcat <file>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["local_file"]
         },
         "lcd": {
             "description": [
                 "Changes the current local directory.",
                 "Syntax: 'lcd <directory>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["local_directory"]
         },
         "lcp": {
             "description": [
                 "Create a copy of a local file.",
                 "Syntax: 'lcp <srcfile> <dstfile>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["remote_file"]
         },
         "lls": {
             "description": [
                 "Lists the contents of the current local directory.", 
                 "Syntax: 'lls'"
             ],
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["local_directory"]
         },
         "lmkdir": {
             "description": [
                 "Creates a new local directory.", 
                 "Syntax: 'lmkdir <directory>'"
             ],
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["local_directory"]
         },
         "lpwd": {
             "description": [
                 "Shows the current local directory.", 
                 "Syntax: 'lpwd'"
             ],
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": []
         },
         "lrename": {
             "description": [
                 "Renames a local file.", 
                 "Syntax: 'lrename <oldfilename> <newfilename>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["local_file"]
         },
         "lrm": {
             "description": [
                 "Removes a local file.", 
                 "Syntax: 'lrm <file>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["local_file"]
         },
         "lrmdir": {
             "description": [
                 "Removes a local directory.", 
                 "Syntax: 'lrmdir <directory>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["local_directory"]
         },
         "ls": {
             "description": [
                 "List the contents of the current remote working directory.", 
                 "Syntax: 'ls'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["remote_directory"]
         },
         "ltree": {
             "description": [
                 "Displays a tree view of the local directories.",
                 "Syntax: 'ltree [directory]'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["local_directory"]
         },
         "mkdir": {
             "description": [
                 "Creates a new remote directory.", 
                 "Syntax: 'mkdir <directory>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["remote_directory"]
         },
         "module": {
             "description": [
                 "Loads a specific module for additional functionalities.",
                 "Syntax: 'module <name>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": []
         },
         "mount": {
             "description": [
                 "Creates a mount point of the remote share on the local machine.",
                 "Syntax: 'mount <remote_path> <local_mountpoint>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["remote_directory"]
         },
         "put": {
             "description": [
                 "Put a local file or directory in a remote directory.", 
                 "Syntax: 'put [-r] <directory or file>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["local_file"]
         },
         "reconnect": {
             "description": [
                 "Reconnect to the remote machine (useful if connection timed out).", 
                 "Syntax: 'reconnect'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": []
         },
         "reset": {
             "description": [
                 "Reset the TTY output, useful if it was broken after printing a binary file on stdout.",
                 "Syntax: 'reset'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": []
         },
         "rmdir": {
             "description": [
                 "Removes a remote directory.", 
                 "Syntax: 'rmdir <directory>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["remote_directory"]
         },
         "rm": {
             "description": [
                 "Removes a remote file.", 
                 "Syntax: 'rm <file>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["remote_file"]
         },
         "sizeof": {
             "description": [
                 "Recursively compute the size of a folder.", 
                 "Syntax: 'sizeof [directory|file]'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["remote_directory"]
         },
         "shares": {
             "description": [
                 "Lists the SMB shares served by the remote machine.", 
                 "Syntax: 'shares'"
             ], 
-            "subcommands": ["rights"]
+            "subcommands": ["rights"],
+            "autocomplete": []
         },
         "tree": {
             "description": [
                 "Displays a tree view of the remote directories.",
                 "Syntax: 'tree [directory]'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["remote_directory"]
         },
         "umount": {
             "description": [
                 "Removes a mount point of the remote share on the local machine.",
                 "Syntax: 'umount <local_mount_point>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["remote_directory"]
         },
         "use": {
             "description": [
                 "Use a SMB share.", 
                 "Syntax: 'use <sharename>'"
             ], 
-            "subcommands": []
+            "subcommands": [],
+            "autocomplete": ["share"]
         },
     }
 
@@ -307,7 +344,8 @@ class CommandCompleter(object):
             # No text typed yet, need the list of commands available
             if len(text) == 0:
                 self.matches = [s for s in self.commands.keys()]
-
+            
+            # Parsing a command
             elif len(text) != 0:
                 # This is for the main command
                 if text.count(" ") == 0:
@@ -316,21 +354,32 @@ class CommandCompleter(object):
                 # This is for subcommands
                 elif text.count(" ") >= 1:
                     command, remainder = text.split(" ", 1)
-                    if command in self.commands.keys():
-                        if command == "use":
-                            # Choose SMB Share to connect to
-                            self.matches = [
-                                command + " " + s.lower()
-                                for s in self.smbSession.list_shares().keys()
-                                if s.lower().startswith(remainder.lower())
-                            ]
 
-                        elif command in ["cd", "dir", "ls", "mkdir", "rmdir", "tree"]:
+                    if command in self.commands.keys():
+                        self.matches = []
+
+                        # Autocomplete shares
+                        if "share" in self.commands[command]["autocomplete"]:
+                            # Choose SMB Share to connect to
+                            shares = self.smbSession.list_shares()
+                            matching_entries = []
+                            for sharename in shares.keys():
+                                if sharename.lower().startswith(remainder.lower()):
+                                    matching_entries.append(shares[sharename]["name"])
+
+                            # Add quoting for shlex
+                            matching_entries = [shlex.quote(s) for s in matching_entries]
+
+                            # Final matches
+                            self.matches += [command + " " + m for m in matching_entries]
+
+                        # Autocomplete directory
+                        if "remote_directory" in self.commands[command]["autocomplete"]:
                             # Choose remote directory
                             path = ""
                             if '\\' in remainder.strip() or '/' in remainder.strip():
-                                path = remainder.strip().replace('/', ntpath.sep)
-                                path = ntpath.sep.join(path.split(ntpath.sep)[:-1]) 
+                                path = remainder.strip().replace(ntpath.sep, '/')
+                                path = '/'.join(path.split('/')[:-1]) 
 
                             directory_contents = self.smbSession.list_contents(path=path).items()
 
@@ -338,46 +387,48 @@ class CommandCompleter(object):
                             for _, entry in directory_contents:
                                 if entry.is_directory() and entry.get_longname() not in [".",".."]:
                                     if len(path) != 0:
-                                        matching_entries.append(path + ntpath.sep + entry.get_longname() + ntpath.sep)
+                                        matching_entries.append(path + '/' + entry.get_longname() + '/')
                                     else:
-                                        matching_entries.append(entry.get_longname() + ntpath.sep)
+                                        matching_entries.append(entry.get_longname() + '/')
+                            
+                            # Add quoting for shlex
+                            matching_entries = [shlex.quote(s) for s in matching_entries]
 
-                            self.matches = [
+                            self.matches += [
                                 command + " " + s 
                                 for s in matching_entries
                                 if s.lower().startswith(remainder.lower())
                             ]
 
-                        elif command in ["bat", "cat", "debug", "get", "rm"]:
-                            # Choose local files and directories
+                        # Autocomplete file
+                        if "remote_file" in self.commands[command]["autocomplete"]:
+                            # Choose remote file
                             path = ""
                             if '\\' in remainder.strip() or '/' in remainder.strip():
-                                path = remainder.strip().replace('/', ntpath.sep)
-                                path = ntpath.sep.join(path.split(ntpath.sep)[:-1]) 
+                                path = remainder.strip().replace(ntpath.sep, '/')
+                                path = '/'.join(path.split('/')[:-1]) 
 
                             directory_contents = self.smbSession.list_contents(path=path).items()
 
                             matching_entries = []
                             for _, entry in directory_contents:
-                                if entry.get_longname() not in [".",".."]:
+                                if not entry.is_directory() and entry.get_longname() not in [".",".."]:
                                     if len(path) != 0:
-                                        if entry.is_directory():
-                                            matching_entries.append(path + ntpath.sep + entry.get_longname() + ntpath.sep)
-                                        else:
-                                            matching_entries.append(path + ntpath.sep + entry.get_longname())
+                                        matching_entries.append(path + '/' + entry.get_longname())
                                     else:
-                                        if entry.is_directory():
-                                            matching_entries.append(entry.get_longname() + ntpath.sep)
-                                        else:
-                                            matching_entries.append(entry.get_longname())
+                                        matching_entries.append(entry.get_longname())
+                            
+                            # Add quoting for shlex
+                            matching_entries = [shlex.quote(s) for s in matching_entries]
 
-                            self.matches = [
+                            self.matches += [
                                 command + " " + s 
                                 for s in matching_entries
                                 if s.lower().startswith(remainder.lower())
                             ]
 
-                        elif command in ["lcd", "lcp", "lls", "lrm", "put", "lmkdir", "lrm", "lrmdir"]:
+                        # Autocomplete local_directory
+                        if "local_directory" in self.commands[command]["autocomplete"]:
                             # Choose directory
                             path = ""
                             if os.path.sep in remainder.strip():
@@ -395,18 +446,42 @@ class CommandCompleter(object):
                                     entry_path = path + os.path.sep + entry
                                     if os.path.isdir(entry_path):
                                         matching_entries.append(entry_path + os.path.sep)
-                                    else:
-                                        matching_entries.append(entry_path)
 
-                            self.matches = [
+                            self.matches += [
                                 command + " " + s
                                 for s in matching_entries
                                 if s.startswith(remainder)
                             ]
+
+                        # Autocomplete local_file
+                        if "local_file" in self.commands[command]["autocomplete"]:
+                            # Choose file
+                            path = ""
+                            if os.path.sep in remainder.strip():
+                                path = path.split(os.path.sep)[:-1]
+                                path = os.path.sep.join(path)
                             
+                            # Current dir
+                            if len(path.strip()) == 0:
+                                path = "."
+
+                            directory_contents = os.listdir(path=path + os.path.sep)
+                            matching_entries = []
+                            for entry in directory_contents:
+                                if entry not in [".",".."]:
+                                    entry_path = path + os.path.sep + entry
+                                    if not os.path.isdir(entry_path):
+                                        matching_entries.append(entry_path)
+
+                            self.matches += [
+                                command + " " + s
+                                for s in matching_entries
+                                if s.startswith(remainder)
+                            ]
+
                         else:
                             # Generic case for subcommands
-                            self.matches = [
+                            self.matches += [
                                 command + " " + s
                                 for s in self.commands[command]["subcommands"]
                                 if s.startswith(remainder)

@@ -13,13 +13,14 @@ import ntpath
 import os
 import readline
 import shutil
+import shlex
 import sys
 import traceback
 from rich.console import Console
 from rich.table import Table
 from rich.syntax import Syntax
 from smbclientng.core.CommandCompleter import CommandCompleter
-from smbclientng.core.utils import b_filesize, unix_permissions, windows_ls_entry, local_tree
+from smbclientng.core.utils import b_filesize, unix_permissions, windows_ls_entry, local_tree, resolve_local_files, resolve_remote_files
 
 
 ## Decorators
@@ -93,22 +94,31 @@ class InteractiveShell(object):
         running = True
         while running:
             try:
-                user_input = input(self.__prompt()).strip().split(" ")
-                command, arguments = user_input[0].lower(), user_input[1:]
+                user_input = input(self.__prompt()).strip()
+                tokens = shlex.split(user_input)
+
+                if len(tokens) == 0:
+                    command = ""
+                    arguments = []
+                elif len(tokens) == 1:
+                    command = tokens[0].lower()
+                    arguments = []
+                else:
+                    command = tokens[0].lower()
+                    arguments = tokens[1:]
                 
                 # Exit the command line
                 if command == "exit":
                     running = False
-
+                # Skip
+                elif command.strip() == "":
+                    pass
+                # Execute the command
                 elif command in self.commandCompleterObject.commands.keys():
                     self.process_command(
                         command=command, 
                         arguments=arguments
                     )
-
-                elif command.strip() == "":
-                    pass
-
                 # Fallback to unknown command
                 else:
                     print("Unknown command. Type \"help\" for help.")
@@ -262,7 +272,8 @@ class InteractiveShell(object):
 
     def command_debug(self, arguments, command):
         try:
-            pass
+            print("[debug] command    = '%s'" % command)
+            print("[debug] arguments  = %s" % arguments)
         except Exception as e:
             traceback.print_exc()
 
@@ -274,26 +285,33 @@ class InteractiveShell(object):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        path = ' '.join(arguments)
-        try:
-            rawcontents = self.smbSession.read_file(path=path)
-            if rawcontents is not None:
-                encoding = charset_normalizer.detect(rawcontents)["encoding"]
-                if encoding is not None:
-                    filecontent = rawcontents.decode(encoding).rstrip()
-                    lexer = Syntax.guess_lexer(path=ntpath.basename(path), code=filecontent)
-                    # Some trickery for the files undetected by the lexer
-                    if lexer == "default":
-                        if '<?xml' in filecontent:
-                            lexer = "xml"
-                        elif '<html>' in filecontent:
-                            lexer = "html"
-                    syntax = Syntax(code=filecontent, line_numbers=True, lexer=lexer)
-                    Console().print(syntax)
-                else:
-                    print("[!] Could not detect charset of '%s'." % path)
-        except impacket.smbconnection.SessionError as e:
-            print("[!] SMB Error: %s" % e)
+        # Parse wildcards
+        files_and_directories = resolve_local_files(arguments)
+
+        for path_to_file in files_and_directories:
+            if self.smbSession.path_isfile(pathFromRoot=path_to_file):
+                # Read the file
+                try:    
+                    rawcontents = self.smbSession.read_file(path=path_to_file)
+                    if rawcontents is not None:
+                        encoding = charset_normalizer.detect(rawcontents)["encoding"]
+                        if encoding is not None:
+                            filecontent = rawcontents.decode(encoding).rstrip()
+                            lexer = Syntax.guess_lexer(path=ntpath.basename(path_to_file), code=filecontent)
+                            # Some trickery for the files undetected by the lexer
+                            if lexer == "default":
+                                if '<?xml' in filecontent:
+                                    lexer = "xml"
+                                elif '<html>' in filecontent:
+                                    lexer = "html"
+                            syntax = Syntax(code=filecontent, line_numbers=True, lexer=lexer)
+                            if len(files_and_directories) > 1:
+                                print("\x1b[1;93m[>] %s\x1b[0m" % (path_to_file+' ').ljust(80,'='))
+                            Console().print(syntax)
+                        else:
+                            print("[!] Could not detect charset of '%s'." % path_to_file)
+                except impacket.smbconnection.SessionError as e:
+                    print("[!] SMB Error: %s" % e)
 
     @command_arguments_required
     @active_smb_connection_needed
@@ -303,9 +321,8 @@ class InteractiveShell(object):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        path = ' '.join(arguments)
         try:
-            self.smbSession.set_cwd(path=path)
+            self.smbSession.set_cwd(path=arguments[0])
         except impacket.smbconnection.SessionError as e:
             print("[!] SMB Error: %s" % e)
 
@@ -317,18 +334,25 @@ class InteractiveShell(object):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        path = ' '.join(arguments)
-        try:
-            rawcontents = self.smbSession.read_file(path=path)
-            if rawcontents is not None:
-                encoding = charset_normalizer.detect(rawcontents)["encoding"]
-                if encoding is not None:
-                    filecontent = rawcontents.decode(encoding).rstrip()
-                    print(filecontent)
-                else:
-                    print("[!] Could not detect charset of '%s'." % path)
-        except impacket.smbconnection.SessionError as e:
-            print("[!] SMB Error: %s" % e)
+        # Parse wildcards
+        files_and_directories = resolve_local_files(arguments)
+
+        for path_to_file in files_and_directories:
+            if self.smbSession.path_isfile(pathFromRoot=path_to_file):
+                # Read the file
+                try:
+                    rawcontents = self.smbSession.read_file(path=path_to_file)
+                    if rawcontents is not None:
+                        encoding = charset_normalizer.detect(rawcontents)["encoding"]
+                        if encoding is not None:
+                            filecontent = rawcontents.decode(encoding).rstrip()
+                            if len(files_and_directories) > 1:
+                                print("\x1b[1;93m[>] %s\x1b[0m" % (path_to_file+' ').ljust(80,'='))
+                            print(filecontent)
+                        else:
+                            print("[!] Could not detect charset of '%s'." % path_to_file)
+                except impacket.smbconnection.SessionError as e:
+                    print("[!] SMB Error: %s" % e)
 
     def command_close(self, arguments, command):
         # Command arguments required   : No
@@ -347,18 +371,23 @@ class InteractiveShell(object):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        # Get files recursively
-        if arguments[0] == "-r":
-            path = ' '.join(arguments[1:]).replace('/', ntpath.sep)
+        is_recursive = False
+        while '-r' in arguments:
+            is_recursive = True
+            arguments.remove('-r')
+
+        # Parse wildcards
+        files_and_directories = resolve_remote_files(self.smbSession, arguments)
+
+        # 
+        for remotepath in files_and_directories:
             try:
-                self.smbSession.get_file_recursively(path=path)
-            except impacket.smbconnection.SessionError as e:
-                print("[!] SMB Error: %s" % e)
-        # Get a single file
-        else:
-            path = ' '.join(arguments).replace('/', ntpath.sep)
-            try:
-                self.smbSession.get_file(path=path)
+                if is_recursive and self.smbSession.path_isdir(remotepath):
+                    # Get files recursively
+                    self.smbSession.get_file_recursively(path=remotepath)
+                else:
+                    # Get this single file
+                    self.smbSession.get_file(path=remotepath)
             except impacket.smbconnection.SessionError as e:
                 print("[!] SMB Error: %s" % e)
 
@@ -396,35 +425,81 @@ class InteractiveShell(object):
             print("[!] SMB Error: %s" % e)
 
     @command_arguments_required
+    def command_lbat(self, arguments, command):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+
+        # Parse wildcards
+        files_and_directories = resolve_remote_files(self.smbSession, arguments)
+
+        for path_to_file in files_and_directories:
+            # Read the file
+            try:
+                if os.path.exists(path=path_to_file):
+                    f = open(path_to_file, 'rb')
+                    rawcontents = f.read()
+                    #
+                    if rawcontents is not None:
+                        encoding = charset_normalizer.detect(rawcontents)["encoding"]
+                        if encoding is not None:
+                            filecontent = rawcontents.decode(encoding).rstrip()
+                            lexer = Syntax.guess_lexer(path=ntpath.basename(path_to_file), code=filecontent)
+                            # Some trickery for the files undetected by the lexer
+                            if lexer == "default":
+                                if '<?xml' in filecontent:
+                                    lexer = "xml"
+                                elif '<html>' in filecontent:
+                                    lexer = "html"
+                            syntax = Syntax(code=filecontent, line_numbers=True, lexer=lexer)
+                            if len(files_and_directories) > 1:
+                                print("\x1b[1;93m[>] %s\x1b[0m" % (path_to_file+' ').ljust(80,'='))
+                            Console().print(syntax)
+                        else:
+                            print("[!] Could not detect charset of '%s'." % path_to_file)
+                else:
+                    print("[!] Local file '%s' does not exist." % path_to_file)
+            except impacket.smbconnection.SessionError as e:
+                print("[!] SMB Error: %s" % e)
+
+    @command_arguments_required
     def command_lcat(self, arguments, command):
         # Command arguments required   : Yes
         # Active SMB connection needed : No
         # SMB share needed             : No
 
-        path = ' '.join(arguments)
-        try:
-            if os.path.exists(path=path):
-                f = open(path, 'rb')
-                rawcontents = f.read()
-                if rawcontents is not None:
-                    encoding = charset_normalizer.detect(rawcontents)["encoding"]
-                    if encoding is not None:
-                        filecontent = rawcontents.decode(encoding).rstrip()
-                        print(filecontent)
-                    else:
-                        print("[!] Could not detect charset of '%s'." % path)
-            else:
-                print("[!] Local file '%s' does not exist." % path)
-        except impacket.smbconnection.SessionError as e:
-            print("[!] SMB Error: %s" % e)
+        # Parse wildcards
+        files_and_directories = resolve_remote_files(self.smbSession, arguments)
+
+        for path_to_file in files_and_directories:
+            # Read the file 
+            try:
+                if os.path.exists(path=path_to_file):
+                    f = open(path_to_file, 'rb')
+                    rawcontents = f.read()
+                    #
+                    if rawcontents is not None:
+                        encoding = charset_normalizer.detect(rawcontents)["encoding"]
+                        if encoding is not None:
+                            filecontent = rawcontents.decode(encoding).rstrip()
+                            if len(files_and_directories) > 1:
+                                print("\x1b[1;93m[>] %s\x1b[0m" % (path_to_file+' ').ljust(80,'='))
+                            print(filecontent)
+                        else:
+                            print("[!] Could not detect charset of '%s'." % path_to_file)
+                else:
+                    print("[!] Local file '%s' does not exist." % path_to_file)
+            except impacket.smbconnection.SessionError as e:
+                print("[!] SMB Error: %s" % e)
 
     @command_arguments_required
     def command_lcd(self, arguments, command):
         # Command arguments required   : Yes
         # Active SMB connection needed : No
         # SMB share needed             : No
+        
+        path = arguments[0]
 
-        path = ' '.join(arguments)
         if os.path.exists(path=path):
             if os.path.isdir(s=path):
                 os.chdir(path=path)
@@ -452,77 +527,50 @@ class InteractiveShell(object):
         else:
             self.commandCompleterObject.print_help(command=command)
 
-    @command_arguments_required
-    def command_lbat(self, arguments, command):
-        # Command arguments required   : Yes
-        # Active SMB connection needed : No
-        # SMB share needed             : No
-
-        path = ' '.join(arguments)
-        try:
-            if os.path.exists(path=path):
-                f = open(path, 'rb')
-                rawcontents = f.read()
-                if rawcontents is not None:
-                    encoding = charset_normalizer.detect(rawcontents)["encoding"]
-                    if encoding is not None:
-                        filecontent = rawcontents.decode(encoding).rstrip()
-                        lexer = Syntax.guess_lexer(path=ntpath.basename(path), code=filecontent)
-                        # Some trickery for the files undetected by the lexer
-                        if lexer == "default":
-                            if '<?xml' in filecontent:
-                                lexer = "xml"
-                            elif '<html>' in filecontent:
-                                lexer = "html"
-                        syntax = Syntax(code=filecontent, line_numbers=True, lexer=lexer)
-                        Console().print(syntax)
-                    else:
-                        print("[!] Could not detect charset of '%s'." % path)
-            else:
-                print("[!] Local file '%s' does not exist." % path)
-        except impacket.smbconnection.SessionError as e:
-            print("[!] SMB Error: %s" % e)
-
     def command_lls(self, arguments, command):
         # Command arguments required   : No
         # Active SMB connection needed : No
         # SMB share needed             : No
 
         if len(arguments) == 0:
-            path = '.'
+            arguments = ['.']
         else:
-            path = ' '.join(arguments)
+            arguments = resolve_local_files(arguments)
 
-        # lls <directory>
-        if os.path.isdir(path):
-            directory_contents = os.listdir(path=path)
-            for entryname in sorted(directory_contents):
-                path_to_file = path + os.path.sep + entryname
-                rights_str = unix_permissions(path_to_file)
-                size_str = b_filesize(os.path.getsize(filename=path_to_file))
-                date_str = datetime.datetime.fromtimestamp(os.path.getmtime(filename=path_to_file)).strftime("%Y-%m-%d %H:%M")
+        for path in arguments:
+            if len(arguments) > 1:
+                print("%s:" % path)
+            # lls <directory>
+            if os.path.isdir(path):
+                directory_contents = os.listdir(path=path)
+                for entryname in sorted(directory_contents):
+                    path_to_file = path + os.path.sep + entryname
+                    rights_str = unix_permissions(path_to_file)
+                    size_str = b_filesize(os.path.getsize(filename=path_to_file))
+                    date_str = datetime.datetime.fromtimestamp(os.path.getmtime(filename=path_to_file)).strftime("%Y-%m-%d %H:%M")
 
-                if os.path.isdir(s=entryname):
-                    if self.config.no_colors:
-                        print("%s %10s  %s  %s%s" % (rights_str, size_str, date_str, entryname, os.path.sep))
+                    if os.path.isdir(s=entryname):
+                        if self.config.no_colors:
+                            print("%s %10s  %s  %s%s" % (rights_str, size_str, date_str, entryname, os.path.sep))
+                        else:
+                            print("%s %10s  %s  \x1b[1;96m%s\x1b[0m%s" % (rights_str, size_str, date_str, entryname, os.path.sep))
                     else:
-                        print("%s %10s  %s  \x1b[1;96m%s\x1b[0m%s" % (rights_str, size_str, date_str, entryname, os.path.sep))
+                        if self.config.no_colors:
+                            print("%s %10s  %s  %s" % (rights_str, size_str, date_str, entryname))
+                        else:
+                            print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, entryname))
+            # lls <file>
+            elif os.path.isfile(path):
+                rights_str = unix_permissions(path)
+                size_str = b_filesize(os.path.getsize(filename=path))
+                date_str = datetime.datetime.fromtimestamp(os.path.getmtime(filename=path)).strftime("%Y-%m-%d %H:%M")
+                if self.config.no_colors:
+                    print("%s %10s  %s  %s" % (rights_str, size_str, date_str, os.path.basename(path)))
                 else:
-                    if self.config.no_colors:
-                        print("%s %10s  %s  %s" % (rights_str, size_str, date_str, entryname))
-                    else:
-                        print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, entryname))
-        # lls <file>
-        elif os.path.isfile(path):
-            rights_str = unix_permissions(path)
-            size_str = b_filesize(os.path.getsize(filename=path))
-            date_str = datetime.datetime.fromtimestamp(os.path.getmtime(filename=path)).strftime("%Y-%m-%d %H:%M")
-            if self.config.no_colors:
-                print("%s %10s  %s  %s" % (rights_str, size_str, date_str, os.path.basename(path)))
-            else:
-               print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, os.path.basename(path))) 
-        else:
-            print("[!] No such file or directory.")
+                    print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, os.path.basename(path))) 
+            
+            if len(arguments) > 1:
+                print()
 
     @command_arguments_required
     def command_lmkdir(self, arguments, command):
@@ -530,19 +578,17 @@ class InteractiveShell(object):
         # Active SMB connection needed : No
         # SMB share needed             : No
 
-        path = ' '.join(arguments)
+        for path in arguments:
+            if os.path.sep in path:
+                path = path.strip(os.path.sep).split(os.path.sep)
+            else:
+                path = [path]
 
-        # Split each dir
-        if os.path.sep in path:
-            path = path.strip(os.path.sep).split(os.path.sep)
-        else:
-            path = [path]
-
-        # Create each dir in the path
-        for depth in range(1, len(path)+1):
-            tmp_path = os.path.sep.join(path[:depth])
-            if not os.path.exists(tmp_path):
-                os.mkdir(path=tmp_path)
+            # Create each dir in the path
+            for depth in range(1, len(path)+1):
+                tmp_path = os.path.sep.join(path[:depth])
+                if not os.path.exists(tmp_path):
+                    os.mkdir(path=tmp_path)
 
     def command_lpwd(self, arguments, command):
         # Command arguments required   : No
@@ -568,7 +614,8 @@ class InteractiveShell(object):
         # Active SMB connection needed : No
         # SMB share needed             : No
 
-        path = ' '.join(arguments)
+        path = arguments[0]
+
         if os.path.exists(path):
             if not os.path.isdir(s=path):
                 try:
@@ -586,7 +633,11 @@ class InteractiveShell(object):
         # Active SMB connection needed : No
         # SMB share needed             : No
 
-        path = ' '.join(arguments)
+        if len(arguments) == 0:
+            path = '.'
+        else:
+            path = arguments[0]
+
         if os.path.exists(path):
             if os.path.isdir(s=path):
                 try:
@@ -604,9 +655,14 @@ class InteractiveShell(object):
         # SMB share needed             : No
 
         if len(arguments) == 0:
+            path = '.'
+        else:
+            path = arguments[0]
+
+        if len(arguments) == 0:
             local_tree(path='.', config=self.config)
         else:
-            local_tree(path=' '.join(arguments), config=self.config)
+            local_tree(path=path, config=self.config)
 
     @active_smb_connection_needed
     @smb_share_is_set
@@ -615,11 +671,30 @@ class InteractiveShell(object):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        # Read the files
-        directory_contents = self.smbSession.list_contents(path=' '.join(arguments))
+        if len(arguments) == 0:
+            arguments = ['.']
+        else:
+            arguments = resolve_remote_files(self.smbSession, arguments)
 
-        for longname in sorted(directory_contents.keys(), key=lambda x:x.lower()):
-            windows_ls_entry(directory_contents[longname], self.config)
+        for path in arguments:
+            if len(arguments) > 1:
+                print("%s:" % path)
+
+            if self.smbSession.path_isdir(pathFromRoot=path):
+                # Read the files
+                directory_contents = self.smbSession.list_contents(path=path)
+            else:
+                entry = self.smbSession.get_entry(path=path)
+                if entry is not None:
+                    directory_contents = {entry.get_longname(): entry}
+                else:
+                    directory_contents = {}
+
+            for longname in sorted(directory_contents.keys(), key=lambda x:x.lower()):
+                windows_ls_entry(directory_contents[longname], self.config)
+
+            if len(arguments) > 1:
+                print()
             
     @command_arguments_required
     @active_smb_connection_needed
@@ -629,8 +704,7 @@ class InteractiveShell(object):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        path = ' '.join(arguments)
-        self.smbSession.mkdir(path=path)
+        self.smbSession.mkdir(path=arguments[0])
 
     @command_arguments_required
     @active_smb_connection_needed
@@ -640,7 +714,8 @@ class InteractiveShell(object):
 
         if module_name in self.modules.keys():
             module = self.modules[module_name](self.smbSession, self.config)
-            module.run(' '.join(arguments[1:]))
+            arguments_string = ' '.join(arguments[1:])
+            module.run(arguments_string)
         else:
             print("[!] Module '%s' does not exist." % module_name)
 
@@ -676,20 +751,25 @@ class InteractiveShell(object):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
+        
+        is_recursive = False
+        while '-r' in arguments:
+            is_recursive = True
+            arguments.remove('-r')
 
-        # Put files recursively
-        if arguments[0] == "-r":
-            localpath = ' '.join(arguments[1:])
-            try:
-                self.smbSession.put_file_recursively(localpath=localpath)
-            except impacket.smbconnection.SessionError as e:
-                print("[!] SMB Error: %s" % e)
+        # Parse wildcards
+        files_and_directories = resolve_local_files(arguments)
 
-        # Put a single file
-        else:
-            localpath = ' '.join(arguments)
+        # 
+        for localpath in files_and_directories:
             try:
-                self.smbSession.put_file(localpath=localpath)
+                print(localpath)
+                if is_recursive and os.path.isdir(s=localpath):
+                    # Put files recursively
+                    self.smbSession.put_file_recursively(localpath=localpath)
+                else:
+                    # Put this single file
+                    self.smbSession.put_file(localpath=localpath)
             except impacket.smbconnection.SessionError as e:
                 print("[!] SMB Error: %s" % e)
 
@@ -722,19 +802,22 @@ class InteractiveShell(object):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        path = ' '.join(arguments)
-        if '*' in path:
-            self.smbSession.rm(path=path)
-        elif self.smbSession.path_exists(path):
-            if self.smbSession.path_isfile(path):
-                try:
-                    self.smbSession.rm(path=path)
-                except Exception as e:
-                    print("[!] Error removing file '%s' : %s" % path)
+        for path_to_file in arguments:
+            # Wildcard
+            if '*' in path_to_file:
+                self.smbSession.rm(path=path_to_file)
+            # File
+            elif self.smbSession.path_exists(path_to_file):
+                if self.smbSession.path_isfile(path_to_file):
+                    try:
+                        self.smbSession.rm(path=path_to_file)
+                    except Exception as e:
+                        print("[!] Error removing file '%s' : %s" % path_to_file)
+                else:
+                    print("[!] Cannot delete '%s': This is a directory, use 'rmdir <directory>' instead." % path_to_file)
+            # File does not exist
             else:
-                print("[!] Cannot delete '%s': This is a directory, use 'rmdir <directory>' instead." % path)
-        else:
-            print("[!] Remote file '%s' does not exist." % path)
+                print("[!] Remote file '%s' does not exist." % path_to_file)
 
     @command_arguments_required
     @active_smb_connection_needed
@@ -744,17 +827,17 @@ class InteractiveShell(object):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        path = ' '.join(arguments)
-        if self.smbSession.path_exists(path):
-            if self.smbSession.path_isdir(path):
-                try:
-                    self.smbSession.rmdir(path=path)
-                except Exception as e:
-                    print("[!] Error removing directory '%s' : %s" % path)
+        for path_to_directory in arguments:
+            if self.smbSession.path_exists(path_to_directory):
+                if self.smbSession.path_isdir(path_to_directory):
+                    try:
+                        self.smbSession.rmdir(path=path_to_directory)
+                    except Exception as e:
+                        print("[!] Error removing directory '%s' : %s" % path_to_directory)
+                else:
+                    print("[!] Cannot delete '%s': This is a file, use 'rm <file>' instead." % path_to_directory)
             else:
-                print("[!] Cannot delete '%s': This is a file, use 'rm <file>' instead." % path)
-        else:
-            print("[!] Remote directory '%s' does not exist." % path)
+                print("[!] Remote directory '%s' does not exist." % path_to_directory)
 
     @active_smb_connection_needed
     @smb_share_is_set
@@ -775,13 +858,13 @@ class InteractiveShell(object):
                 self.print(end='\r')
             
             def print(self, end='\n'):
-                #
+                # Directory
                 if self.entry.is_directory():
                     if self.config.no_colors:
                         path = "%s\\" % self.entry.get_longname()
                     else:
                         path = "\x1b[1;96m%s\x1b[0m\\" % self.entry.get_longname()
-                # 
+                # File
                 else:
                     if self.config.no_colors:
                         path = "%s" % self.entry.get_longname()
@@ -889,7 +972,7 @@ class InteractiveShell(object):
         if len(arguments) == 0:
             self.smbSession.tree(path='.')
         else:
-            self.smbSession.tree(path=' '.join(arguments))
+            self.smbSession.tree(path=arguments[0])
 
     @command_arguments_required
     @active_smb_connection_needed
@@ -913,10 +996,12 @@ class InteractiveShell(object):
         # Active SMB connection needed : Yes
         # SMB share needed             : No
 
-        sharename = ' '.join(arguments)
+        sharename = arguments[0]
+
         # Reload the list of shares
         shares = self.smbSession.list_shares()
         shares = [s.lower() for s in shares.keys()]
+
         if sharename.lower() in shares:
             self.smbSession.set_share(sharename)
         else:
@@ -925,6 +1010,17 @@ class InteractiveShell(object):
     # Private functions =======================================================
 
     def __load_modules(self):
+        """
+        Dynamically loads all Python modules from the 'modules' directory and stores them in the 'modules' dictionary.
+        Each module is expected to be a Python file that contains a class with the same name as the file (minus the .py extension).
+        The class must have at least two attributes: 'name' and 'description'.
+        
+        This method clears any previously loaded modules, constructs the path to the modules directory, and iterates over
+        each file in that directory. If the file is a Python file (ends with .py and is not '__init__.py'), it attempts to
+        import the module and access the class within it to add to the 'modules' dictionary.
+        
+        If debug mode is enabled in the configuration, it prints debug information about the loading process and the loaded modules.
+        """
 
         self.modules.clear()
 
