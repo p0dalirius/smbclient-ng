@@ -472,7 +472,7 @@ class InteractiveShell(object):
         files_and_directories = resolve_remote_files(self.smbSession, arguments)
 
         for path_to_file in files_and_directories:
-            # Read the file
+            # Read the file 
             try:
                 if os.path.exists(path=path_to_file):
                     f = open(path_to_file, 'rb')
