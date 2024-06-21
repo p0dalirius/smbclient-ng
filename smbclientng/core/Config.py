@@ -24,6 +24,7 @@ class Config(object):
     """
 
     not_interactive = False
+    startup_script = None
 
     def __init__(self, debug=False, no_colors=None):
         self._debug = debug

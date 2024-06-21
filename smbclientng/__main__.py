@@ -29,7 +29,7 @@ def parseArgs():
     parser.add_argument("--no-colors", dest="no_colors", action="store_true", default=False, help="No colors mode.")
     parser.add_argument("--target", action="store", metavar="ip address", required=True, type=str, help="IP Address of the SMB Server to connect to.")  
     
-    parser.add_argument("--script", metavar="script", required=False, type=str, help="File containing the list of commands to be typed at start of the console.")  
+    parser.add_argument("-S", "--startup-script", metavar="startup_script", required=False, type=str, help="File containing the list of commands to be typed at start of the console.")  
     parser.add_argument("-N", "--not-interactive", dest="not_interactive", required=False, action="store_true", default=False, help="Non interactive mode.")
 
     authconn = parser.add_argument_group("Authentication & connection")
@@ -50,6 +50,11 @@ def parseArgs():
         sys.exit(1)
 
     options = parser.parse_args()
+
+    if options.not_interactive and options.startup_script is None:
+        print("[+] Option --not-interactive without --startup-script does not make any sense.")
+        parser.print_help()
+        sys.exit(1)
 
     if options.auth_username is not None and (options.auth_password is None and options.no_pass == False and options.auth_hashes is None):
         print("[+] No password or hashes provided and --no-pass is '%s'" % options.no_pass)
@@ -98,6 +103,7 @@ def main():
     config.debug = options.debug
     config.no_colors = options.no_colors
     config.not_interactive = options.not_interactive
+    config.startup_script = options.startup_script
 
     smbSession = SMBSession(
         address=options.target,

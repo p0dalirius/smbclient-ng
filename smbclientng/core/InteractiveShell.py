@@ -93,21 +93,41 @@ class InteractiveShell(object):
         self.__load_modules()
 
     def run(self):
-        while self.running:
-            try:
-                user_input = input(self.__prompt()).strip()
-                self.process_line(commandLine=user_input)
-            except KeyboardInterrupt as e:
-                print()
+        # Read commands from script file first
+        if self.config.script:
+            f = open(self.config.script, 'r')
+            for line in f.readlines():
+                try:
+                    self.process_line(commandLine=line.strip())
+                except KeyboardInterrupt as e:
+                    print()
 
-            except EOFError as e:
-                print()
-                running = False
+                except EOFError as e:
+                    print()
+                    running = False
 
-            except Exception as e:
-                if self.config.debug:
-                    traceback.print_exc()
-                print("[!] Error: %s" % str(e))
+                except Exception as e:
+                    if self.config.debug:
+                        traceback.print_exc()
+                    print("[!] Error: %s" % str(e))
+
+        # Then interactive console
+        if not self.config.not_interactive:
+            while self.running:
+                try:
+                    user_input = input(self.__prompt()).strip()
+                    self.process_line(commandLine=user_input)
+                except KeyboardInterrupt as e:
+                    print()
+
+                except EOFError as e:
+                    print()
+                    running = False
+
+                except Exception as e:
+                    if self.config.debug:
+                        traceback.print_exc()
+                    print("[!] Error: %s" % str(e))
 
     def process_line(self, commandLine):
         # Split and parse the commandLine
