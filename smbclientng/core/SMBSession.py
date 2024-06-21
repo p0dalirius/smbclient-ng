@@ -886,7 +886,7 @@ class SMBSession(object):
                             )
                             f.close()
 
-                        except BrokenPipeError as err:
+                        except (BrokenPipeError, PermissionError) as err:
                             f.set_error(message="[bold red]Failed uploading '%s': %s" % (f.path, err))
                             f.close(remove=True)
                             break

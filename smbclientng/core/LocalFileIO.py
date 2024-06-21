@@ -51,7 +51,10 @@ class LocalFileIO(object):
             if self.debug:
                 print("[debug] Openning local '%s' with mode '%s'" % (self.path, self.mode))
             
-            self.fd = open(self.dir + os.path.sep + os.path.basename(self.path), self.mode)
+            try:
+                self.fd = open(self.dir + os.path.sep + os.path.basename(self.path), self.mode)
+            except PermissionError as err:
+                self.fd = None
 
         # Write to remote (read local)
         elif self.mode in ["rb"]:
@@ -60,10 +63,15 @@ class LocalFileIO(object):
 
             if self.debug:
                 print("[debug] Openning local '%s' with mode '%s'" % (self.path, self.mode))
-            self.fd = open(self.path, self.mode)
+            
+            try:
+                self.fd = open(self.path, self.mode)
+            except PermissionError as err:
+                self.fd = None
 
-            if self.expected_size is None:
-                self.expected_size = os.path.getsize(filename=self.path)
+            if self.fd is not None:
+                if self.expected_size is None:
+                    self.expected_size = os.path.getsize(filename=self.path)
 
         # Create progress bar
         if self.expected_size is not None:
@@ -99,9 +107,12 @@ class LocalFileIO(object):
             int: The number of bytes written.
         """
 
-        if self.expected_size is not None:
-            self.__progress.update(self.__task, advance=len(data))
-        return self.fd.write(data)
+        if self.fd is not None:
+            if self.expected_size is not None:
+                self.__progress.update(self.__task, advance=len(data))
+            return self.fd.write(data)
+        else:
+            return 0
     
     def read(self, size):
         """
@@ -116,10 +127,13 @@ class LocalFileIO(object):
             bytes: The data read from the file.
         """
 
-        read_data = self.fd.read(size)
-        if self.expected_size is not None:
-            self.__progress.update(self.__task, advance=len(read_data))
-        return read_data
+        if self.fd is not None:
+            read_data = self.fd.read(size)
+            if self.expected_size is not None:
+                self.__progress.update(self.__task, advance=len(read_data))
+            return read_data
+        else:
+            return b""
 
     def close(self, remove=False):
         """
@@ -132,10 +146,14 @@ class LocalFileIO(object):
             remove (bool): If True, the file at the path will be removed after closing the file descriptor.
         """
 
-        self.fd.close()
+        if self.fd is not None:
+            self.fd.close()
 
         if remove:
-            os.remove(path=self.path)
+            try:
+                os.remove(path=self.path)
+            except (PermissionError, FileNotFoundError) as err:
+                pass
 
         if self.expected_size is not None:
             self.__progress.stop()
