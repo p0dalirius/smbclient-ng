@@ -6,8 +6,9 @@
 
 
 import datetime
-import os
+import fnmatch
 import ntpath
+import os
 import re
 import stat
 
@@ -322,3 +323,79 @@ def local_tree(path, config):
     except (BrokenPipeError, KeyboardInterrupt) as e:
         print("[!] Interrupted.")
 
+
+def resolve_local_files(arguments):
+    """
+    Resolves local file paths based on the provided arguments.
+
+    This function takes a list of arguments, which can include wildcard patterns, and resolves them to actual file paths.
+    If an argument contains a wildcard ('*'), it attempts to match files in the specified directory against the pattern.
+    If the argument does not contain a wildcard, it is added to the list of resolved files as is.
+
+    Args:
+        arguments (list): A list of file path arguments, which may include wildcard patterns.
+
+    Returns:
+        list: A list of resolved file paths that match the provided arguments.
+    """
+
+    resolved_files = []
+    for arg in arguments:
+        if '*' in arg:
+            try:
+                path = os.path.dirname(arg) or '.'
+                pattern = os.path.basename(arg)
+                for entry in os.listdir(path):
+                    if fnmatch.fnmatch(entry, pattern):
+                        resolved_files.append(os.path.join(path, entry))
+            except FileNotFoundError as err:
+                pass
+        else:
+            resolved_files.append(arg)
+    resolved_files = sorted(list(set(resolved_files)))
+    return resolved_files
+
+
+def resolve_remote_files(smbSession, arguments):
+    """
+    Resolves remote file paths based on the provided arguments using an SMB session.
+
+    This function takes a list of arguments, which can include wildcard patterns, and resolves them to actual remote file paths.
+    If an argument contains a wildcard ('*'), it attempts to match files in the specified remote directory against the pattern.
+    If the argument does not contain a wildcard, it is added to the list of resolved files as is.
+
+    Args:
+        smbsession (SMBSession): The SMB session through which to access the files.
+        arguments (list): A list of file path arguments, which may include wildcard patterns.
+
+    Returns:
+        list: A list of resolved remote file paths that match the provided arguments.
+    """
+
+    resolved_files = []
+    for arg in arguments:
+        if '*' in arg:
+            if arg == '*':
+                path = smbSession.smb_cwd
+            elif arg.startswith(ntpath.sep):
+                path = ntpath.dirname(arg)
+            else:
+                path = ntpath.normpath(smbSession.smb_cwd + ntpath.sep + ntpath.dirname(arg))
+
+            try:
+                contents = smbSession.smbClient.listPath(
+                    shareName=smbSession.smb_share,
+                    path=path + ntpath.sep + '*'
+                )
+                contents = [e for e in contents if e.get_longname() not in ['.', '..']]
+
+                for entry in contents:
+                    if fnmatch.fnmatch(entry.get_longname(), ntpath.basename(arg)):
+                        resolved_files.append(ntpath.join(path, entry.get_longname()))
+
+            except Exception as err:
+                pass
+        else:
+            resolved_files.append(arg)
+    resolved_files = sorted(list(set(resolved_files)))
+    return resolved_files

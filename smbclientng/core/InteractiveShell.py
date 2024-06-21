@@ -20,7 +20,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.syntax import Syntax
 from smbclientng.core.CommandCompleter import CommandCompleter
-from smbclientng.core.utils import b_filesize, unix_permissions, windows_ls_entry, local_tree
+from smbclientng.core.utils import b_filesize, unix_permissions, windows_ls_entry, local_tree, resolve_local_files, resolve_remote_files
 
 
 ## Decorators
@@ -361,18 +361,23 @@ class InteractiveShell(object):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        # Get files recursively
-        if arguments[0] == "-r":
-            path = ' '.join(arguments[1:]).replace('/', ntpath.sep)
+        is_recursive = False
+        while '-r' in arguments:
+            is_recursive = True
+            arguments.remove('-r')
+
+        # Parse wildcards
+        files_and_directories = resolve_remote_files(self.smbSession, arguments)
+
+        # 
+        for remotepath in files_and_directories:
             try:
-                self.smbSession.get_file_recursively(path=path)
-            except impacket.smbconnection.SessionError as e:
-                print("[!] SMB Error: %s" % e)
-        # Get a single file
-        else:
-            path = ' '.join(arguments).replace('/', ntpath.sep)
-            try:
-                self.smbSession.get_file(path=path)
+                if is_recursive and self.smbSession.path_isdir(remotepath):
+                    # Get files recursively
+                    self.smbSession.get_file_recursively(path=remotepath)
+                else:
+                    # Get this single file
+                    self.smbSession.get_file(path=remotepath)
             except impacket.smbconnection.SessionError as e:
                 print("[!] SMB Error: %s" % e)
 
@@ -717,19 +722,9 @@ class InteractiveShell(object):
         while '-r' in arguments:
             is_recursive = True
             arguments.remove('-r')
-        print("is_recursive: %s" % is_recursive)
 
         # Parse wildcards
-        files_and_directories = []
-        for argument in arguments:
-            if argument.endswith('*'):
-                path = argument.rstrip('*')
-                if os.path.sep in path:
-                    path = "." + os.path.sep + path
-                for entry in os.listdir(path=path):
-                    files_and_directories.append(path.rstrip(os.path.sep) + os.path.sep + entry)
-            else:
-                files_and_directories.append(argument)
+        files_and_directories = resolve_local_files(arguments)
 
         # 
         for localpath in files_and_directories:
@@ -737,11 +732,9 @@ class InteractiveShell(object):
                 print(localpath)
                 if is_recursive and os.path.isdir(s=localpath):
                     # Put files recursively
-                    print("Put files recursively")
                     self.smbSession.put_file_recursively(localpath=localpath)
                 else:
                     # Put this single file
-                    print("Put this single file")
                     self.smbSession.put_file(localpath=localpath)
             except impacket.smbconnection.SessionError as e:
                 print("[!] SMB Error: %s" % e)
