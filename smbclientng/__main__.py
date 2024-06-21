@@ -28,6 +28,9 @@ def parseArgs():
     parser.add_argument("--debug", dest="debug", action="store_true", default=False, help="Debug mode.")
     parser.add_argument("--no-colors", dest="no_colors", action="store_true", default=False, help="No colors mode.")
     parser.add_argument("--target", action="store", metavar="ip address", required=True, type=str, help="IP Address of the SMB Server to connect to.")  
+    
+    parser.add_argument("--script", metavar="script", required=False, type=str, help="File containing the list of commands to be typed at start of the console.")  
+    parser.add_argument("-N", "--not-interactive", dest="not_interactive", required=False, action="store_true", default=False, help="Non interactive mode.")
 
     authconn = parser.add_argument_group("Authentication & connection")
     authconn.add_argument("--kdcHost", dest="kdcHost", action="store", metavar="FQDN KDC", help="FQDN of KDC for Kerberos.")
@@ -94,6 +97,7 @@ def main():
     config = Config()
     config.debug = options.debug
     config.no_colors = options.no_colors
+    config.not_interactive = options.not_interactive
 
     smbSession = SMBSession(
         address=options.target,

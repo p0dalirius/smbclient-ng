@@ -77,6 +77,9 @@ class InteractiveShell(object):
         __init__(self, smbSession, debug=False): Initializes the InteractiveShell with the given SMB session and debug mode.
         run(self): Starts the command line interface loop, processing user input until exit.
     """
+
+    running = True
+    modules = {}
     
     def __init__(self, smbSession, config):
         # Objects
@@ -87,42 +90,13 @@ class InteractiveShell(object):
         readline.parse_and_bind("tab: complete")
         readline.set_completer_delims("\n")
         # Additional modules
-        self.modules = {}
         self.__load_modules()
 
     def run(self):
-        running = True
-        while running:
+        while self.running:
             try:
                 user_input = input(self.__prompt()).strip()
-                tokens = shlex.split(user_input)
-
-                if len(tokens) == 0:
-                    command = ""
-                    arguments = []
-                elif len(tokens) == 1:
-                    command = tokens[0].lower()
-                    arguments = []
-                else:
-                    command = tokens[0].lower()
-                    arguments = tokens[1:]
-                
-                # Exit the command line
-                if command == "exit":
-                    running = False
-                # Skip
-                elif command.strip() == "":
-                    pass
-                # Execute the command
-                elif command in self.commandCompleterObject.commands.keys():
-                    self.process_command(
-                        command=command, 
-                        arguments=arguments
-                    )
-                # Fallback to unknown command
-                else:
-                    print("Unknown command. Type \"help\" for help.")
-
+                self.process_line(commandLine=user_input)
             except KeyboardInterrupt as e:
                 print()
 
@@ -135,138 +109,160 @@ class InteractiveShell(object):
                     traceback.print_exc()
                 print("[!] Error: %s" % str(e))
 
-    def process_command(self, command, arguments=[]):
+    def process_line(self, commandLine):
+        # Split and parse the commandLine
+        tokens = shlex.split(commandLine)
+        if len(tokens) == 0:
+            command = ""
+            arguments = []
+        elif len(tokens) == 1:
+            command = tokens[0].lower()
+            arguments = []
+        else:
+            command = tokens[0].lower()
+            arguments = tokens[1:]
+        
         # Skip
         if command.strip() == "":
             pass
-        
-        # Display help
-        elif command == "help":
-            self.command_help(arguments, command)
+        # Execute the command
+        elif command in self.commandCompleterObject.commands.keys():
 
-        # Cat the contents of a file
-        elif command == "bat":
-            self.command_bat(arguments, command)
-
-        # Cat the contents of a file
-        elif command == "cat":
-            self.command_cat(arguments, command)
-
-        # Closes the current SMB session
-        elif command == "close":
-            self.command_close(arguments, command)
-               
-        # Change directory in the current share
-        elif command == "cd":
-            self.command_cd(arguments, command)
-        
-        # debug
-        elif command == "debug":
-            self.command_debug(arguments, command)
-
-        # Get a file
-        elif command == "get":
-            self.command_get(arguments, command)
-
-        # SMB server info
-        elif command == "info":
-            self.command_info(arguments, command)
-
-        # List directory contents in a share
-        elif command in ["ls", "dir"]:
-            self.command_ls(arguments, command)
-
-        # Creates a new remote directory
-        elif command == "mkdir":
-            self.command_mkdir(arguments, command)
-
-        # Put a file
-        elif command == "put":
-            self.command_put(arguments, command)
-
-        # Shows the content of a local file
-        elif command == "lcat":
-            self.command_lcat(arguments, command)
-
-        # Changes the current local directory
-        elif command == "lcd":
-            self.command_lcd(arguments, command)
-
-        # Creates a copy of a local file
-        elif command == "lcp":
-            self.command_lcp(arguments, command)
-
-        # Pretty prints the content of a local file
-        elif command == "lbat":
-            self.command_lbat(arguments, command)
-
-        # Lists the contents of the current local directory
-        elif command == "lls":
-            self.command_lls(arguments, command)
-
-        # Creates a new local directory
-        elif command == "lmkdir":
-            self.command_lmkdir(arguments, command)
-
-        # Shows the current local directory
-        elif command == "lpwd":
-            self.command_lpwd(arguments, command)
-
-        # Renames a local file
-        elif command == "lrename":
-            self.command_lrename(arguments, command)
-        
-        # Removes a local file
-        elif command == "lrm":
-            self.command_lrm(arguments, command)
-
-        # Removes a local directory
-        elif command == "lrmdir":
-            self.command_lrmdir(arguments, command)
-
-        # Shows the current local directory
-        elif command == "ltree":
-            self.command_ltree(arguments, command)
-
-        # Modules
-        elif command == "module":
-            self.command_module(arguments, command)
-
-        # Creates a mount point of the remote share on the local machine
-        elif command == "mount":
-            self.command_mount(arguments, command)
-
-        # Reconnects the current SMB session
-        elif command in ["connect", "reconnect"]:
-            self.command_reconnect(arguments, command)
-
-        # Reset the TTY output
-        elif command == "reset":
-            self.command_reset(arguments, command)
-
-        # Removes a remote file
-        elif command == "rm":
-            self.command_rm(arguments, command)
+            # Exit the command line
+            if command in ["exit", "quit"]:
+                self.running = False
             
-        # Removes a remote directory
-        elif command == "rmdir":
-            self.command_rmdir(arguments, command)
+            # Display help
+            elif command == "help":
+                self.command_help(arguments, command)
 
-        # List shares
-        elif command == "sizeof":
-            self.command_sizeof(arguments, command)
+            # Cat the contents of a file
+            elif command == "bat":
+                self.command_bat(arguments, command)
 
-        # List shares
-        elif command == "shares":
-            self.command_shares(arguments, command)
+            # Cat the contents of a file
+            elif command == "cat":
+                self.command_cat(arguments, command)
+
+            # Closes the current SMB session
+            elif command == "close":
+                self.command_close(arguments, command)
+                
+            # Change directory in the current share
+            elif command == "cd":
+                self.command_cd(arguments, command)
+            
+            # debug
+            elif command == "debug":
+                self.command_debug(arguments, command)
+
+            # Get a file
+            elif command == "get":
+                self.command_get(arguments, command)
+
+            # SMB server info
+            elif command == "info":
+                self.command_info(arguments, command)
+
+            # List directory contents in a share
+            elif command in ["ls", "dir"]:
+                self.command_ls(arguments, command)
+
+            # Creates a new remote directory
+            elif command == "mkdir":
+                self.command_mkdir(arguments, command)
+
+            # Put a file
+            elif command == "put":
+                self.command_put(arguments, command)
+
+            # Shows the content of a local file
+            elif command == "lcat":
+                self.command_lcat(arguments, command)
+
+            # Changes the current local directory
+            elif command == "lcd":
+                self.command_lcd(arguments, command)
+
+            # Creates a copy of a local file
+            elif command == "lcp":
+                self.command_lcp(arguments, command)
+
+            # Pretty prints the content of a local file
+            elif command == "lbat":
+                self.command_lbat(arguments, command)
+
+            # Lists the contents of the current local directory
+            elif command == "lls":
+                self.command_lls(arguments, command)
+
+            # Creates a new local directory
+            elif command == "lmkdir":
+                self.command_lmkdir(arguments, command)
+
+            # Shows the current local directory
+            elif command == "lpwd":
+                self.command_lpwd(arguments, command)
+
+            # Renames a local file
+            elif command == "lrename":
+                self.command_lrename(arguments, command)
+            
+            # Removes a local file
+            elif command == "lrm":
+                self.command_lrm(arguments, command)
+
+            # Removes a local directory
+            elif command == "lrmdir":
+                self.command_lrmdir(arguments, command)
+
+            # Shows the current local directory
+            elif command == "ltree":
+                self.command_ltree(arguments, command)
+
+            # Modules
+            elif command == "module":
+                self.command_module(arguments, command)
+
+            # Creates a mount point of the remote share on the local machine
+            elif command == "mount":
+                self.command_mount(arguments, command)
+
+            # Reconnects the current SMB session
+            elif command in ["connect", "reconnect"]:
+                self.command_reconnect(arguments, command)
+
+            # Reset the TTY output
+            elif command == "reset":
+                self.command_reset(arguments, command)
+
+            # Removes a remote file
+            elif command == "rm":
+                self.command_rm(arguments, command)
+                
+            # Removes a remote directory
+            elif command == "rmdir":
+                self.command_rmdir(arguments, command)
+
+            # List shares
+            elif command == "sizeof":
+                self.command_sizeof(arguments, command)
+
+            # List shares
+            elif command == "shares":
+                self.command_shares(arguments, command)
+            
+            # Displays a tree view of the CWD
+            elif command == "tree":
+                self.command_tree(arguments, command)
+            
+            # Use a share
+            elif command == "use":
+                self.command_use(arguments, command)
         
-        # Displays a tree view of the CWD
-        elif command == "tree":
-            self.command_tree(arguments, command)
-        
-        # Use a share
-        elif command == "use":
-            self.command_use(arguments, command)
+        # Fallback to unknown command   
+        else:
+            print("Unknown command. Type \"help\" for help.")
 
     # Commands ================================================================
 
