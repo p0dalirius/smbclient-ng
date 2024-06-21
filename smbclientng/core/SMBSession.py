@@ -435,13 +435,15 @@ class SMBSession(object):
         """
 
         if self.path_exists(path=path):
-            matches = self.smbClient.listPath(shareName=self.smb_share, path=path)
+            matches = self.smbClient.listPath(
+                shareName=self.smb_share,
+                path=path
+            )
 
             if len(matches) == 1:
                 return matches[0]
             else:
                 return None
-            
         else:
             return None 
 

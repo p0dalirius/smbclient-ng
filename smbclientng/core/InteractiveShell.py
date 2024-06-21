@@ -533,40 +533,44 @@ class InteractiveShell(object):
         # SMB share needed             : No
 
         if len(arguments) == 0:
-            path = '.'
+            arguments = ['.']
         else:
-            path = ' '.join(arguments)
+            arguments = resolve_local_files(arguments)
 
-        # lls <directory>
-        if os.path.isdir(path):
-            directory_contents = os.listdir(path=path)
-            for entryname in sorted(directory_contents):
-                path_to_file = path + os.path.sep + entryname
-                rights_str = unix_permissions(path_to_file)
-                size_str = b_filesize(os.path.getsize(filename=path_to_file))
-                date_str = datetime.datetime.fromtimestamp(os.path.getmtime(filename=path_to_file)).strftime("%Y-%m-%d %H:%M")
+        for path in arguments:
+            if len(arguments) > 1:
+                print("%s:" % path)
+            # lls <directory>
+            if os.path.isdir(path):
+                directory_contents = os.listdir(path=path)
+                for entryname in sorted(directory_contents):
+                    path_to_file = path + os.path.sep + entryname
+                    rights_str = unix_permissions(path_to_file)
+                    size_str = b_filesize(os.path.getsize(filename=path_to_file))
+                    date_str = datetime.datetime.fromtimestamp(os.path.getmtime(filename=path_to_file)).strftime("%Y-%m-%d %H:%M")
 
-                if os.path.isdir(s=entryname):
-                    if self.config.no_colors:
-                        print("%s %10s  %s  %s%s" % (rights_str, size_str, date_str, entryname, os.path.sep))
+                    if os.path.isdir(s=entryname):
+                        if self.config.no_colors:
+                            print("%s %10s  %s  %s%s" % (rights_str, size_str, date_str, entryname, os.path.sep))
+                        else:
+                            print("%s %10s  %s  \x1b[1;96m%s\x1b[0m%s" % (rights_str, size_str, date_str, entryname, os.path.sep))
                     else:
-                        print("%s %10s  %s  \x1b[1;96m%s\x1b[0m%s" % (rights_str, size_str, date_str, entryname, os.path.sep))
+                        if self.config.no_colors:
+                            print("%s %10s  %s  %s" % (rights_str, size_str, date_str, entryname))
+                        else:
+                            print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, entryname))
+            # lls <file>
+            elif os.path.isfile(path):
+                rights_str = unix_permissions(path)
+                size_str = b_filesize(os.path.getsize(filename=path))
+                date_str = datetime.datetime.fromtimestamp(os.path.getmtime(filename=path)).strftime("%Y-%m-%d %H:%M")
+                if self.config.no_colors:
+                    print("%s %10s  %s  %s" % (rights_str, size_str, date_str, os.path.basename(path)))
                 else:
-                    if self.config.no_colors:
-                        print("%s %10s  %s  %s" % (rights_str, size_str, date_str, entryname))
-                    else:
-                        print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, entryname))
-        # lls <file>
-        elif os.path.isfile(path):
-            rights_str = unix_permissions(path)
-            size_str = b_filesize(os.path.getsize(filename=path))
-            date_str = datetime.datetime.fromtimestamp(os.path.getmtime(filename=path)).strftime("%Y-%m-%d %H:%M")
-            if self.config.no_colors:
-                print("%s %10s  %s  %s" % (rights_str, size_str, date_str, os.path.basename(path)))
-            else:
-               print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, os.path.basename(path))) 
-        else:
-            print("[!] No such file or directory.")
+                    print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, os.path.basename(path))) 
+            
+            if len(arguments) > 1:
+                print()
 
     @command_arguments_required
     def command_lmkdir(self, arguments, command):
@@ -574,19 +578,17 @@ class InteractiveShell(object):
         # Active SMB connection needed : No
         # SMB share needed             : No
 
-        path = ' '.join(arguments)
+        for path in arguments:
+            if os.path.sep in path:
+                path = path.strip(os.path.sep).split(os.path.sep)
+            else:
+                path = [path]
 
-        # Split each dir
-        if os.path.sep in path:
-            path = path.strip(os.path.sep).split(os.path.sep)
-        else:
-            path = [path]
-
-        # Create each dir in the path
-        for depth in range(1, len(path)+1):
-            tmp_path = os.path.sep.join(path[:depth])
-            if not os.path.exists(tmp_path):
-                os.mkdir(path=tmp_path)
+            # Create each dir in the path
+            for depth in range(1, len(path)+1):
+                tmp_path = os.path.sep.join(path[:depth])
+                if not os.path.exists(tmp_path):
+                    os.mkdir(path=tmp_path)
 
     def command_lpwd(self, arguments, command):
         # Command arguments required   : No
@@ -670,15 +672,29 @@ class InteractiveShell(object):
         # SMB share needed             : Yes
 
         if len(arguments) == 0:
-            path = '.'
+            arguments = ['.']
         else:
-            path = arguments[0]
+            arguments = resolve_remote_files(self.smbSession, arguments)
 
-        # Read the files
-        directory_contents = self.smbSession.list_contents(path=path)
+        for path in arguments:
+            if len(arguments) > 1:
+                print("%s:" % path)
 
-        for longname in sorted(directory_contents.keys(), key=lambda x:x.lower()):
-            windows_ls_entry(directory_contents[longname], self.config)
+            if self.smbSession.path_isdir(pathFromRoot=path):
+                # Read the files
+                directory_contents = self.smbSession.list_contents(path=path)
+            else:
+                entry = self.smbSession.get_entry(path=path)
+                if entry is not None:
+                    directory_contents = {entry.get_longname(): entry}
+                else:
+                    directory_contents = {}
+
+            for longname in sorted(directory_contents.keys(), key=lambda x:x.lower()):
+                windows_ls_entry(directory_contents[longname], self.config)
+
+            if len(arguments) > 1:
+                print()
             
     @command_arguments_required
     @active_smb_connection_needed
