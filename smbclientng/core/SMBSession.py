@@ -170,12 +170,29 @@ class SMBSession(object):
     # Operations
 
     def read_file(self, path=None):
-        if self.path_isfile(path=path):
-            tmp_file_path = self.smb_cwd + ntpath.sep + path
-            matches = self.smbClient.listPath(
-                shareName=self.smb_share, 
-                path=tmp_file_path
-            )
+        """
+        Reads a file from the SMB share.
+
+        This method attempts to read the contents of a file specified by the `path` parameter from the SMB share.
+        It constructs the full path to the file, checks if the path is a valid file, and then reads the file content
+        into a byte stream which is returned to the caller.
+
+        Args:
+            path (str, optional): The path of the file to be read from the SMB share. Defaults to None.
+
+        Returns:
+            bytes: The content of the file as a byte stream, or None if the file does not exist or an error occurs.
+        """
+
+        if self.path_isfile(pathFromRoot=path):
+            path = path.replace('/', ntpath.sep)
+            if path.startswith(ntpath.sep):
+                # Absolute path
+                tmp_file_path = ntpath.normpath(path)
+            else:
+                # Relative path
+                tmp_file_path = ntpath.normpath(self.smb_cwd + ntpath.sep + path)
+            tmp_file_path = tmp_file_path.lstrip(ntpath.sep)
 
             fh = io.BytesIO()
             try:
@@ -188,9 +205,25 @@ class SMBSession(object):
             fh.close()
             return rawdata
         else:
-            print("[!] Remote path '%s' is not a file." % path)
+            return None
 
     def find(self, paths=[], callback=None):
+        """
+        Finds files and directories on the SMB share based on the provided paths and executes a callback function on each entry.
+
+        This method traverses the specified paths on the SMB share, recursively exploring directories and invoking the callback
+        function on each file or directory found. The callback function is called with three arguments: the entry object, the
+        full path of the entry, and the current depth of recursion.
+
+        Args:
+            paths (list, optional): A list of paths to start the search from. Defaults to an empty list.
+            callback (function, optional): A function to be called on each entry found. The function should accept three arguments:
+                                           the entry object, the full path of the entry, and the current depth of recursion. Defaults to None.
+
+        Note:
+            If the callback function is None, the method will print an error message and return without performing any action.
+        """
+
         def recurse_action(paths=[], depth=0, callback=None):
             if callback is None:
                 return []
@@ -660,6 +693,7 @@ class SMBSession(object):
 
         if path is not None:
             path = path.replace('*','')
+            path = path.replace('/', ntpath.sep)
             try:
                 contents = self.smbClient.listPath(
                     shareName=self.smb_share,
@@ -685,12 +719,11 @@ class SMBSession(object):
             bool: True if the path is a directory, False otherwise or if an error occurs.
         """
 
-        if pathFromRoot is not None:
-            # Replace slashes if any
-            path = pathFromRoot.replace('/', ntpath.sep)
-            
+        if pathFromRoot is not None: 
             # Strip wildcards to avoid injections
-            path = path.replace('*','')
+            path = pathFromRoot.replace('*','')
+            # Replace slashes if any
+            path = path.replace('/', ntpath.sep)
 
             # Normalize path and strip leading backslash
             path = ntpath.normpath(path + ntpath.sep).lstrip(ntpath.sep)
@@ -715,7 +748,7 @@ class SMBSession(object):
         else:
             return False
 
-    def path_isfile(self, path=None):
+    def path_isfile(self, pathFromRoot=None):
         """
         Checks if the specified path is a file on the SMB share.
 
@@ -729,14 +762,19 @@ class SMBSession(object):
             bool: True if the path is a file, False otherwise or if an error occurs.
         """
 
-        if path is not None:
-            path = path.replace('*','')
-            search_dir = ntpath.normpath(self.smb_cwd + ntpath.sep + path)
-            search_dir = ntpath.dirname(search_dir) + ntpath.sep + '*'
+        if pathFromRoot is not None: 
+            # Strip wildcards to avoid injections
+            path = pathFromRoot.replace('*','')
+            # Replace slashes if any
+            path = path.replace('/', ntpath.sep)
+
+            # Normalize path and strip leading backslash
+            path = ntpath.normpath(path + ntpath.sep).lstrip(ntpath.sep)
+
             try:
                 contents = self.smbClient.listPath(
                     shareName=self.smb_share,
-                    path=search_dir
+                    path=ntpath.dirname(path) + ntpath.sep + '*'
                 )
                 # Filter on files
                 contents = [

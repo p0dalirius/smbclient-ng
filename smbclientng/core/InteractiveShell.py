@@ -285,28 +285,33 @@ class InteractiveShell(object):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        for path_to_file in arguments:
-            print("[>] %s" % path_to_file)
-            # Read the file
-            try:
-                rawcontents = self.smbSession.read_file(path=path_to_file)
-                if rawcontents is not None:
-                    encoding = charset_normalizer.detect(rawcontents)["encoding"]
-                    if encoding is not None:
-                        filecontent = rawcontents.decode(encoding).rstrip()
-                        lexer = Syntax.guess_lexer(path=ntpath.basename(path_to_file), code=filecontent)
-                        # Some trickery for the files undetected by the lexer
-                        if lexer == "default":
-                            if '<?xml' in filecontent:
-                                lexer = "xml"
-                            elif '<html>' in filecontent:
-                                lexer = "html"
-                        syntax = Syntax(code=filecontent, line_numbers=True, lexer=lexer)
-                        Console().print(syntax)
-                    else:
-                        print("[!] Could not detect charset of '%s'." % path_to_file)
-            except impacket.smbconnection.SessionError as e:
-                print("[!] SMB Error: %s" % e)
+        # Parse wildcards
+        files_and_directories = resolve_local_files(arguments)
+
+        for path_to_file in files_and_directories:
+            if self.smbSession.path_isfile(pathFromRoot=path_to_file):
+                # Read the file
+                try:    
+                    rawcontents = self.smbSession.read_file(path=path_to_file)
+                    if rawcontents is not None:
+                        encoding = charset_normalizer.detect(rawcontents)["encoding"]
+                        if encoding is not None:
+                            filecontent = rawcontents.decode(encoding).rstrip()
+                            lexer = Syntax.guess_lexer(path=ntpath.basename(path_to_file), code=filecontent)
+                            # Some trickery for the files undetected by the lexer
+                            if lexer == "default":
+                                if '<?xml' in filecontent:
+                                    lexer = "xml"
+                                elif '<html>' in filecontent:
+                                    lexer = "html"
+                            syntax = Syntax(code=filecontent, line_numbers=True, lexer=lexer)
+                            if len(files_and_directories) > 1:
+                                print("\x1b[1;93m[>] %s\x1b[0m" % (path_to_file+' ').ljust(80,'='))
+                            Console().print(syntax)
+                        else:
+                            print("[!] Could not detect charset of '%s'." % path_to_file)
+                except impacket.smbconnection.SessionError as e:
+                    print("[!] SMB Error: %s" % e)
 
     @command_arguments_required
     @active_smb_connection_needed
@@ -329,20 +334,25 @@ class InteractiveShell(object):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        for path_to_file in arguments:
-            print("[>] %s" % path_to_file)
-            # Read the file
-            try:
-                rawcontents = self.smbSession.read_file(path=path_to_file)
-                if rawcontents is not None:
-                    encoding = charset_normalizer.detect(rawcontents)["encoding"]
-                    if encoding is not None:
-                        filecontent = rawcontents.decode(encoding).rstrip()
-                        print(filecontent)
-                    else:
-                        print("[!] Could not detect charset of '%s'." % path_to_file)
-            except impacket.smbconnection.SessionError as e:
-                print("[!] SMB Error: %s" % e)
+        # Parse wildcards
+        files_and_directories = resolve_local_files(arguments)
+
+        for path_to_file in files_and_directories:
+            if self.smbSession.path_isfile(pathFromRoot=path_to_file):
+                # Read the file
+                try:
+                    rawcontents = self.smbSession.read_file(path=path_to_file)
+                    if rawcontents is not None:
+                        encoding = charset_normalizer.detect(rawcontents)["encoding"]
+                        if encoding is not None:
+                            filecontent = rawcontents.decode(encoding).rstrip()
+                            if len(files_and_directories) > 1:
+                                print("\x1b[1;93m[>] %s\x1b[0m" % (path_to_file+' ').ljust(80,'='))
+                            print(filecontent)
+                        else:
+                            print("[!] Could not detect charset of '%s'." % path_to_file)
+                except impacket.smbconnection.SessionError as e:
+                    print("[!] SMB Error: %s" % e)
 
     def command_close(self, arguments, command):
         # Command arguments required   : No
@@ -420,8 +430,10 @@ class InteractiveShell(object):
         # Active SMB connection needed : No
         # SMB share needed             : No
 
-        for path_to_file in arguments:
-            print("[>] %s" % path_to_file)
+        # Parse wildcards
+        files_and_directories = resolve_remote_files(self.smbSession, arguments)
+
+        for path_to_file in files_and_directories:
             # Read the file
             try:
                 if os.path.exists(path=path_to_file):
@@ -440,6 +452,8 @@ class InteractiveShell(object):
                                 elif '<html>' in filecontent:
                                     lexer = "html"
                             syntax = Syntax(code=filecontent, line_numbers=True, lexer=lexer)
+                            if len(files_and_directories) > 1:
+                                print("\x1b[1;93m[>] %s\x1b[0m" % (path_to_file+' ').ljust(80,'='))
                             Console().print(syntax)
                         else:
                             print("[!] Could not detect charset of '%s'." % path_to_file)
@@ -454,8 +468,10 @@ class InteractiveShell(object):
         # Active SMB connection needed : No
         # SMB share needed             : No
 
-        for path_to_file in arguments:
-            print("[>] %s" % path_to_file)
+        # Parse wildcards
+        files_and_directories = resolve_remote_files(self.smbSession, arguments)
+
+        for path_to_file in files_and_directories:
             # Read the file
             try:
                 if os.path.exists(path=path_to_file):
@@ -466,6 +482,8 @@ class InteractiveShell(object):
                         encoding = charset_normalizer.detect(rawcontents)["encoding"]
                         if encoding is not None:
                             filecontent = rawcontents.decode(encoding).rstrip()
+                            if len(files_and_directories) > 1:
+                                print("\x1b[1;93m[>] %s\x1b[0m" % (path_to_file+' ').ljust(80,'='))
                             print(filecontent)
                         else:
                             print("[!] Could not detect charset of '%s'." % path_to_file)
