@@ -866,12 +866,15 @@ class SMBSession(object):
                             callback=f.read
                         )
                         f.close()
+
                     except (BrokenPipeError, KeyboardInterrupt) as err:
                         print("[!] Interrupted.")
                         self.close_smb_session()
                         self.init_smb_session()
-                    except Exception as err:
-                        print("[!] Failed to upload '%s': %s" % (localfile, err))
+
+                    except (Exception, PermissionError) as err:
+                        f.set_error(message="[bold red]Failed uploading '%s': %s" % (f.path, err))
+                        f.close(remove=False)
                         if self.config.debug:
                             traceback.print_exc()
                 else:
@@ -926,13 +929,16 @@ class SMBSession(object):
                             )
                             f.close()
 
-                        except (BrokenPipeError, PermissionError) as err:
+                        except (BrokenPipeError, KeyboardInterrupt) as err:
+                            print("[!] Interrupted.")
+                            self.close_smb_session()
+                            self.init_smb_session()
+                            
+                        except (Exception, PermissionError) as err:
                             f.set_error(message="[bold red]Failed uploading '%s': %s" % (f.path, err))
-                            f.close(remove=True)
-                            break
-                        except Exception as err:
-                            f.set_error(message="[bold red]Failed uploading '%s': %s" % (f.path, err))
-                            f.close(remove=True)
+                            f.close(remove=False)
+                            if self.config.debug:
+                                traceback.print_exc()
                 else:
                     print("[!] The specified localpath is a file. Use 'put <file>' instead.")
         else:
