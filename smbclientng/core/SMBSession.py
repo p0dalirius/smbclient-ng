@@ -781,9 +781,17 @@ class SMBSession(object):
         # Parse path
         localpath = localpath.replace('/', os.path.sep)
         if os.path.sep in localpath:
-            tmp_search_path = os.path.normpath(os.getcwd() + os.path.sep + os.path.dirname(localpath))
+            if localpath.startswith(os.path.sep):
+                # Absolute path
+                tmp_search_path = os.path.normpath(localpath)
+            else:
+                # Relative path
+                tmp_search_path = os.path.normpath(os.getcwd() + os.path.sep + os.path.dirname(localpath))
         else:
             tmp_search_path = os.path.normpath(os.getcwd() + os.path.sep)
+        
+        print(localpath)
+
         # Parse filename
         filename = os.path.basename(localpath)
 
@@ -847,7 +855,7 @@ class SMBSession(object):
         """
 
         if os.path.exists(localpath):
-            if os.path.isfile(localpath):
+            if os.path.isdir(localpath):
                 # Iterate over all files and directories within the local path
                 local_files = {}
                 for root, dirs, files in os.walk(localpath):

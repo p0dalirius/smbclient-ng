@@ -712,20 +712,37 @@ class InteractiveShell(object):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
+        
+        is_recursive = False
+        while '-r' in arguments:
+            is_recursive = True
+            arguments.remove('-r')
+        print("is_recursive: %s" % is_recursive)
 
-        # Put files recursively
-        if arguments[0] == "-r":
-            localpath = ' '.join(arguments[1:])
-            try:
-                self.smbSession.put_file_recursively(localpath=localpath)
-            except impacket.smbconnection.SessionError as e:
-                print("[!] SMB Error: %s" % e)
+        # Parse wildcards
+        files_and_directories = []
+        for argument in arguments:
+            if argument.endswith('*'):
+                path = argument.rstrip('*')
+                if os.path.sep in path:
+                    path = "." + os.path.sep + path
+                for entry in os.listdir(path=path):
+                    files_and_directories.append(path.rstrip(os.path.sep) + os.path.sep + entry)
+            else:
+                files_and_directories.append(argument)
 
-        # Put a single file
-        else:
-            localpath = ' '.join(arguments)
+        # 
+        for localpath in files_and_directories:
             try:
-                self.smbSession.put_file(localpath=localpath)
+                print(localpath)
+                if is_recursive and os.path.isdir(s=localpath):
+                    # Put files recursively
+                    print("Put files recursively")
+                    self.smbSession.put_file_recursively(localpath=localpath)
+                else:
+                    # Put this single file
+                    print("Put this single file")
+                    self.smbSession.put_file(localpath=localpath)
             except impacket.smbconnection.SessionError as e:
                 print("[!] SMB Error: %s" % e)
 
