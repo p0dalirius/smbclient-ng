@@ -94,10 +94,11 @@ class InteractiveShell(object):
 
     def run(self):
         # Read commands from script file first
-        if self.config.script:
-            f = open(self.config.script, 'r')
+        if self.config.startup_script:
+            f = open(self.config.startup_script, 'r')
             for line in f.readlines():
                 try:
+                    print("%s%s" % (self.__prompt(), line.strip()))
                     self.process_line(commandLine=line.strip())
                 except KeyboardInterrupt as e:
                     print()
