@@ -44,13 +44,15 @@ class SMBSession(object):
             Initializes the SMB session by connecting to the server and authenticating using the specified method.
     """
 
-    def __init__(self, address, domain, username, password, lmhash, nthash, use_kerberos=False, kdcHost=None, config=None):
+    def __init__(self, address, port, domain, username, password, lmhash, nthash, use_kerberos=False, kdcHost=None, config=None):
         super(SMBSession, self).__init__()
         # Objects
         self.config = config
 
         # Target server
         self.address = address
+        # Target port (by default on 445)
+        self.port = port
 
         # Credentials
         self.domain = domain
@@ -94,7 +96,7 @@ class SMBSession(object):
             self.smbClient = impacket.smbconnection.SMBConnection(
                 remoteName=self.address,
                 remoteHost=self.address,
-                sess_port=int(445)
+                sess_port=int(self.port)
             )
         except OSError as err:
             print("[!] %s" % err)
