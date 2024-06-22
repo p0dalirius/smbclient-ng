@@ -250,15 +250,13 @@ class SMBSession(object):
                 
                 for entry in entries:
                     if entry.is_directory():
-                        callback(entry, path + ntpath.sep + entry.get_longname() + ntpath.sep, depth)
+                        fullpath = path + ntpath.sep + entry.get_longname() + ntpath.sep
+                        next_directories_to_explore.append(fullpath)
                     else:
-                        callback(entry, path + ntpath.sep + entry.get_longname(), depth)
-
-                # Next directories to explore
-                for entry in entries:
-                    if entry.is_directory():
-                        next_directories_to_explore.append(path + ntpath.sep + entry.get_longname() + ntpath.sep)
-            
+                        fullpath = path + ntpath.sep + entry.get_longname()
+                    fullpath = re.sub(r'\\\\+', r'\\', fullpath)
+                    callback(entry, fullpath, depth)
+                     
             return next_directories_to_explore
         # 
         if callback is not None:
