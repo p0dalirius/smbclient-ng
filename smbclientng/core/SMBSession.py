@@ -914,7 +914,7 @@ class SMBSession(object):
                     # Create remote directory
                     remote_dir_path = local_dir_path.replace(os.path.sep, ntpath.sep)
                     self.mkdir(
-                        path=ntpath.normpath(self.smb_cwd + ntpath.sep + remote_dir_path + ntpath.sep)
+                        path=ntpath.normpath(remote_dir_path + ntpath.sep)
                     )
 
                     for local_file_path in local_files[local_dir_path]:
