@@ -52,7 +52,7 @@ class SMBSession(object):
         # Target server
         self.address = address
         # Target port (by default on 445)
-        self.port = int(port)
+        self.port = port
 
         # Credentials
         self.domain = domain
@@ -96,7 +96,7 @@ class SMBSession(object):
             self.smbClient = impacket.smbconnection.SMBConnection(
                 remoteName=self.address,
                 remoteHost=self.address,
-                sess_port=self.port
+                sess_port=int(self.port)
             )
         except OSError as err:
             print("[!] %s" % err)
