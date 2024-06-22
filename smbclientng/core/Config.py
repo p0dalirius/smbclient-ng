@@ -23,6 +23,9 @@ class Config(object):
         no_colors: Property to get or set the colored output preference.
     """
 
+    not_interactive = False
+    startup_script = None
+
     def __init__(self, debug=False, no_colors=None):
         self._debug = debug
 
