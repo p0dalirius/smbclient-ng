@@ -28,7 +28,7 @@ def parseArgs():
     parser.add_argument("--debug", dest="debug", action="store_true", default=False, help="Debug mode.")
     parser.add_argument("--no-colors", dest="no_colors", action="store_true", default=False, help="No colors mode.")
     parser.add_argument("--target", action="store", metavar="ip address", required=True, type=str, help="IP Address of the SMB Server to connect to.")  
-    parser.add_argument("--port", action="store", metavar="port of smb service", type=str, default='445', help="Port of the SMB Server to connect to.")
+    parser.add_argument("--port", action="store", metavar="port of smb service", type=int, default='445', help="Port of the SMB Server to connect to.")
 
 
     authconn = parser.add_argument_group("Authentication & connection")
