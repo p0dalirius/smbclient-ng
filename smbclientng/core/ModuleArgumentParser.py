@@ -35,5 +35,5 @@ class ModuleArgumentParser(argparse.ArgumentParser):
             message (str): The error message to be displayed.
         """
 
-        sys.stderr.write('[!] Error: %s\n' % message)
         self.print_help()
+        sys.stderr.write('\n[!] Error: %s\n' % message)
