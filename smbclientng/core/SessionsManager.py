@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# File name          : SessionsManager.py
+# Author             : Podalirius (@podalirius_)
+# Date created       : 20 may 2024
+
+
+import shlex
+from smbclientng.core.ModuleArgumentParser import ModuleArgumentParser
+from smbclientng.core.SMBSession import SMBSession
+
+
+class SessionsManager(object):
+
+    next_session_id = 1
+    current_session = None
+    sessions = {}
+
+    def __init__(self, config):
+        self.sessions = {}
+        self.next_session_id = 1
+        self.current_session = None
+
+        self.config = config
+
+    def create_new_session(self, credentials, target, port=445):
+        """
+        Creates a new session with the given session information.
+
+        Args:
+            session_info (dict): Information necessary to start a new session.
+
+        Returns:
+            None
+        """
+        
+        smbSession = SMBSession(
+            address=target,
+            port=port,
+            credentials=credentials,
+            config=self.config
+        )
+        smbSession.init_smb_session()
+        
+        self.sessions[self.next_session_id] = {
+            "credentials": credentials,
+            "smbsession": smbSession
+        }
+        self.next_session_id += 1
+
+    def switch_session(self, session_id):
+        """
+        Switches the current session to the session with the specified ID.
+
+        Args:
+            session_id (int): The ID of the session to switch to.
+
+        Returns:
+            bool: True if the session was successfully switched, False otherwise.
+        """
+
+        if session_id in self.sessions.keys():
+            self.current_session = self.sessions[session_id]
+            return True
+        else:
+            return False
+
+    def process_command_line(self, command_line):
+        parser = ModuleArgumentParser(add_help=True, description="")
+
+        # Access
+        mode_access = ModuleArgumentParser(add_help=True, description="Switch to the specified session.")
+        mode_access.add_argument("-i", "--session-id", type=int, default=None, required=True, help="Session ID to access.")
+
+        # Create
+        mode_create = ModuleArgumentParser(add_help=True, description="Create a new session.")
+        group_target = mode_create.add_argument_group("Target")
+        group_target.add_argument("--host", action="store", metavar="HOST", required=True, type=str, help="IP address or hostname of the SMB Server to connect to.")  
+        group_target.add_argument("--port", action="store", metavar="PORT", type=int, default=445, help="Port of the SMB Server to connect to. (default: 445)")
+        authconn = mode_create.add_argument_group("Authentication & connection")
+        authconn.add_argument("--kdcHost", dest="kdcHost", action="store", metavar="FQDN KDC", help="FQDN of KDC for Kerberos.")
+        authconn.add_argument("-d", "--domain", dest="auth_domain", metavar="DOMAIN", action="store", default='.', help="(FQDN) domain to authenticate to.")
+        authconn.add_argument("-u", "--user", dest="auth_username", metavar="USER", action="store", help="User to authenticate with.")
+        secret = mode_create.add_argument_group()
+        cred = secret.add_mutually_exclusive_group()
+        cred.add_argument("--no-pass", action="store_true", help="Don't ask for password (useful for -k).")
+        cred.add_argument("-p", "--password", dest="auth_password", metavar="PASSWORD", action="store", nargs="?", help="Password to authenticate with.")
+        cred.add_argument("-H", "--hashes", dest="auth_hashes", action="store", metavar="[LMHASH:]NTHASH", help="NT/LM hashes, format is LMhash:NThash.")
+        cred.add_argument("--aes-key", dest="aesKey", action="store", metavar="hex key", help="AES key to use for Kerberos Authentication (128 or 256 bits).")
+        secret.add_argument("-k", "--kerberos", dest="use_kerberos", action="store_true", help="Use Kerberos authentication. Grabs credentials from .ccache file (KRB5CCNAME) based on target parameters. If valid credentials cannot be found, it will use the ones specified in the command line.")
+
+        # Delete
+        mode_delete = ModuleArgumentParser(add_help=True, description="Delete the specified session.")
+        group_sessions = mode_delete.add_mutually_exclusive_group(required=True)
+        group_sessions.add_argument("-i", "--session-id", type=int, default=[], action="append", help="One or more ID of sessions to target.")
+        group_sessions.add_argument("-a", "--all", type=bool, default=False, action="store_true", help="Delete all sessions.")
+
+        # Execute
+        mode_execute = ModuleArgumentParser(add_help=True, description="Send a smbclient-ng command line in one or more sessions.")
+        group_sessions = mode_execute.add_mutually_exclusive_group(required=True)
+        group_sessions.add_argument("-i", "--session-id", type=int, default=[], action="append", help="One or more ID of sessions to target.")
+        group_sessions.add_argument("-a", "--all", type=bool, default=False, action="store_true", help="Execute command in all sessions.")
+        mode_execute.add_argument("-c", "--command", type=str, required=True, help="Command to execute in the target sessions.")
+
+        # List
+        mode_list = ModuleArgumentParser(add_help=True, description="List the registered sessions.")
+
+        # Register subparsers
+        subparsers = parser.add_subparsers(help="Action", dest="action")
+        subparsers.add_parser("access", parents=[mode_access], help=mode_access.description)
+        subparsers.add_parser("create", parents=[mode_create], help=mode_create.description)
+        subparsers.add_parser("delete", parents=[mode_delete], help=mode_delete.description)
+        subparsers.add_parser("execute", parents=[mode_execute], help=mode_execute.description)
+        subparsers.add_parser("list", parents=[mode_list], help=mode_list.description)
+
+        if type(command_line) == list:
+            arguments = ' '.join(command_line)
+        __iterableArguments = shlex.split(arguments)
+        options = parser.parse_args(__iterableArguments)
+
+        # Process actions
