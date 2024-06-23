@@ -26,9 +26,10 @@ class Credentials(object):
     lm_raw = None
     # Kerberos
     use_kerberos = False
+    aesKey = None
     kdcHost = None
 
-    def __init__(self, domain, username, password, hashes=None, use_kerberos=False, kdcHost=None):
+    def __init__(self, domain, username, password, hashes=None, use_kerberos=False, aesKey=None, kdcHost=None):
         super(Credentials, self).__init__()
         # Identity
         self.domain = domain
@@ -43,6 +44,7 @@ class Credentials(object):
         # Kerberos
         self.use_kerberos = use_kerberos
         self.kdcHost = kdcHost
+        self.aesKey = aesKey
 
     def set_hashes(self, hashes):
         """
@@ -105,5 +107,9 @@ class Credentials(object):
                 "nt_hash": self.nt_hex
             },
             "use_kerberos": self.use_kerberos,
+            "aesKey": self.aesKey,
             "kdcHost": self.kdcHost
         }
+    
+    def __repr__(self):
+        return f"<Credentials for '{self.domain}\\{self.username}'>"
