@@ -30,7 +30,7 @@ def parseArgs():
     parser.add_argument("--target", action="store", metavar="ip address", required=True, type=str, help="IP Address of the SMB Server to connect to.")  
     parser.add_argument("-S", "--startup-script", metavar="startup_script", required=False, type=str, help="File containing the list of commands to be typed at start of the console.")  
     parser.add_argument("-N", "--not-interactive", dest="not_interactive", required=False, action="store_true", default=False, help="Non interactive mode.")
-    parser.add_argument("--port", action="store", metavar="port of smb service", type=int, default='445', help="Port of the SMB Server to connect to.")
+    parser.add_argument("--port", action="store", metavar="port of smb service", type=int, default=445, help="Port of the SMB Server to connect to.")
 
     authconn = parser.add_argument_group("Authentication & connection")
     authconn.add_argument("--kdcHost", dest="kdcHost", action="store", metavar="FQDN KDC", help="FQDN of KDC for Kerberos.")
@@ -104,6 +104,8 @@ def main():
     config.no_colors = options.no_colors
     config.not_interactive = options.not_interactive
     config.startup_script = options.startup_script
+
+    sessionsManager = SessionsManager()
 
     smbSession = SMBSession(
         address=options.target,
