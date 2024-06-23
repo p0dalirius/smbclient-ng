@@ -44,24 +44,18 @@ class SMBSession(object):
             Initializes the SMB session by connecting to the server and authenticating using the specified method.
     """
 
-    def __init__(self, address, port, domain, username, password, lmhash, nthash, use_kerberos=False, kdcHost=None, config=None):
+    def __init__(self, host, port, credentials, config=None):
         super(SMBSession, self).__init__()
         # Objects
         self.config = config
 
         # Target server
-        self.address = address
+        self.host = host
         # Target port (by default on 445)
         self.port = port
 
         # Credentials
-        self.domain = domain
-        self.username = username
-        self.password = password 
-        self.lmhash = lmhash
-        self.nthash = nthash
-        self.use_kerberos = use_kerberos
-        self.kdcHost = kdcHost
+        self.credentials = credentials
 
         self.smbClient = None
         self.connected = False
@@ -91,11 +85,11 @@ class SMBSession(object):
         self.connected = False
 
         if self.config.debug:
-            print("[debug] [>] Connecting to remote SMB server '%s' ... " % self.address)
+            print("[debug] [>] Connecting to remote SMB server '%s' ... " % self.host)
         try:
             self.smbClient = impacket.smbconnection.SMBConnection(
-                remoteName=self.address,
-                remoteHost=self.address,
+                remoteName=self.host,
+                remoteHost=self.host,
                 sess_port=int(self.port)
             )
         except OSError as err:
@@ -103,18 +97,18 @@ class SMBSession(object):
             self.smbClient = None
 
         if self.smbClient is not None:
-            if self.use_kerberos:
+            if self.credentials.use_kerberos:
                 if self.config.debug:
-                    print("[debug] [>] Authenticating as '%s\\%s' with kerberos ... " % (self.domain, self.username))
+                    print("[debug] [>] Authenticating as '%s\\%s' with kerberos ... " % (self.credentials.domain, self.credentials.username))
                 try:
                     self.connected = self.smbClient.kerberosLogin(
-                        user=self.username,
-                        password=self.password,
-                        domain=self.domain,
-                        lmhash=self.lmhash,
-                        nthash=self.nthash,
-                        aesKey=self.aesKey,
-                        kdcHost=self.kdcHost
+                        user=self.credentials.username,
+                        password=self.credentials.password,
+                        domain=self.credentials.domain,
+                        lmhash=self.credentials.lm_hex,
+                        nthash=self.credentials.nt_hex,
+                        aesKey=self.credentials.aesKey,
+                        kdcHost=self.credentials.kdcHost
                     )
                 except impacket.smbconnection.SessionError as err:
                     if self.config.debug:
@@ -124,14 +118,14 @@ class SMBSession(object):
 
             else:
                 if self.config.debug:
-                    print("[debug] [>] Authenticating as '%s\\%s' with NTLM ... " % (self.domain, self.username))
+                    print("[debug] [>] Authenticating as '%s\\%s' with NTLM ... " % (self.credentials.domain, self.credentials.username))
                 try:
                     self.connected = self.smbClient.login(
-                        user=self.username,
-                        password=self.password,
-                        domain=self.domain,
-                        lmhash=self.lmhash,
-                        nthash=self.nthash
+                        user=self.credentials.username,
+                        password=self.credentials.password,
+                        domain=self.credentials.domain,
+                        lmhash=self.credentials.lm_hex,
+                        nthash=self.credentials.nt_hex
                     )
                 except impacket.smbconnection.SessionError as err:
                     if self.config.debug:
@@ -140,9 +134,9 @@ class SMBSession(object):
                     self.connected = False
 
             if self.connected:
-                print("[+] Successfully authenticated to '%s' as '%s\\%s'!" % (self.address, self.domain, self.username))
+                print("[+] Successfully authenticated to '%s' as '%s\\%s'!" % (self.host, self.credentials.domain, self.credentials.username))
             else:
-                print("[!] Failed to authenticate to '%s' as '%s\\%s'!" % (self.address, self.domain, self.username))
+                print("[!] Failed to authenticate to '%s' as '%s\\%s'!" % (self.host, self.credentials.domain, self.credentials.username))
 
         return self.connected
 
@@ -660,15 +654,15 @@ class SMBSession(object):
 
         if sys.platform.startswith('win'):
             remote_path = remote_path.replace('/',ntpath.sep)
-            command = f"net use {local_mount_point} \\\\{self.address}\\{self.smb_share}\\{remote_path}"
+            command = f"net use {local_mount_point} \\\\{self.host}\\{self.smb_share}\\{remote_path}"
         
         elif sys.platform.startswith('linux'):
             remote_path = remote_path.replace(ntpath.sep,'/')
-            command = f"mount -t cifs //{self.address}/{self.smb_share}/{remote_path} {local_mount_point} -o username={self.username},password={self.password}"
+            command = f"mount -t cifs //{self.host}/{self.smb_share}/{remote_path} {local_mount_point} -o username={self.credentials.username},password={self.credentials.password}"
         
         elif sys.platform.startswith('darwin'):
             remote_path = remote_path.replace(ntpath.sep,'/')
-            command = f"mount_smbfs //{self.username}:{self.password}@{self.address}/{self.smb_share}/{remote_path} {local_mount_point}"
+            command = f"mount_smbfs //{self.credentials.username}:{self.credentials.password}@{self.host}/{self.smb_share}/{remote_path} {local_mount_point}"
         
         else:
             command = None
@@ -829,8 +823,6 @@ class SMBSession(object):
                 tmp_search_path = os.path.normpath(os.getcwd() + os.path.sep + os.path.dirname(localpath))
         else:
             tmp_search_path = os.path.normpath(os.getcwd() + os.path.sep)
-        
-        print(localpath)
 
         # Parse filename
         filename = os.path.basename(localpath)
