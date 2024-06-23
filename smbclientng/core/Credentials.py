@@ -15,17 +15,34 @@ class Credentials(object):
     Documentation for class Credentials
     """
 
-    def __init__(self, domain, username, password, hashes=None):
+    # Identity
+    domain = None
+    username = None
+    password = None
+    # Hashes
+    nt_hex = None
+    nt_raw = None
+    lm_hex = None
+    lm_raw = None
+    # Kerberos
+    use_kerberos = False
+    kdcHost = None
+
+    def __init__(self, domain, username, password, hashes=None, use_kerberos=False, kdcHost=None):
         super(Credentials, self).__init__()
+        # Identity
+        self.domain = domain
+        self.username = username
+        self.password = password
+        # Hashes
         self.nt_hex = None
         self.nt_raw = None
         self.lm_hex = None
         self.lm_raw = None
         self.set_hashes(hashes=hashes)
-
-        self.domain = domain
-        self.username = username
-        self.password = password
+        # Kerberos
+        self.use_kerberos = use_kerberos
+        self.kdcHost = kdcHost
 
     def set_hashes(self, hashes):
         """
@@ -86,5 +103,7 @@ class Credentials(object):
             "hashes": {
                 "lm_hash": self.lm_hex,
                 "nt_hash": self.nt_hex
-            }
+            },
+            "use_kerberos": self.use_kerberos,
+            "kdcHost": self.kdcHost
         }
