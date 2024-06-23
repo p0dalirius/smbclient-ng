@@ -283,6 +283,14 @@ class CommandCompleter(object):
             "subcommands": [],
             "autocomplete": ["remote_directory"]
         },
+        "sessions": {
+            "description": [
+                "Manages the sessions.", 
+                "Syntax: 'sessions [access|create|delete|execute|list]'"
+            ], 
+            "subcommands": ["access", "create", "delete", "execute", "list"],
+            "autocomplete": []
+        },
         "shares": {
             "description": [
                 "Lists the SMB shares served by the remote machine.", 
