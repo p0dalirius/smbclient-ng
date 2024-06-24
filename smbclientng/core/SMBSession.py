@@ -14,34 +14,43 @@ import re
 import sys
 import traceback
 from smbclientng.core.LocalFileIO import LocalFileIO
-from smbclientng.core.utils import b_filesize, STYPE_MASK
+from smbclientng.core.utils import b_filesize, STYPE_MASK, is_port_open
 
 
 class SMBSession(object):
     """
-    Class SMBSession is designed to handle the session management for SMB (Server Message Block) protocol connections.
-    It provides functionalities to connect to an SMB server, authenticate using either NTLM or Kerberos, and manage SMB shares.
+    Represents an SMB session for interacting with an SMB server.
+
+    This class provides methods to manage and interact with an SMB server, including
+    connecting to the server, listing shares, uploading and downloading files, and
+    managing directories and files on the server. It handles session initialization,
+    authentication, and cleanup.
 
     Attributes:
-        address (str): The IP address or hostname of the SMB server.
-        domain (str): The domain name for SMB server authentication.
-        username (str): The username for SMB server authentication.
-        password (str): The password for SMB server authentication.
-        lmhash (str): The LM hash of the user's password, if available.
-        nthash (str): The NT hash of the user's password, if available.
-        use_kerberos (bool): A flag to determine whether to use Kerberos for authentication.
-        kdcHost (str): The Key Distribution Center (KDC) host for Kerberos authentication.
-        debug (bool): A flag to enable debug output.
-        smbClient (object): The SMB client object used for the connection.
-        connected (bool): A flag to check the status of the connection.
+        host (str): The hostname or IP address of the SMB server.
+        port (int): The port number on which the SMB server is listening.
+        credentials (dict): Authentication credentials for the SMB server.
+        config (dict, optional): Configuration options for the SMB session.
+        smbClient (impacket.smbconnection.SMBConnection): The SMB connection instance.
+        connected (bool): Connection status to the SMB server.
+        available_shares (dict): A dictionary of available SMB shares.
         smb_share (str): The current SMB share in use.
-        smb_path (str): The current path within the SMB share.
+        smb_cwd (str): The current working directory on the SMB share.
+        smb_tree_id (int): The tree ID of the connected SMB share.
 
     Methods:
-        __init__(address, domain, username, password, lmhash, nthash, use_kerberos=False, kdcHost=None, debug=False):
-            Initializes the SMBSession with the specified parameters.
-        init_smb_session():
-            Initializes the SMB session by connecting to the server and authenticating using the specified method.
+        close_smb_session(): Closes the current SMB session.
+        init_smb_session(): Initializes the SMB session with the server.
+        list_shares(): Lists all shares available on the SMB server.
+        set_share(shareName): Sets the current SMB share.
+        set_cwd(path): Sets the current working directory on the SMB share.
+        put_file(localpath): Uploads a file to the current SMB share.
+        get_file(remotepath, localpath): Downloads a file from the SMB share.
+        mkdir(path): Creates a directory on the SMB share.
+        rmdir(path): Removes a directory from the SMB share.
+        rm(path): Removes a file from the SMB share.
+        read_file(path): Reads a file from the SMB share.
+        test_rights(sharename): Tests read and write access rights on a share.
     """
 
     def __init__(self, host, port, credentials, config=None):
@@ -69,6 +78,29 @@ class SMBSession(object):
 
     # Connect and disconnect SMB session
 
+    def close_smb_session(self):
+        """
+        Closes the current SMB session by disconnecting the SMB client.
+
+        This method ensures that the SMB client connection is properly closed. It checks if the client is connected
+        and if so, it closes the connection and resets the connection status.
+
+        Raises:
+            Exception: If the SMB client is not initialized or if there's an error during the disconnection process.
+        """
+
+        if self.smbClient is not None:
+            if self.connected:
+                self.smbClient.close()
+                self.connected = False
+                if self.config.debug:
+                    print("[+] SMB connection closed successfully.")
+            else:
+                if self.config.debug:
+                    print("[!] No active SMB connection to close.")
+        else:
+            raise Exception("SMB client is not initialized.")
+
     def init_smb_session(self):
         """
         Initializes and establishes a session with the SMB server.
@@ -87,12 +119,17 @@ class SMBSession(object):
         if self.config.debug:
             print("[debug] [>] Connecting to remote SMB server '%s' ... " % self.host)
         try:
-            self.smbClient = impacket.smbconnection.SMBConnection(
-                remoteName=self.host,
-                remoteHost=self.host,
-                sess_port=int(self.port)
-            )
+            if is_port_open(self.host, self.port):
+                self.smbClient = impacket.smbconnection.SMBConnection(
+                    remoteName=self.host,
+                    remoteHost=self.host,
+                    sess_port=int(self.port)
+                )
+            else:
+                self.connected = False
         except OSError as err:
+            if self.config.debug:
+                traceback.print_exc()
             print("[!] %s" % err)
             self.smbClient = None
 
@@ -140,68 +177,28 @@ class SMBSession(object):
 
         return self.connected
 
-    def close_smb_session(self):
+    def ping_smb_session(self):
         """
-        Closes the current SMB session by disconnecting the SMB client.
+        Tests the connectivity to the SMB server by sending an echo command.
 
-        This method ensures that the SMB client connection is properly closed. It checks if the client is connected
-        and if so, it closes the connection and resets the connection status.
-
-        Raises:
-            Exception: If the SMB client is not initialized or if there's an error during the disconnection process.
-        """
-
-        if self.smbClient is not None:
-            if self.connected:
-                self.smbClient.close()
-                self.connected = False
-                if self.config.debug:
-                    print("[+] SMB connection closed successfully.")
-            else:
-                if self.config.debug:
-                    print("[!] No active SMB connection to close.")
-        else:
-            raise Exception("SMB client is not initialized.")
-
-    # Operations
-
-    def read_file(self, path=None):
-        """
-        Reads a file from the SMB share.
-
-        This method attempts to read the contents of a file specified by the `path` parameter from the SMB share.
-        It constructs the full path to the file, checks if the path is a valid file, and then reads the file content
-        into a byte stream which is returned to the caller.
-
-        Args:
-            path (str, optional): The path of the file to be read from the SMB share. Defaults to None.
+        This method attempts to send an echo command to the SMB server to check if the session is still active.
+        It updates the `connected` attribute of the class based on the success or failure of the echo command.
 
         Returns:
-            bytes: The content of the file as a byte stream, or None if the file does not exist or an error occurs.
+            bool: True if the echo command succeeds (indicating the session is active), False otherwise.
         """
 
-        if self.path_isfile(pathFromRoot=path):
-            path = path.replace('/', ntpath.sep)
-            if path.startswith(ntpath.sep):
-                # Absolute path
-                tmp_file_path = ntpath.normpath(path)
-            else:
-                # Relative path
-                tmp_file_path = ntpath.normpath(self.smb_cwd + ntpath.sep + path)
-            tmp_file_path = tmp_file_path.lstrip(ntpath.sep)
-
-            fh = io.BytesIO()
-            try:
-                # opening the files in streams instead of mounting shares allows 
-                # for running the script from unprivileged containers
-                self.smbClient.getFile(self.smb_share, tmp_file_path, fh.write)
-            except impacket.smbconnection.SessionError as e:
-                return None
-            rawdata = fh.getvalue()
-            fh.close()
-            return rawdata
+        if not is_port_open(self.host, self.port):
+            self.connected = False
         else:
-            return None
+            try:
+                self.smbClient.getSMBServer().echo()
+            except Exception as e:
+                self.connected = False
+
+        return self.connected
+
+    # Operations
 
     def find(self, paths=[], callback=None):
         """
@@ -783,23 +780,6 @@ class SMBSession(object):
         else:
             return False
 
-    def ping_smb_session(self):
-        """
-        Tests the connectivity to the SMB server by sending an echo command.
-
-        This method attempts to send an echo command to the SMB server to check if the session is still active.
-        It updates the `connected` attribute of the class based on the success or failure of the echo command.
-
-        Returns:
-            bool: True if the echo command succeeds (indicating the session is active), False otherwise.
-        """
-
-        try:
-            self.smbClient.getSMBServer().echo()
-        except Exception as e:
-            self.connected = False
-        return self.connected
-
     def put_file(self, localpath=None):
         """
         Uploads a single file to the SMB share.
@@ -935,6 +915,44 @@ class SMBSession(object):
                     print("[!] The specified localpath is a file. Use 'put <file>' instead.")
         else:
             print("[!] The specified localpath does not exist.")
+
+    def read_file(self, path=None):
+        """
+        Reads a file from the SMB share.
+
+        This method attempts to read the contents of a file specified by the `path` parameter from the SMB share.
+        It constructs the full path to the file, checks if the path is a valid file, and then reads the file content
+        into a byte stream which is returned to the caller.
+
+        Args:
+            path (str, optional): The path of the file to be read from the SMB share. Defaults to None.
+
+        Returns:
+            bytes: The content of the file as a byte stream, or None if the file does not exist or an error occurs.
+        """
+
+        if self.path_isfile(pathFromRoot=path):
+            path = path.replace('/', ntpath.sep)
+            if path.startswith(ntpath.sep):
+                # Absolute path
+                tmp_file_path = ntpath.normpath(path)
+            else:
+                # Relative path
+                tmp_file_path = ntpath.normpath(self.smb_cwd + ntpath.sep + path)
+            tmp_file_path = tmp_file_path.lstrip(ntpath.sep)
+
+            fh = io.BytesIO()
+            try:
+                # opening the files in streams instead of mounting shares allows 
+                # for running the script from unprivileged containers
+                self.smbClient.getFile(self.smb_share, tmp_file_path, fh.write)
+            except impacket.smbconnection.SessionError as e:
+                return None
+            rawdata = fh.getvalue()
+            fh.close()
+            return rawdata
+        else:
+            return None
 
     def rmdir(self, path=None):
         """
