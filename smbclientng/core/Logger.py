@@ -63,7 +63,7 @@ class Logger(object):
         if self.no_colors:
             print("[info] %s" % nocolor_message)
         else:
-            print("[info] %s" % message)
+            print("[\x1b[1;92minfo\x1b[0m] %s" % message)
         self.__write_to_logfile("[info] %s" % nocolor_message)
 
     def debug(self, message):
@@ -80,7 +80,7 @@ class Logger(object):
         if self.no_colors:
             print("[error] %s" % nocolor_message)
         else:
-            print("[error] %s" % message)
+            print("[\x1b[1;91merror\x1b[0m] %s" % message)
         self.__write_to_logfile("[error] %s" % nocolor_message)
 
     def __write_to_logfile(self, message):
