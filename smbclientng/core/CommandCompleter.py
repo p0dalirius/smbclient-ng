@@ -288,7 +288,7 @@ class CommandCompleter(object):
                 "Manages the sessions.", 
                 "Syntax: 'sessions [access|create|delete|execute|list]'"
             ], 
-            "subcommands": ["access", "create", "delete", "execute", "list"],
+            "subcommands": ["create", "delete", "execute", "interact", "list"],
             "autocomplete": []
         },
         "shares": {
