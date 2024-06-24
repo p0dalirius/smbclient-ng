@@ -66,7 +66,40 @@ class SessionsManager(object):
         else:
             return False
 
+    def delete_session(self, session_id):
+        """
+        Deletes a session with the given session ID.
+
+        Args:
+            session_id (int): The ID of the session to delete.
+
+        Returns:
+            bool: True if the session was successfully deleted, False otherwise.
+        """
+
+        if session_id in self.sessions.keys():
+            self.sessions[session_id]["smbSession"].close_smb_session()
+            del self.sessions[session_id]
+            if self.current_session_id == session_id:
+                self.current_session = None
+                self.current_session_id = None
+            return True
+        return False
+
     def process_command_line(self, arguments):
+        """
+        Processes command line arguments to manage SMB sessions.
+
+        This function parses the command line arguments provided to the application and determines the appropriate action to take,
+        such as creating, accessing, deleting, or listing SMB sessions, or executing a command in one or more sessions.
+
+        Args:
+            arguments (list of str): The command line arguments.
+
+        Returns:
+            None
+        """
+        
         parser = ModuleArgumentParser(add_help=True, description="")
 
         # Access
@@ -159,7 +192,6 @@ class SessionsManager(object):
                 if options.session_id is not None:
                     if options.session_id in self.sessions.keys():
                         print("[+] Executing '%s to session #%d" % (options.command, options.session_id))
-                        self.switch_session(session_id=options.session_id)
                     else:
                         print("[!] No session with id #%d" % options.session_id)
                 elif options.all == True:
