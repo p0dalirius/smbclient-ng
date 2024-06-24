@@ -17,13 +17,14 @@ class SessionsManager(object):
     current_session_id = None
     sessions = {}
 
-    def __init__(self, config):
+    def __init__(self, config, logger):
         self.sessions = {}
         self.next_session_id = 1
         self.current_session = None
         self.current_session_id = None
 
-        self.config = config
+        self.config = config,
+        self.logger = logger
 
     def create_new_session(self, credentials, host, port=445):
         """
@@ -155,10 +156,10 @@ class SessionsManager(object):
         if options.action == "interact":
             if options.session_id is not None:
                 if options.session_id in self.sessions.keys():
-                    print("[+] Switching to session #%d" % options.session_id)
+                    self.logger.info("Switching to session #%d" % options.session_id)
                     self.switch_session(session_id=options.session_id)
                 else:
-                    print("[!] No session with id #%d" % options.session_id)
+                    self.logger.error("No session with id #%d" % options.session_id)
 
         # 
         elif options.action == "create":
@@ -182,19 +183,19 @@ class SessionsManager(object):
             if options.session_id is not None:
                 for session_id in options.session_id:
                     if session_id in self.sessions.keys():
-                        print("[+] Closing and deleting session #%d" % session_id)
+                        self.logger.info("Closing and deleting session #%d" % session_id)
                         self.delete_session(session_id=session_id)
                     else:
-                        print("[!] No session with id #%d" % session_id)
+                        self.logger.error("No session with id #%d" % session_id)
 
         # 
         elif options.action == "execute":
             if options.command is not None:
                 if options.session_id is not None:
                     if options.session_id in self.sessions.keys():
-                        print("[+] Executing '%s to session #%d" % (options.command, options.session_id))
+                        self.logger.info("Executing '%s to session #%d" % (options.command, options.session_id))
                     else:
-                        print("[!] No session with id #%d" % options.session_id)
+                        self.logger.error("No session with id #%d" % options.session_id)
                 elif options.all == True:
                     for session_id in self.sessions.keys():
                         pass

@@ -9,6 +9,7 @@ import sys
 from smbclientng.core.Config import Config
 from smbclientng.core.Credentials import Credentials
 from smbclientng.core.InteractiveShell import InteractiveShell
+from smbclientng.core.Logger import Logger
 from smbclientng.core.SessionsManager import SessionsManager
 
 
@@ -106,7 +107,9 @@ def main():
     config.not_interactive = options.not_interactive
     config.startup_script = options.startup_script
 
-    sessionsManager = SessionsManager(config=config)
+    logger = Logger(config=config, logfile=None)
+
+    sessionsManager = SessionsManager(config=config, logger=logger)
 
     if any([(options.auth_domain != '.'), (options.auth_username is not None), (options.auth_password is not None),(options.auth_hashes is not None)]):
         credentials = Credentials(
@@ -127,7 +130,8 @@ def main():
     # Start the main interactive command line
     shell = InteractiveShell(
         sessionsManager=sessionsManager, 
-        config=config
+        config=config,
+        logger=logger
     )
     shell.run()
 

@@ -81,10 +81,12 @@ class InteractiveShell(object):
     running = True
     modules = {}
     
-    def __init__(self, sessionsManager, config):
+    def __init__(self, sessionsManager, config, logger):
         # Objects
         self.sessionsManager = sessionsManager
         self.config = config
+        self.logger = logger
+        # Internals
         self.commandCompleterObject = CommandCompleter(smbSession=self.sessionsManager.current_session, config=self.config)
         readline.set_completer(self.commandCompleterObject.complete)
         readline.parse_and_bind("tab: complete")
@@ -98,19 +100,19 @@ class InteractiveShell(object):
             f = open(self.config.startup_script, 'r')
             for line in f.readlines():
                 try:
-                    print("%s%s" % (self.__prompt(), line.strip()))
+                    self.logger.print("%s%s" % (self.__prompt(), line.strip()))
                     self.process_line(commandLine=line.strip())
                 except KeyboardInterrupt as e:
-                    print()
+                    self.logger.print()
 
                 except EOFError as e:
-                    print()
+                    self.logger.print()
                     running = False
 
-                except Exception as e:
+                except Exception as err:
                     if self.config.debug:
                         traceback.print_exc()
-                    print("[!] Error: %s" % str(e))
+                    self.logger.error(str(err))
 
         # Then interactive console
         if not self.config.not_interactive:
@@ -119,16 +121,16 @@ class InteractiveShell(object):
                     user_input = input(self.__prompt()).strip()
                     self.process_line(commandLine=user_input)
                 except KeyboardInterrupt as e:
-                    print()
+                    self.logger.print()
 
                 except EOFError as e:
-                    print()
+                    self.logger.print()
                     running = False
 
-                except Exception as e:
+                except Exception as err:
                     if self.config.debug:
                         traceback.print_exc()
-                    print("[!] Error: %s" % str(e))
+                    self.logger.error(str(err))
 
     def process_line(self, commandLine):
         # Split and parse the commandLine
@@ -287,14 +289,14 @@ class InteractiveShell(object):
         
         # Fallback to unknown command   
         else:
-            print("Unknown command. Type \"help\" for help.")
+            self.logger.print("Unknown command. Type \"help\" for help.")
 
     # Commands ================================================================
 
     def command_debug(self, arguments, command):
         try:
-            print("[debug] command    = '%s'" % command)
-            print("[debug] arguments  = %s" % arguments)
+            self.logger.print("[debug] command    = '%s'" % command)
+            self.logger.print("[debug] arguments  = %s" % arguments)
         except Exception as e:
             traceback.print_exc()
 
@@ -327,12 +329,12 @@ class InteractiveShell(object):
                                     lexer = "html"
                             syntax = Syntax(code=filecontent, line_numbers=True, lexer=lexer)
                             if len(files_and_directories) > 1:
-                                print("\x1b[1;93m[>] %s\x1b[0m" % (path_to_file+' ').ljust(80,'='))
+                                self.logger.print("\x1b[1;93m[>] %s\x1b[0m" % (path_to_file+' ').ljust(80,'='))
                             Console().print(syntax)
                         else:
-                            print("[!] Could not detect charset of '%s'." % path_to_file)
+                            self.logger.error("[!] Could not detect charset of '%s'." % path_to_file)
                 except impacket.smbconnection.SessionError as e:
-                    print("[!] SMB Error: %s" % e)
+                    self.logger.error("[!] SMB Error: %s" % e)
 
     @command_arguments_required
     @active_smb_connection_needed
@@ -345,7 +347,7 @@ class InteractiveShell(object):
         try:
             self.sessionsManager.current_session.set_cwd(path=arguments[0])
         except impacket.smbconnection.SessionError as e:
-            print("[!] SMB Error: %s" % e)
+            self.logger.error("[!] SMB Error: %s" % e)
 
     @command_arguments_required
     @active_smb_connection_needed
@@ -368,12 +370,12 @@ class InteractiveShell(object):
                         if encoding is not None:
                             filecontent = rawcontents.decode(encoding).rstrip()
                             if len(files_and_directories) > 1:
-                                print("\x1b[1;93m[>] %s\x1b[0m" % (path_to_file+' ').ljust(80,'='))
-                            print(filecontent)
+                                self.logger.print("\x1b[1;93m[>] %s\x1b[0m" % (path_to_file+' ').ljust(80,'='))
+                            self.logger.print(filecontent)
                         else:
-                            print("[!] Could not detect charset of '%s'." % path_to_file)
+                            self.logger.error("[!] Could not detect charset of '%s'." % path_to_file)
                 except impacket.smbconnection.SessionError as e:
-                    print("[!] SMB Error: %s" % e)
+                    self.logger.error("[!] SMB Error: %s" % e)
 
     def command_close(self, arguments, command):
         # Command arguments required   : No
@@ -410,7 +412,7 @@ class InteractiveShell(object):
                     # Get this single file
                     self.sessionsManager.current_session.get_file(path=remotepath)
             except impacket.smbconnection.SessionError as e:
-                print("[!] SMB Error: %s" % e)
+                self.logger.error("[!] SMB Error: %s" % e)
 
     def command_help(self, arguments, command):
         # Command arguments required   : No
@@ -443,7 +445,7 @@ class InteractiveShell(object):
                 server=print_server_info
             )
         except impacket.smbconnection.SessionError as e:
-            print("[!] SMB Error: %s" % e)
+            self.logger.error("[!] SMB Error: %s" % e)
 
     @command_arguments_required
     def command_lbat(self, arguments, command):
@@ -474,14 +476,14 @@ class InteractiveShell(object):
                                     lexer = "html"
                             syntax = Syntax(code=filecontent, line_numbers=True, lexer=lexer)
                             if len(files_and_directories) > 1:
-                                print("\x1b[1;93m[>] %s\x1b[0m" % (path_to_file+' ').ljust(80,'='))
+                                self.logger.print("\x1b[1;93m[>] %s\x1b[0m" % (path_to_file+' ').ljust(80,'='))
                             Console().print(syntax)
                         else:
-                            print("[!] Could not detect charset of '%s'." % path_to_file)
+                            self.logger.error("[!] Could not detect charset of '%s'." % path_to_file)
                 else:
-                    print("[!] Local file '%s' does not exist." % path_to_file)
+                    self.logger.error("[!] Local file '%s' does not exist." % path_to_file)
             except impacket.smbconnection.SessionError as e:
-                print("[!] SMB Error: %s" % e)
+                self.logger.error("[!] SMB Error: %s" % e)
 
     @command_arguments_required
     def command_lcat(self, arguments, command):
@@ -504,14 +506,14 @@ class InteractiveShell(object):
                         if encoding is not None:
                             filecontent = rawcontents.decode(encoding).rstrip()
                             if len(files_and_directories) > 1:
-                                print("\x1b[1;93m[>] %s\x1b[0m" % (path_to_file+' ').ljust(80,'='))
-                            print(filecontent)
+                                self.logger.print("\x1b[1;93m[>] %s\x1b[0m" % (path_to_file+' ').ljust(80,'='))
+                            self.logger.print(filecontent)
                         else:
-                            print("[!] Could not detect charset of '%s'." % path_to_file)
+                            self.logger.error("[!] Could not detect charset of '%s'." % path_to_file)
                 else:
-                    print("[!] Local file '%s' does not exist." % path_to_file)
+                    self.logger.error("[!] Local file '%s' does not exist." % path_to_file)
             except impacket.smbconnection.SessionError as e:
-                print("[!] SMB Error: %s" % e)
+                self.logger.error("[!] SMB Error: %s" % e)
 
     @command_arguments_required
     def command_lcd(self, arguments, command):
@@ -525,9 +527,9 @@ class InteractiveShell(object):
             if os.path.isdir(s=path):
                 os.chdir(path=path)
             else:
-                print("[!] Path '%s' is not a directory." % path)
+                self.logger.error("Path '%s' is not a directory." % path)
         else:
-            print("[!] Directory '%s' does not exists." % path)
+            self.logger.error("Directory '%s' does not exists." % path)
 
     @command_arguments_required
     def command_lcp(self, arguments, command):
@@ -542,9 +544,9 @@ class InteractiveShell(object):
                 try:
                     shutil.copyfile(src=src_path, dst=dst_path)
                 except shutil.SameFileError as err:
-                    print("[!] Error: %s" % err)
+                    self.logger.error("[!] Error: %s" % err)
             else:
-                print("[!] File '%s' does not exists." % src_path)
+                self.logger.error("[!] File '%s' does not exists." % src_path)
         else:
             self.commandCompleterObject.print_help(command=command)
 
@@ -560,7 +562,7 @@ class InteractiveShell(object):
 
         for path in arguments:
             if len(arguments) > 1:
-                print("%s:" % path)
+                self.logger.print("%s:" % path)
             # lls <directory>
             if os.path.isdir(path):
                 directory_contents = os.listdir(path=path)
@@ -572,26 +574,26 @@ class InteractiveShell(object):
 
                     if os.path.isdir(s=entryname):
                         if self.config.no_colors:
-                            print("%s %10s  %s  %s%s" % (rights_str, size_str, date_str, entryname, os.path.sep))
+                            self.logger.print("%s %10s  %s  %s%s" % (rights_str, size_str, date_str, entryname, os.path.sep))
                         else:
-                            print("%s %10s  %s  \x1b[1;96m%s\x1b[0m%s" % (rights_str, size_str, date_str, entryname, os.path.sep))
+                            self.logger.print("%s %10s  %s  \x1b[1;96m%s\x1b[0m%s" % (rights_str, size_str, date_str, entryname, os.path.sep))
                     else:
                         if self.config.no_colors:
-                            print("%s %10s  %s  %s" % (rights_str, size_str, date_str, entryname))
+                            self.logger.print("%s %10s  %s  %s" % (rights_str, size_str, date_str, entryname))
                         else:
-                            print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, entryname))
+                            self.logger.print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, entryname))
             # lls <file>
             elif os.path.isfile(path):
                 rights_str = unix_permissions(path)
                 size_str = b_filesize(os.path.getsize(filename=path))
                 date_str = datetime.datetime.fromtimestamp(os.path.getmtime(filename=path)).strftime("%Y-%m-%d %H:%M")
                 if self.config.no_colors:
-                    print("%s %10s  %s  %s" % (rights_str, size_str, date_str, os.path.basename(path)))
+                    self.logger.print("%s %10s  %s  %s" % (rights_str, size_str, date_str, os.path.basename(path)))
                 else:
-                    print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, os.path.basename(path))) 
+                    self.logger.print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (rights_str, size_str, date_str, os.path.basename(path))) 
             
             if len(arguments) > 1:
-                print()
+                self.logger.print()
 
     @command_arguments_required
     def command_lmkdir(self, arguments, command):
@@ -616,7 +618,7 @@ class InteractiveShell(object):
         # Active SMB connection needed : No
         # SMB share needed             : No
 
-        print(os.getcwd())
+        self.logger.print(os.getcwd())
 
     @command_arguments_required
     def command_lrename(self, arguments, command):
@@ -642,11 +644,11 @@ class InteractiveShell(object):
                 try:
                     os.remove(path=path)
                 except Exception as e:
-                    print("[!] Error removing file '%s' : %s" % path)
+                    self.logger.error("Error removing file '%s' : %s" % path)
             else:
-                print("[!] Cannot delete '%s'. It is a directory, use 'lrmdir <directory>' instead." % path)
+                self.logger.error("Cannot delete '%s'. It is a directory, use 'lrmdir <directory>' instead." % path)
         else:
-            print("[!] Path '%s' does not exist." % path)
+            self.logger.error("Path '%s' does not exist." % path)
 
     @command_arguments_required
     def command_lrmdir(self, arguments, command):
@@ -664,11 +666,11 @@ class InteractiveShell(object):
                 try:
                     shutil.rmtree(path=path)
                 except Exception as e:
-                    print("[!] Error removing directory '%s' : %s" % path)
+                    self.logger.error("Error removing directory '%s' : %s" % path)
             else:
-                print("[!] Cannot delete '%s'. It is a file, use 'lrm <file>' instead." % path)
+                self.logger.error("Cannot delete '%s'. It is a file, use 'lrm <file>' instead." % path)
         else:
-            print("[!] Path '%s' does not exist." % path)
+            self.logger.error("Path '%s' does not exist." % path)
 
     def command_ltree(self, arguments, command):
         # Command arguments required   : No
@@ -699,7 +701,7 @@ class InteractiveShell(object):
 
         for path in arguments:
             if len(arguments) > 1:
-                print("%s:" % path)
+                self.logger.print("%s:" % path)
 
             if self.sessionsManager.current_session.path_isdir(pathFromRoot=path):
                 # Read the files
@@ -715,7 +717,7 @@ class InteractiveShell(object):
                 windows_ls_entry(directory_contents[longname], self.config)
 
             if len(arguments) > 1:
-                print()
+                self.logger.print()
             
     @command_arguments_required
     @active_smb_connection_needed
@@ -738,7 +740,7 @@ class InteractiveShell(object):
             arguments_string = ' '.join(arguments[1:])
             module.run(arguments_string)
         else:
-            print("[!] Module '%s' does not exist." % module_name)
+            self.logger.error("Module '%s' does not exist." % module_name)
 
     @command_arguments_required
     @active_smb_connection_needed
@@ -755,8 +757,7 @@ class InteractiveShell(object):
 
             local_mount_point = arguments[1]
 
-            if self.config.debug:
-                print("[debug] Trying to mount remote '%s' onto local '%s'" % (remote_path, local_mount_point))
+            self.logger.debug("Trying to mount remote '%s' onto local '%s'" % (remote_path, local_mount_point))
 
             try:
                 self.sessionsManager.current_session.mount(local_mount_point, remote_path)
@@ -784,7 +785,7 @@ class InteractiveShell(object):
         # 
         for localpath in files_and_directories:
             try:
-                print(localpath)
+                self.logger.print(localpath)
                 if is_recursive and os.path.isdir(s=localpath):
                     # Put files recursively
                     self.sessionsManager.current_session.put_file_recursively(localpath=localpath)
@@ -792,7 +793,7 @@ class InteractiveShell(object):
                     # Put this single file
                     self.sessionsManager.current_session.put_file(localpath=localpath)
             except impacket.smbconnection.SessionError as e:
-                print("[!] SMB Error: %s" % e)
+                self.logger.error("[!] SMB Error: %s" % e)
 
     def command_reconnect(self, arguments, command):
         # Command arguments required   : No
@@ -833,12 +834,12 @@ class InteractiveShell(object):
                     try:
                         self.sessionsManager.current_session.rm(path=path_to_file)
                     except Exception as e:
-                        print("[!] Error removing file '%s' : %s" % path_to_file)
+                        self.logger.error("Error removing file '%s' : %s" % path_to_file)
                 else:
-                    print("[!] Cannot delete '%s': This is a directory, use 'rmdir <directory>' instead." % path_to_file)
+                    self.logger.error("Cannot delete '%s': This is a directory, use 'rmdir <directory>' instead." % path_to_file)
             # File does not exist
             else:
-                print("[!] Remote file '%s' does not exist." % path_to_file)
+                self.logger.error("Remote file '%s' does not exist." % path_to_file)
 
     @command_arguments_required
     @active_smb_connection_needed
@@ -854,11 +855,11 @@ class InteractiveShell(object):
                     try:
                         self.sessionsManager.current_session.rmdir(path=path_to_directory)
                     except Exception as e:
-                        print("[!] Error removing directory '%s' : %s" % path_to_directory)
+                        self.logger.error("Error removing directory '%s' : %s" % path_to_directory)
                 else:
-                    print("[!] Cannot delete '%s': This is a file, use 'rm <file>' instead." % path_to_directory)
+                    self.logger.error("Cannot delete '%s': This is a file, use 'rm <file>' instead." % path_to_directory)
             else:
-                print("[!] Remote directory '%s' does not exist." % path_to_directory)
+                self.logger.error("Remote directory '%s' does not exist." % path_to_directory)
 
     @active_smb_connection_needed
     @smb_share_is_set
@@ -891,7 +892,7 @@ class InteractiveShell(object):
                         path = "%s" % self.entry.get_longname()
                     else:
                         path = "\x1b[1m%s\x1b[0m" % self.entry.get_longname()
-                print("%10s  %s" % (b_filesize(self.size), path), end=end)
+                self.logger.print("%10s  %s" % (b_filesize(self.size), path), end=end)
 
         entries = []
         if len(arguments) == 0:
@@ -903,7 +904,7 @@ class InteractiveShell(object):
             if entry is not None:
                 entries = [entry]
             else:
-                print("[!] Path '%s' does not exist." % ' '.join(arguments))
+                self.logger.print("[!] Path '%s' does not exist." % ' '.join(arguments))
 
         total = 0
         for entry in entries:
@@ -922,8 +923,8 @@ class InteractiveShell(object):
             total += rsop.size
         
         if len(entries) > 1:
-            print("──────────────────────")
-            print("     total  %s" % b_filesize(total))
+            self.logger.print("──────────────────────")
+            self.logger.print("     total  %s" % b_filesize(total))
 
     @active_smb_connection_needed
     def command_shares(self, arguments, command):
@@ -981,7 +982,7 @@ class InteractiveShell(object):
 
             Console().print(table)
         else:
-            print("[!] No share served on '%s'" % self.sessionsManager.current_session.host)
+            self.logger.error("No share served on '%s'" % self.sessionsManager.current_session.host)
 
     @active_smb_connection_needed
     @smb_share_is_set
@@ -1005,8 +1006,7 @@ class InteractiveShell(object):
 
         local_mount_point = arguments[0]
 
-        if self.config.debug:
-            print("[debug] Trying to unmount local mount point '%s'" % (local_mount_point))
+        self.logger.debug("Trying to unmount local mount point '%s'" % (local_mount_point))
         
         self.sessionsManager.current_session.umount(local_mount_point)
         
@@ -1026,7 +1026,7 @@ class InteractiveShell(object):
         if sharename.lower() in shares:
             self.sessionsManager.current_session.set_share(sharename)
         else:
-            print("[!] No share named '%s' on '%s'" % (sharename, self.sessionsManager.current_session.host))
+            self.logger.error("No share named '%s' on '%s'" % (sharename, self.sessionsManager.current_session.host))
 
     # Private functions =======================================================
 
@@ -1046,8 +1046,7 @@ class InteractiveShell(object):
         self.modules.clear()
 
         modules_dir = os.path.normpath(os.path.dirname(__file__) + os.path.sep + ".." + os.path.sep + "modules")
-        if self.config.debug:
-            print("[debug] Loading modules from %s ..." % modules_dir)
+        self.logger.debug("Loading modules from %s ..." % modules_dir)
         sys.path.extend([modules_dir])
 
         for file in os.listdir(modules_dir):
@@ -1063,13 +1062,13 @@ class InteractiveShell(object):
 
         if self.config.debug:
             if len(self.modules.keys()) == 0:
-                print("[debug] Loaded 0 modules.")
+                self.logger.debug("Loaded 0 modules.")
             elif len(self.modules.keys()) == 1:
-                print("[debug] Loaded 1 module:")
+                self.logger.debug("Loaded 1 module:")
             else:
-                print("[debug] Loaded %d modules:" % len(self.modules.keys()))
+                self.logger.debug("Loaded %d modules:" % len(self.modules.keys()))
             for modulename in sorted(self.modules.keys()):
-                print("[debug] %s : \"%s\" (%s)" % (self.modules[modulename].name, self.modules[modulename].description, self.modules[modulename]))
+                self.logger.debug("%s : \"%s\" (%s)" % (self.modules[modulename].name, self.modules[modulename].description, self.modules[modulename]))
 
         if self.commandCompleterObject is not None:
             self.commandCompleterObject.commands["module"]["subcommands"] = list(self.modules.keys())
