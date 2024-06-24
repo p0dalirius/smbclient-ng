@@ -24,6 +24,8 @@ class ModuleArgumentParser(argparse.ArgumentParser):
             Overrides the default error handling to provide a more informative error message and display the help text.
     """
 
+    exit_on_error = False
+
     def error(self, message):
         """
         Overrides the default error handling of argparse.ArgumentParser to provide a custom error message and help display.
@@ -37,3 +39,6 @@ class ModuleArgumentParser(argparse.ArgumentParser):
 
         self.print_help()
         sys.stderr.write('\n[!] Error: %s\n' % message)
+    
+    def exit(self, message):
+        pass
