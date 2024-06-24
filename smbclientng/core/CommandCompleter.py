@@ -325,10 +325,11 @@ class CommandCompleter(object):
         },
     }
 
-    def __init__(self, smbSession, config):
+    def __init__(self, smbSession, config, logger):
         # Objects
         self.smbSession = smbSession
         self.config = config
+        self.logger = logger
         # Pre computing for some commands 
         self.commands["help"]["subcommands"] = ["format"] + list(self.commands.keys())
         self.commands["help"]["subcommands"].remove("help")
@@ -532,54 +533,54 @@ class CommandCompleter(object):
             if command == "format":
                 self.print_help_format()
             else:
-                print("│")
+                self.logger.print("│")
                 if self.config.no_colors:
                     command_str = command + "─"* (15 - len(command))
                     if len(self.commands[command]["description"]) == 0:
-                        print("│ ■ %s┤  " % command_str)
+                        self.logger.print("│ ■ %s┤  " % command_str)
                     elif len(self.commands[command]["description"]) == 1:
-                        print("│ ■ %s┤ %s " % (command_str, self.commands[command]["description"][0]))
+                        self.logger.print("│ ■ %s┤ %s " % (command_str, self.commands[command]["description"][0]))
                     else:
-                        print("│ ■ %s┤ %s " % (command_str, self.commands[command]["description"][0]))
+                        self.logger.print("│ ■ %s┤ %s " % (command_str, self.commands[command]["description"][0]))
                         for line in self.commands[command]["description"][1:]:
-                            print("│ %s│ %s " % (" "*(15+2), line))
+                            self.logger.print("│ %s│ %s " % (" "*(15+2), line))
                 else:
                     command_str = command + " \x1b[90m" + "─"* (15 - len(command)) + "\x1b[0m"
                     if len(self.commands[command]["description"]) == 0:
-                        print("│ ■ %s\x1b[90m┤\x1b[0m  " % command_str)
+                        self.logger.print("│ ■ %s\x1b[90m┤\x1b[0m  " % command_str)
                     elif len(self.commands[command]["description"]) == 1:
-                        print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
+                        self.logger.print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
                     else:
-                        print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
+                        self.logger.print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
                         for line in self.commands[command]["description"][1:]:
-                            print("│ %s\x1b[90m│\x1b[0m %s " % (" "*(15+3), line))
-                print("│")
+                            self.logger.print("│ %s\x1b[90m│\x1b[0m %s " % (" "*(15+3), line))
+                self.logger.print("│")
         # Generic help
         else:
-            print("│")
+            self.logger.print("│")
             commands = sorted(self.commands.keys())
             for command in commands:
                 if self.config.no_colors:
                     command_str = command + "─"* (15 - len(command))
                     if len(self.commands[command]["description"]) == 0:
-                        print("│ ■ %s┤  " % command_str)
+                        self.logger.print("│ ■ %s┤  " % command_str)
                     elif len(self.commands[command]["description"]) == 1:
-                        print("│ ■ %s┤ %s " % (command_str, self.commands[command]["description"][0]))
+                        self.logger.print("│ ■ %s┤ %s " % (command_str, self.commands[command]["description"][0]))
                     else:
-                        print("│ ■ %s┤ %s " % (command_str, self.commands[command]["description"][0]))
+                        self.logger.print("│ ■ %s┤ %s " % (command_str, self.commands[command]["description"][0]))
                         for line in self.commands[command]["description"][1:]:
-                            print("│ %s│ %s " % (" "*(15+2), line))
+                            self.logger.print("│ %s│ %s " % (" "*(15+2), line))
                 else:
                     command_str = command + " \x1b[90m" + "─"* (15 - len(command)) + "\x1b[0m"
                     if len(self.commands[command]["description"]) == 0:
-                        print("│ ■ %s\x1b[90m┤\x1b[0m  " % command_str)
+                        self.logger.print("│ ■ %s\x1b[90m┤\x1b[0m  " % command_str)
                     elif len(self.commands[command]["description"]) == 1:
-                        print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
+                        self.logger.print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
                     else:
-                        print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
+                        self.logger.print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
                         for line in self.commands[command]["description"][1:]:
-                            print("│ %s\x1b[90m│\x1b[0m %s " % (" "*(15+3), line))
-                print("│")
+                            self.logger.print("│ %s\x1b[90m│\x1b[0m %s " % (" "*(15+3), line))
+                self.logger.print("│")
 
     def print_help_format(self):
         """
@@ -589,25 +590,25 @@ class CommandCompleter(object):
         of each character in the file attribute string, such as whether a file is read-only, hidden, or a directory.
         """
         if self.config.no_colors:
-            print("File attributes format:\n")
-            print("dachnrst")
-            print("│││││││└──> Temporary")
-            print("││││││└───> System")
-            print("│││││└────> Read-Only")
-            print("││││└─────> Normal")
-            print("│││└──────> Hidden")
-            print("││└───────> Compressed")
-            print("│└────────> Archived")
-            print("└─────────> Directory")
+            self.logger.print("File attributes format:\n")
+            self.logger.print("dachnrst")
+            self.logger.print("│││││││└──> Temporary")
+            self.logger.print("││││││└───> System")
+            self.logger.print("│││││└────> Read-Only")
+            self.logger.print("││││└─────> Normal")
+            self.logger.print("│││└──────> Hidden")
+            self.logger.print("││└───────> Compressed")
+            self.logger.print("│└────────> Archived")
+            self.logger.print("└─────────> Directory")
         else:
-            print("File attributes format:\n")
-            print("dachnrst")
-            print("\x1b[90m│││││││└──>\x1b[0m Temporary")
-            print("\x1b[90m││││││└───>\x1b[0m System")
-            print("\x1b[90m│││││└────>\x1b[0m Read-Only")
-            print("\x1b[90m││││└─────>\x1b[0m Normal")
-            print("\x1b[90m│││└──────>\x1b[0m Hidden")
-            print("\x1b[90m││└───────>\x1b[0m Compressed")
-            print("\x1b[90m│└────────>\x1b[0m Archived")
-            print("\x1b[90m└─────────>\x1b[0m Directory")
+            self.logger.print("File attributes format:\n")
+            self.logger.print("dachnrst")
+            self.logger.print("\x1b[90m│││││││└──>\x1b[0m Temporary")
+            self.logger.print("\x1b[90m││││││└───>\x1b[0m System")
+            self.logger.print("\x1b[90m│││││└────>\x1b[0m Read-Only")
+            self.logger.print("\x1b[90m││││└─────>\x1b[0m Normal")
+            self.logger.print("\x1b[90m│││└──────>\x1b[0m Hidden")
+            self.logger.print("\x1b[90m││└───────>\x1b[0m Compressed")
+            self.logger.print("\x1b[90m│└────────>\x1b[0m Archived")
+            self.logger.print("\x1b[90m└─────────>\x1b[0m Directory")
 
