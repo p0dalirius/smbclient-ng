@@ -874,10 +874,11 @@ class InteractiveShell(object):
         # SMB share needed             : Yes
 
         class RecursiveSizeOfPrint(object):
-            def __init__(self, entry, smbSession, config):
+            def __init__(self, entry, sessionsManager, config, logger):
                 self.entry = entry
                 self.config = config
-                self.sessionsManager.current_session = smbSession
+                self.logger = logger
+                self.sessionsManager = sessionsManager
                 self.size = 0
             
             def update(self, entry, fullpath, depth):
@@ -913,7 +914,12 @@ class InteractiveShell(object):
 
         total = 0
         for entry in entries:
-            rsop = RecursiveSizeOfPrint(entry=entry, smbSession=self.sessionsManager.current_session, config=self.config)
+            rsop = RecursiveSizeOfPrint(
+                entry=entry, 
+                sessionsManager=self.sessionsManager, 
+                config=self.config,
+                logger=self.logger
+            )
             # Directory
             if entry.is_directory():
                 self.sessionsManager.current_session.find(

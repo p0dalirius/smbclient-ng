@@ -49,7 +49,7 @@ class Logger(object):
                 self.logfile = self.logfile + (".%d" % k)
             open(self.logfile, "w").close()
 
-    def print(self, message=""):
+    def print(self, message="", end='\n'):
         """
         Prints a message to stdout and logs it to a file if logging is enabled.
 
@@ -61,10 +61,10 @@ class Logger(object):
 
         nocolor_message = re.sub(r"\x1b[\[]([0-9;]+)m", "", message)
         if self.config.no_colors:
-            print(nocolor_message)
+            print(nocolor_message, end=end)
         else:
-            print(message)
-        self.__write_to_logfile(nocolor_message)
+            print(message, end=end)
+        self.__write_to_logfile(nocolor_message, end=end)
 
     def info(self, message):
         """
@@ -118,7 +118,7 @@ class Logger(object):
             print("[\x1b[1;91merror\x1b[0m] %s" % message)
         self.__write_to_logfile("[error] %s" % nocolor_message)
 
-    def __write_to_logfile(self, message):
+    def __write_to_logfile(self, message, end='\n'):
         """
         Writes the provided message to the log file specified during Logger instance initialization.
 
@@ -127,8 +127,8 @@ class Logger(object):
         Args:
             message (str): The message to be written to the log file.
         """
-        
+
         if self.logfile is not None:
             f = open(self.logfile, "a")
-            f.write(message + "\n")
+            f.write(message + end)
             f.close()
