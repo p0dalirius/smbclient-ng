@@ -10,6 +10,7 @@ import fnmatch
 import ntpath
 import os
 import re
+import socket
 import stat
 
 
@@ -399,3 +400,28 @@ def resolve_remote_files(smbSession, arguments):
             resolved_files.append(arg)
     resolved_files = sorted(list(set(resolved_files)))
     return resolved_files
+
+
+def is_port_open(target, port) -> bool:
+    """
+    Check if a specific port on a target host is open.
+
+    This function attempts to establish a TCP connection to the specified port on the target host.
+    If the connection is successful, it indicates that the port is open. If the connection fails,
+    it indicates that the port is closed or the host is unreachable.
+
+    Args:
+        target (str): The hostname or IP address of the target host.
+        port (int): The port number to check.
+
+    Returns:
+        bool: True if the port is open, False otherwise.
+    """
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.1)
+        # Non-existant domains cause a lot of errors, added error handling
+        try:
+            return s.connect_ex((target, port)) == 0
+        except Exception as e:
+            return False
