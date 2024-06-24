@@ -53,10 +53,11 @@ class SMBSession(object):
         test_rights(sharename): Tests read and write access rights on a share.
     """
 
-    def __init__(self, host, port, credentials, config=None):
+    def __init__(self, host, port, credentials, config=None, logger=None):
         super(SMBSession, self).__init__()
         # Objects
         self.config = config
+        self.logger = logger
 
         # Target server
         self.host = host

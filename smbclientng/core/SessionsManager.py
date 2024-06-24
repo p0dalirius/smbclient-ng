@@ -17,13 +17,14 @@ class SessionsManager(object):
     current_session_id = None
     sessions = {}
 
-    def __init__(self, config):
+    def __init__(self, config, logger):
         self.sessions = {}
         self.next_session_id = 1
         self.current_session = None
         self.current_session_id = None
 
-        self.config = config
+        self.config = config,
+        self.logger = logger
 
     def create_new_session(self, credentials, host, port=445):
         """

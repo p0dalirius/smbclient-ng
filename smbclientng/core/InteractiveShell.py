@@ -81,10 +81,12 @@ class InteractiveShell(object):
     running = True
     modules = {}
     
-    def __init__(self, sessionsManager, config):
+    def __init__(self, sessionsManager, config, logger):
         # Objects
         self.sessionsManager = sessionsManager
         self.config = config
+        self.logger = logger
+        # Internals
         self.commandCompleterObject = CommandCompleter(smbSession=self.sessionsManager.current_session, config=self.config)
         readline.set_completer(self.commandCompleterObject.complete)
         readline.parse_and_bind("tab: complete")
