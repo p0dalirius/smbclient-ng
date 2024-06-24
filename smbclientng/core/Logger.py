@@ -36,10 +36,9 @@ class Logger(object):
         error(message): Logs a message at the ERROR level.
     """
 
-    def __init__(self, debug=False, logfile=None, no_colors=False):
+    def __init__(self, config, logfile=None):
         super(Logger, self).__init__()
-        self.__debug = debug
-        self.no_colors = no_colors
+        self.config = config
         self.logfile = logfile
         #
         if self.logfile is not None:
@@ -52,7 +51,7 @@ class Logger(object):
 
     def print(self, message=""):
         nocolor_message = re.sub(r"\x1b[\[]([0-9;]+)m", "", message)
-        if self.no_colors:
+        if self.config.no_colors:
             print(nocolor_message)
         else:
             print(message)
@@ -60,16 +59,16 @@ class Logger(object):
 
     def info(self, message):
         nocolor_message = re.sub(r"\x1b[\[]([0-9;]+)m", "", message)
-        if self.no_colors:
+        if self.config.no_colors:
             print("[info] %s" % nocolor_message)
         else:
             print("[\x1b[1;92minfo\x1b[0m] %s" % message)
         self.__write_to_logfile("[info] %s" % nocolor_message)
 
     def debug(self, message):
-        if self.__debug == True:
+        if self.config.debug == True:
             nocolor_message = re.sub(r"\x1b[\[]([0-9;]+)m", "", message)
-            if self.no_colors:
+            if self.config.no_colors:
                 print("[debug] %s" % nocolor_message)
             else:
                 print("[debug] %s" % message)
@@ -77,7 +76,7 @@ class Logger(object):
 
     def error(self, message):
         nocolor_message = re.sub(r"\x1b[\[]([0-9;]+)m", "", message)
-        if self.no_colors:
+        if self.config.no_colors:
             print("[error] %s" % nocolor_message)
         else:
             print("[\x1b[1;91merror\x1b[0m] %s" % message)
