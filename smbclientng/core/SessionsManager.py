@@ -91,7 +91,7 @@ class SessionsManager(object):
         Processes command line arguments to manage SMB sessions.
 
         This function parses the command line arguments provided to the application and determines the appropriate action to take,
-        such as creating, accessing, deleting, or listing SMB sessions, or executing a command in one or more sessions.
+        such as creating, interacting, deleting, or listing SMB sessions, or executing a command in one or more sessions.
 
         Args:
             arguments (list of str): The command line arguments.
@@ -99,12 +99,12 @@ class SessionsManager(object):
         Returns:
             None
         """
-        
-        parser = ModuleArgumentParser(add_help=True, description="")
 
-        # Access
-        mode_access = ModuleArgumentParser(add_help=False, description="Switch to the specified session.")
-        mode_access.add_argument("-i", "--session-id", type=int, default=None, required=True, help="Session ID to access.")
+        parser = ModuleArgumentParser(add_help=True, prog="sessions", description="")
+
+        # interact
+        mode_interact = ModuleArgumentParser(add_help=False, description="Switch to the specified session.")
+        mode_interact.add_argument("-i", "--session-id", type=int, default=None, required=True, help="Session ID to interact with.")
 
         # Create
         mode_create = ModuleArgumentParser(add_help=False, description="Create a new session.")
@@ -141,7 +141,7 @@ class SessionsManager(object):
 
         # Register subparsers
         subparsers = parser.add_subparsers(help="Action", dest="action", required=True)
-        subparsers.add_parser("access", parents=[mode_access], help=mode_access.description)
+        subparsers.add_parser("interact", parents=[mode_interact], help=mode_interact.description)
         subparsers.add_parser("create", parents=[mode_create], help=mode_create.description)
         subparsers.add_parser("delete", parents=[mode_delete], help=mode_delete.description)
         subparsers.add_parser("execute", parents=[mode_execute], help=mode_execute.description)
@@ -152,7 +152,7 @@ class SessionsManager(object):
         # Process actions
 
         # 
-        if options.action == "access":
+        if options.action == "interact":
             if options.session_id is not None:
                 if options.session_id in self.sessions.keys():
                     print("[+] Switching to session #%d" % options.session_id)
@@ -180,11 +180,12 @@ class SessionsManager(object):
         # 
         elif options.action == "delete":
             if options.session_id is not None:
-                if options.session_id in self.sessions.keys():
-                    print("[+] Switching to session #%d" % options.session_id)
-                    self.switch_session(session_id=options.session_id)
-                else:
-                    print("[!] No session with id #%d" % options.session_id)
+                for session_id in options.session_id:
+                    if session_id in self.sessions.keys():
+                        print("[+] Closing and deleting session #%d" % session_id)
+                        self.delete_session(session_id=session_id)
+                    else:
+                        print("[!] No session with id #%d" % session_id)
 
         # 
         elif options.action == "execute":
@@ -206,7 +207,7 @@ class SessionsManager(object):
                     if self.config.no_colors:
                         print(f"=> [Session #{sessionId:<2} - '{session.credentials.domain}\\{session.credentials.username}' @ {session.host}:{session.port}] [current session]")
                     else:
-                        print(f"\x1b[1m=> Session #{sessionId:<2} - '\x1b[1;96m{session.credentials.domain}\x1b[0m\\\x1b[1;96m{session.credentials.username}\x1b[0m' @ {session.host}:{session.port}\x1b[0m [\x1b[93mcurrent session\x1b[0m]")
+                        print(f"\x1b[1m=> Session #{sessionId:<2} - '\x1b[1;96m{session.credentials.domain}\x1b[0m\\\x1b[1;96m{session.credentials.username}\x1b[0m\x1b[1m' @ {session.host}:{session.port}\x1b[0m [\x1b[93mcurrent session\x1b[0m]")
                 else:
                     print(f"── Session #{sessionId:<2} - '{session.credentials.domain}\\{session.credentials.username}' @ {session.host}:{session.port}")
                 
