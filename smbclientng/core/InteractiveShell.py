@@ -39,8 +39,8 @@ def active_smb_connection_needed(func):
     def wrapper(*args, **kwargs):
         self, arguments,command  = args[0], args[1], args[2]
         #
-        self.smbSession.ping_smb_session()
-        if self.smbSession.connected:
+        self.sessionsManager.current_session.ping_smb_session()
+        if self.sessionsManager.current_session.connected:
             return func(*args, **kwargs)
         else:
             print("[!] SMB Session is disconnected.")
@@ -50,7 +50,7 @@ def active_smb_connection_needed(func):
 def smb_share_is_set(func):
     def wrapper(*args, **kwargs):
         self, arguments,command  = args[0], args[1], args[2]
-        if self.smbSession.smb_share is not None:
+        if self.sessionsManager.current_session.smb_share is not None:
             return func(*args, **kwargs)
         else:
             print("[!] You must open a share first, try the 'use <share>' command.")
@@ -81,11 +81,11 @@ class InteractiveShell(object):
     running = True
     modules = {}
     
-    def __init__(self, smbSession, config):
+    def __init__(self, sessionsManager, config):
         # Objects
-        self.smbSession = smbSession
+        self.sessionsManager = sessionsManager
         self.config = config
-        self.commandCompleterObject = CommandCompleter(smbSession=self.smbSession, config=self.config)
+        self.commandCompleterObject = CommandCompleter(smbSession=self.sessionsManager.current_session, config=self.config)
         readline.set_completer(self.commandCompleterObject.complete)
         readline.parse_and_bind("tab: complete")
         readline.set_completer_delims("\n")
@@ -265,6 +265,10 @@ class InteractiveShell(object):
             elif command == "rmdir":
                 self.command_rmdir(arguments, command)
 
+            # Sessions management
+            elif command == "sessions":
+                self.sessionsManager.process_command_line(arguments)
+
             # List shares
             elif command == "sizeof":
                 self.command_sizeof(arguments, command)
@@ -306,10 +310,10 @@ class InteractiveShell(object):
         files_and_directories = resolve_local_files(arguments)
 
         for path_to_file in files_and_directories:
-            if self.smbSession.path_isfile(pathFromRoot=path_to_file):
+            if self.sessionsManager.current_session.path_isfile(pathFromRoot=path_to_file):
                 # Read the file
                 try:    
-                    rawcontents = self.smbSession.read_file(path=path_to_file)
+                    rawcontents = self.sessionsManager.current_session.read_file(path=path_to_file)
                     if rawcontents is not None:
                         encoding = charset_normalizer.detect(rawcontents)["encoding"]
                         if encoding is not None:
@@ -339,7 +343,7 @@ class InteractiveShell(object):
         # SMB share needed             : Yes
 
         try:
-            self.smbSession.set_cwd(path=arguments[0])
+            self.sessionsManager.current_session.set_cwd(path=arguments[0])
         except impacket.smbconnection.SessionError as e:
             print("[!] SMB Error: %s" % e)
 
@@ -355,10 +359,10 @@ class InteractiveShell(object):
         files_and_directories = resolve_local_files(arguments)
 
         for path_to_file in files_and_directories:
-            if self.smbSession.path_isfile(pathFromRoot=path_to_file):
+            if self.sessionsManager.current_session.path_isfile(pathFromRoot=path_to_file):
                 # Read the file
                 try:
-                    rawcontents = self.smbSession.read_file(path=path_to_file)
+                    rawcontents = self.sessionsManager.current_session.read_file(path=path_to_file)
                     if rawcontents is not None:
                         encoding = charset_normalizer.detect(rawcontents)["encoding"]
                         if encoding is not None:
@@ -376,9 +380,9 @@ class InteractiveShell(object):
         # Active SMB connection needed : No
         # SMB share needed             : No
 
-        self.smbSession.ping_smb_session()
-        if self.smbSession.connected:
-            self.smbSession.close_smb_session()
+        self.sessionsManager.current_session.ping_smb_session()
+        if self.sessionsManager.current_session.connected:
+            self.sessionsManager.current_session.close_smb_session()
 
     @command_arguments_required
     @active_smb_connection_needed
@@ -394,17 +398,17 @@ class InteractiveShell(object):
             arguments.remove('-r')
 
         # Parse wildcards
-        files_and_directories = resolve_remote_files(self.smbSession, arguments)
+        files_and_directories = resolve_remote_files(self.sessionsManager.current_session, arguments)
 
         # 
         for remotepath in files_and_directories:
             try:
-                if is_recursive and self.smbSession.path_isdir(remotepath):
+                if is_recursive and self.sessionsManager.current_session.path_isdir(remotepath):
                     # Get files recursively
-                    self.smbSession.get_file_recursively(path=remotepath)
+                    self.sessionsManager.current_session.get_file_recursively(path=remotepath)
                 else:
                     # Get this single file
-                    self.smbSession.get_file(path=remotepath)
+                    self.sessionsManager.current_session.get_file(path=remotepath)
             except impacket.smbconnection.SessionError as e:
                 print("[!] SMB Error: %s" % e)
 
@@ -434,7 +438,7 @@ class InteractiveShell(object):
             print_share_info = True
 
         try:
-            self.smbSession.info(
+            self.sessionsManager.current_session.info(
                 share=print_share_info,
                 server=print_server_info
             )
@@ -448,7 +452,7 @@ class InteractiveShell(object):
         # SMB share needed             : No
 
         # Parse wildcards
-        files_and_directories = resolve_remote_files(self.smbSession, arguments)
+        files_and_directories = resolve_remote_files(self.sessionsManager.current_session, arguments)
 
         for path_to_file in files_and_directories:
             # Read the file
@@ -486,7 +490,7 @@ class InteractiveShell(object):
         # SMB share needed             : No
 
         # Parse wildcards
-        files_and_directories = resolve_remote_files(self.smbSession, arguments)
+        files_and_directories = resolve_remote_files(self.sessionsManager.current_session, arguments)
 
         for path_to_file in files_and_directories:
             # Read the file 
@@ -691,17 +695,17 @@ class InteractiveShell(object):
         if len(arguments) == 0:
             arguments = ['.']
         else:
-            arguments = resolve_remote_files(self.smbSession, arguments)
+            arguments = resolve_remote_files(self.sessionsManager.current_session, arguments)
 
         for path in arguments:
             if len(arguments) > 1:
                 print("%s:" % path)
 
-            if self.smbSession.path_isdir(pathFromRoot=path):
+            if self.sessionsManager.current_session.path_isdir(pathFromRoot=path):
                 # Read the files
-                directory_contents = self.smbSession.list_contents(path=path)
+                directory_contents = self.sessionsManager.current_session.list_contents(path=path)
             else:
-                entry = self.smbSession.get_entry(path=path)
+                entry = self.sessionsManager.current_session.get_entry(path=path)
                 if entry is not None:
                     directory_contents = {entry.get_longname(): entry}
                 else:
@@ -721,7 +725,7 @@ class InteractiveShell(object):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        self.smbSession.mkdir(path=arguments[0])
+        self.sessionsManager.current_session.mkdir(path=arguments[0])
 
     @command_arguments_required
     @active_smb_connection_needed
@@ -730,7 +734,7 @@ class InteractiveShell(object):
         module_name = arguments[0]
 
         if module_name in self.modules.keys():
-            module = self.modules[module_name](self.smbSession, self.config)
+            module = self.modules[module_name](self.sessionsManager.current_session, self.config)
             arguments_string = ' '.join(arguments[1:])
             module.run(arguments_string)
         else:
@@ -747,7 +751,7 @@ class InteractiveShell(object):
         if len(arguments) == 2:
             remote_path = arguments[0]
             if not remote_path.startswith(ntpath.sep):
-                remote_path = self.smbSession.smb_cwd + ntpath.sep + remote_path
+                remote_path = self.sessionsManager.current_session.smb_cwd + ntpath.sep + remote_path
 
             local_mount_point = arguments[1]
 
@@ -755,9 +759,9 @@ class InteractiveShell(object):
                 print("[debug] Trying to mount remote '%s' onto local '%s'" % (remote_path, local_mount_point))
 
             try:
-                self.smbSession.mount(local_mount_point, remote_path)
+                self.sessionsManager.current_session.mount(local_mount_point, remote_path)
             except (impacket.smbconnection.SessionError, impacket.smb3.SessionError) as e:
-                self.smbSession.umount(local_mount_point)
+                self.sessionsManager.current_session.umount(local_mount_point)
         else:
             self.commandCompleterObject.print_help(command=command)
 
@@ -783,10 +787,10 @@ class InteractiveShell(object):
                 print(localpath)
                 if is_recursive and os.path.isdir(s=localpath):
                     # Put files recursively
-                    self.smbSession.put_file_recursively(localpath=localpath)
+                    self.sessionsManager.current_session.put_file_recursively(localpath=localpath)
                 else:
                     # Put this single file
-                    self.smbSession.put_file(localpath=localpath)
+                    self.sessionsManager.current_session.put_file(localpath=localpath)
             except impacket.smbconnection.SessionError as e:
                 print("[!] SMB Error: %s" % e)
 
@@ -795,12 +799,12 @@ class InteractiveShell(object):
         # Active SMB connection needed : No
         # SMB share needed             : No
 
-        self.smbSession.ping_smb_session()
-        if self.smbSession.connected:
-            self.smbSession.close_smb_session()
-            self.smbSession.init_smb_session()
+        self.sessionsManager.current_session.ping_smb_session()
+        if self.sessionsManager.current_session.connected:
+            self.sessionsManager.current_session.close_smb_session()
+            self.sessionsManager.current_session.init_smb_session()
         else:
-            self.smbSession.init_smb_session()
+            self.sessionsManager.current_session.init_smb_session()
 
     def command_reset(self, arguments, command):
         # Command arguments required   : No
@@ -822,12 +826,12 @@ class InteractiveShell(object):
         for path_to_file in arguments:
             # Wildcard
             if '*' in path_to_file:
-                self.smbSession.rm(path=path_to_file)
+                self.sessionsManager.current_session.rm(path=path_to_file)
             # File
-            elif self.smbSession.path_exists(path_to_file):
-                if self.smbSession.path_isfile(path_to_file):
+            elif self.sessionsManager.current_session.path_exists(path_to_file):
+                if self.sessionsManager.current_session.path_isfile(path_to_file):
                     try:
-                        self.smbSession.rm(path=path_to_file)
+                        self.sessionsManager.current_session.rm(path=path_to_file)
                     except Exception as e:
                         print("[!] Error removing file '%s' : %s" % path_to_file)
                 else:
@@ -845,10 +849,10 @@ class InteractiveShell(object):
         # SMB share needed             : Yes
 
         for path_to_directory in arguments:
-            if self.smbSession.path_exists(path_to_directory):
-                if self.smbSession.path_isdir(path_to_directory):
+            if self.sessionsManager.current_session.path_exists(path_to_directory):
+                if self.sessionsManager.current_session.path_isdir(path_to_directory):
                     try:
-                        self.smbSession.rmdir(path=path_to_directory)
+                        self.sessionsManager.current_session.rmdir(path=path_to_directory)
                     except Exception as e:
                         print("[!] Error removing directory '%s' : %s" % path_to_directory)
                 else:
@@ -867,7 +871,7 @@ class InteractiveShell(object):
             def __init__(self, entry, smbSession, config):
                 self.entry = entry
                 self.config = config
-                self.smbSession = smbSession
+                self.sessionsManager.current_session = smbSession
                 self.size = 0
             
             def update(self, entry, fullpath, depth):
@@ -891,10 +895,10 @@ class InteractiveShell(object):
 
         entries = []
         if len(arguments) == 0:
-            entries = self.smbSession.list_contents()
+            entries = self.sessionsManager.current_session.list_contents()
             entries = [entry for name, entry in entries.items() if name not in ['.', '..']]
         else:
-            entry = self.smbSession.get_entry(path=' '.join(arguments))
+            entry = self.sessionsManager.current_session.get_entry(path=' '.join(arguments))
             entries = []
             if entry is not None:
                 entries = [entry]
@@ -903,10 +907,10 @@ class InteractiveShell(object):
 
         total = 0
         for entry in entries:
-            rsop = RecursiveSizeOfPrint(entry=entry, smbSession=self.smbSession, config=self.config)
+            rsop = RecursiveSizeOfPrint(entry=entry, smbSession=self.sessionsManager.current_session, config=self.config)
             # Directory
             if entry.is_directory():
-                self.smbSession.find(
+                self.sessionsManager.current_session.find(
                     paths=[entry.get_longname()],
                     callback=rsop.update
                 )
@@ -932,7 +936,7 @@ class InteractiveShell(object):
             if arguments[0] == "rights":
                 do_check_rights = True
 
-        shares = self.smbSession.list_shares()
+        shares = self.sessionsManager.current_session.list_shares()
         if len(shares.keys()) != 0:
             table = Table(title=None)
             table.add_column("Share")
@@ -958,7 +962,7 @@ class InteractiveShell(object):
                     str_comment = "[bold bright_yellow]" + shares[sharename]["comment"] + "[/bold bright_yellow]"
 
                 if do_check_rights:
-                    access_rights = self.smbSession.test_rights(sharename=shares[sharename]["name"])
+                    access_rights = self.sessionsManager.current_session.test_rights(sharename=shares[sharename]["name"])
                     str_access_rights = "[bold yellow]NO ACCESS[/bold yellow]"
                     if access_rights["readable"] and access_rights["writable"]:
                         str_access_rights = "[bold green]READ[/bold green], [bold red]WRITE[/bold red]"
@@ -977,7 +981,7 @@ class InteractiveShell(object):
 
             Console().print(table)
         else:
-            print("[!] No share served on '%s'" % self.smbSession.address)
+            print("[!] No share served on '%s'" % self.sessionsManager.current_session.host)
 
     @active_smb_connection_needed
     @smb_share_is_set
@@ -987,9 +991,9 @@ class InteractiveShell(object):
         # SMB share needed             : Yes
 
         if len(arguments) == 0:
-            self.smbSession.tree(path='.')
+            self.sessionsManager.current_session.tree(path='.')
         else:
-            self.smbSession.tree(path=arguments[0])
+            self.sessionsManager.current_session.tree(path=arguments[0])
 
     @command_arguments_required
     @active_smb_connection_needed
@@ -1004,7 +1008,7 @@ class InteractiveShell(object):
         if self.config.debug:
             print("[debug] Trying to unmount local mount point '%s'" % (local_mount_point))
         
-        self.smbSession.umount(local_mount_point)
+        self.sessionsManager.current_session.umount(local_mount_point)
         
     @command_arguments_required
     @active_smb_connection_needed
@@ -1016,13 +1020,13 @@ class InteractiveShell(object):
         sharename = arguments[0]
 
         # Reload the list of shares
-        shares = self.smbSession.list_shares()
+        shares = self.sessionsManager.current_session.list_shares()
         shares = [s.lower() for s in shares.keys()]
 
         if sharename.lower() in shares:
-            self.smbSession.set_share(sharename)
+            self.sessionsManager.current_session.set_share(sharename)
         else:
-            print("[!] No share named '%s' on '%s'" % (sharename, self.smbSession.address))
+            print("[!] No share named '%s' on '%s'" % (sharename, self.sessionsManager.current_session.host))
 
     # Private functions =======================================================
 
@@ -1082,34 +1086,47 @@ class InteractiveShell(object):
             str: The formatted command prompt string.
         """
 
-        self.smbSession.ping_smb_session()
-        if self.smbSession.connected:
-            if self.config.no_colors:
-                connected_dot = "[v]"
+        # A session exists
+        if self.sessionsManager.current_session is not None:
+            # Check if the session is still active
+            self.sessionsManager.current_session.ping_smb_session()
+            if self.sessionsManager.current_session.connected:
+                if self.config.no_colors:
+                    connected_dot = "[v]"
+                else:
+                    connected_dot = "\x1b[1;92m⏺\x1b[0m"
             else:
-                connected_dot = "\x1b[1;92m⏺\x1b[0m"
-        else:
-            if self.config.no_colors:
-                connected_dot = "[x]"
-            else:
-                connected_dot = "\x1b[1;91m⏺\x1b[0m"
-        
-        if self.smbSession.smb_share is None:
-            if self.config.no_colors:
-                str_prompt = "%s[\\\\%s\\]> " % (connected_dot, self.smbSession.address)
-            else:
-                str_prompt = "%s[\x1b[1;94m\\\\%s\\\x1b[0m]> " % (connected_dot, self.smbSession.address)
-        else:
-            if len(self.smbSession.smb_cwd) == 0:
-                current_path = ""
-            else:
-                current_path = self.smbSession.smb_cwd.strip(ntpath.sep) + ntpath.sep
+                if self.config.no_colors:
+                    connected_dot = "[x]"
+                else:
+                    connected_dot = "\x1b[1;91m⏺\x1b[0m"
             
-            str_path = "\\\\%s\\%s\\%s" % (self.smbSession.address, self.smbSession.smb_share, current_path)
+            # Session ID if 
+            session_prompt = ""
+            if len(self.sessionsManager.sessions.keys()) >= 2:
+                session_prompt = "[#%d]" % self.sessionsManager.current_session_id
 
-            if self.config.no_colors:
-                str_prompt = "%s[%s]> " % (connected_dot, str_path)
+            # No share set yet
+            if self.sessionsManager.current_session.smb_share is None:
+                str_path = "\\\\%s\\" % self.sessionsManager.current_session.host
+            # A share is set
             else:
-                str_prompt = "%s[\x1b[1;94m%s\x1b[0m]> " % (connected_dot, str_path)
+                if len(self.sessionsManager.current_session.smb_cwd) == 0:
+                    current_path = ""
+                else:
+                    current_path = self.sessionsManager.current_session.smb_cwd.strip(ntpath.sep) + ntpath.sep
+                
+                str_path = "\\\\%s\\%s\\%s" % (self.sessionsManager.current_session.host, self.sessionsManager.current_session.smb_share, current_path)
+        # No active session
+        else:
+            connected_dot = ""
+            session_prompt = ""
+            str_path = "No active session"
+
+        # Build final prompt string
+        if self.config.no_colors:
+            str_prompt = "%s%s[%s]> " % (connected_dot, session_prompt, str_path)
+        else:
+            str_prompt = "%s%s[\x1b[1;94m%s\x1b[0m]> " % (connected_dot, session_prompt, str_path)
 
         return str_prompt
