@@ -101,6 +101,7 @@ class InteractiveShell(object):
             for line in f.readlines():
                 try:
                     self.logger.print("%s%s" % (self.__prompt(), line.strip()))
+                    readline.add_history(line.strip())
                     self.process_line(commandLine=line.strip())
                 except KeyboardInterrupt as e:
                     self.logger.print()
