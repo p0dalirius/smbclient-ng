@@ -41,7 +41,8 @@ class SessionsManager(object):
             host=host,
             port=port,
             credentials=credentials,
-            config=self.config
+            config=self.config,
+            logger=self.logger
         )
         smbSession.init_smb_session()
         
@@ -148,8 +149,11 @@ class SessionsManager(object):
         subparsers.add_parser("execute", parents=[mode_execute], help=mode_execute.description)
         subparsers.add_parser("list", parents=[mode_list], help=mode_list.description)
 
-        options = parser.parse_args(arguments)
-
+        try:
+            options = parser.parse_args(arguments)
+        except SystemExit as e:
+            pass
+        
         # Process actions
 
         # 

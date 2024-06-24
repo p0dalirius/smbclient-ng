@@ -42,7 +42,10 @@ class Module(object):
         
         __iterableArguments = shlex.split(arguments)
 
-        self.options = parser.parse_args(__iterableArguments)
+        try:
+            self.options = parser.parse_args(__iterableArguments)
+        except SystemExit as e:
+            pass
 
         return self.options
         

@@ -39,6 +39,3 @@ class ModuleArgumentParser(argparse.ArgumentParser):
 
         self.print_help()
         sys.stderr.write('\n[!] Error: %s\n' % message)
-    
-    def exit(self, message):
-        pass

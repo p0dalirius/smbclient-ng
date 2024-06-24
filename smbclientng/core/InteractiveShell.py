@@ -87,7 +87,11 @@ class InteractiveShell(object):
         self.config = config
         self.logger = logger
         # Internals
-        self.commandCompleterObject = CommandCompleter(smbSession=self.sessionsManager.current_session, config=self.config)
+        self.commandCompleterObject = CommandCompleter(
+            smbSession=self.sessionsManager.current_session,
+            config=self.config,
+            logger=self.logger,
+        )
         readline.set_completer(self.commandCompleterObject.complete)
         readline.parse_and_bind("tab: complete")
         readline.set_completer_delims("\n")
@@ -737,7 +741,7 @@ class InteractiveShell(object):
         module_name = arguments[0]
 
         if module_name in self.modules.keys():
-            module = self.modules[module_name](self.sessionsManager.current_session, self.config)
+            module = self.modules[module_name](self.sessionsManager.current_session, self.config, self.logger)
             arguments_string = ' '.join(arguments[1:])
             module.run(arguments_string)
         else:
