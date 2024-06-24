@@ -265,6 +265,10 @@ class InteractiveShell(object):
             elif command == "rmdir":
                 self.command_rmdir(arguments, command)
 
+            # Sessions management
+            elif command == "sessions":
+                self.sessionsManager.process_command_line(arguments)
+
             # List shares
             elif command == "sizeof":
                 self.command_sizeof(arguments, command)
@@ -977,7 +981,7 @@ class InteractiveShell(object):
 
             Console().print(table)
         else:
-            print("[!] No share served on '%s'" % self.sessionsManager.current_session.address)
+            print("[!] No share served on '%s'" % self.sessionsManager.current_session.host)
 
     @active_smb_connection_needed
     @smb_share_is_set
@@ -1022,7 +1026,7 @@ class InteractiveShell(object):
         if sharename.lower() in shares:
             self.sessionsManager.current_session.set_share(sharename)
         else:
-            print("[!] No share named '%s' on '%s'" % (sharename, self.sessionsManager.current_session.address))
+            print("[!] No share named '%s' on '%s'" % (sharename, self.sessionsManager.current_session.host))
 
     # Private functions =======================================================
 
@@ -1082,34 +1086,47 @@ class InteractiveShell(object):
             str: The formatted command prompt string.
         """
 
-        self.sessionsManager.current_session.ping_smb_session()
-        if self.sessionsManager.current_session.connected:
-            if self.config.no_colors:
-                connected_dot = "[v]"
+        # A session exists
+        if self.sessionsManager.current_session is not None:
+            # Check if the session is still active
+            self.sessionsManager.current_session.ping_smb_session()
+            if self.sessionsManager.current_session.connected:
+                if self.config.no_colors:
+                    connected_dot = "[v]"
+                else:
+                    connected_dot = "\x1b[1;92m⏺\x1b[0m"
             else:
-                connected_dot = "\x1b[1;92m⏺\x1b[0m"
-        else:
-            if self.config.no_colors:
-                connected_dot = "[x]"
-            else:
-                connected_dot = "\x1b[1;91m⏺\x1b[0m"
-        
-        if self.sessionsManager.current_session.smb_share is None:
-            if self.config.no_colors:
-                str_prompt = "%s[\\\\%s\\]> " % (connected_dot, self.sessionsManager.current_session.address)
-            else:
-                str_prompt = "%s[\x1b[1;94m\\\\%s\\\x1b[0m]> " % (connected_dot, self.sessionsManager.current_session.address)
-        else:
-            if len(self.sessionsManager.current_session.smb_cwd) == 0:
-                current_path = ""
-            else:
-                current_path = self.sessionsManager.current_session.smb_cwd.strip(ntpath.sep) + ntpath.sep
+                if self.config.no_colors:
+                    connected_dot = "[x]"
+                else:
+                    connected_dot = "\x1b[1;91m⏺\x1b[0m"
             
-            str_path = "\\\\%s\\%s\\%s" % (self.sessionsManager.current_session.address, self.sessionsManager.current_session.smb_share, current_path)
+            # Session ID if 
+            session_prompt = ""
+            if len(self.sessionsManager.sessions.keys()) >= 2:
+                session_prompt = "[#%d]" % self.sessionsManager.current_session_id
 
-            if self.config.no_colors:
-                str_prompt = "%s[%s]> " % (connected_dot, str_path)
+            # No share set yet
+            if self.sessionsManager.current_session.smb_share is None:
+                str_path = "\\\\%s\\" % self.sessionsManager.current_session.host
+            # A share is set
             else:
-                str_prompt = "%s[\x1b[1;94m%s\x1b[0m]> " % (connected_dot, str_path)
+                if len(self.sessionsManager.current_session.smb_cwd) == 0:
+                    current_path = ""
+                else:
+                    current_path = self.sessionsManager.current_session.smb_cwd.strip(ntpath.sep) + ntpath.sep
+                
+                str_path = "\\\\%s\\%s\\%s" % (self.sessionsManager.current_session.host, self.sessionsManager.current_session.smb_share, current_path)
+        # No active session
+        else:
+            connected_dot = ""
+            session_prompt = ""
+            str_path = "No active session"
+
+        # Build final prompt string
+        if self.config.no_colors:
+            str_prompt = "%s%s[%s]> " % (connected_dot, session_prompt, str_path)
+        else:
+            str_prompt = "%s%s[\x1b[1;94m%s\x1b[0m]> " % (connected_dot, session_prompt, str_path)
 
         return str_prompt
