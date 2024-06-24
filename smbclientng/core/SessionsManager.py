@@ -23,7 +23,7 @@ class SessionsManager(object):
         self.current_session = None
         self.current_session_id = None
 
-        self.config = config,
+        self.config = config
         self.logger = logger
 
     def create_new_session(self, credentials, host, port=445):
