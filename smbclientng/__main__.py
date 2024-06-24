@@ -7,9 +7,9 @@
 import argparse
 import sys
 from smbclientng.core.Config import Config
+from smbclientng.core.Credentials import Credentials
 from smbclientng.core.InteractiveShell import InteractiveShell
-from smbclientng.core.SMBSession import SMBSession
-from smbclientng.core.utils import parse_lm_nt_hashes
+from smbclientng.core.SessionsManager import SessionsManager
 
 
 VERSION = "1.4"
@@ -27,10 +27,12 @@ def parseArgs():
     parser = argparse.ArgumentParser(add_help=True, description="smbclient-ng, a fast and user friendly way to interact with SMB shares.")
     parser.add_argument("--debug", dest="debug", action="store_true", default=False, help="Debug mode.")
     parser.add_argument("--no-colors", dest="no_colors", action="store_true", default=False, help="No colors mode.")
-    parser.add_argument("--target", action="store", metavar="ip address", required=True, type=str, help="IP Address of the SMB Server to connect to.")  
     parser.add_argument("-S", "--startup-script", metavar="startup_script", required=False, type=str, help="File containing the list of commands to be typed at start of the console.")  
     parser.add_argument("-N", "--not-interactive", dest="not_interactive", required=False, action="store_true", default=False, help="Non interactive mode.")
-    parser.add_argument("--port", action="store", metavar="port of smb service", type=int, default=445, help="Port of the SMB Server to connect to.")
+
+    group_target = parser.add_argument_group("Target")
+    group_target.add_argument("--host", action="store", metavar="HOST", required=True, type=str, help="IP address or hostname of the SMB Server to connect to.")  
+    group_target.add_argument("--port", action="store", metavar="PORT", type=int, default=445, help="Port of the SMB Server to connect to. (default: 445)")
 
     authconn = parser.add_argument_group("Authentication & connection")
     authconn.add_argument("--kdcHost", dest="kdcHost", action="store", metavar="FQDN KDC", help="FQDN of KDC for Kerberos.")
@@ -42,7 +44,7 @@ def parseArgs():
     cred.add_argument("--no-pass", action="store_true", help="Don't ask for password (useful for -k).")
     cred.add_argument("-p", "--password", dest="auth_password", metavar="PASSWORD", action="store", nargs="?", help="Password to authenticate with.")
     cred.add_argument("-H", "--hashes", dest="auth_hashes", action="store", metavar="[LMHASH:]NTHASH", help="NT/LM hashes, format is LMhash:NThash.")
-    cred.add_argument("--aes-key", dest="auth_key", action="store", metavar="hex key", help="AES key to use for Kerberos Authentication (128 or 256 bits).")
+    cred.add_argument("--aes-key", dest="aesKey", action="store", metavar="hex key", help="AES key to use for Kerberos Authentication (128 or 256 bits).")
     secret.add_argument("-k", "--kerberos", dest="use_kerberos", action="store_true", help="Use Kerberos authentication. Grabs credentials from .ccache file (KRB5CCNAME) based on target parameters. If valid credentials cannot be found, it will use the ones specified in the command line.")
 
     if len(sys.argv) == 1:
@@ -63,6 +65,18 @@ def parseArgs():
             options.auth_password = getpass("  | Provide a password for '%s\\%s':" % (options.auth_domain, options.auth_username))
         else:
             options.auth_password = getpass("  | Provide a password for '%s':" % options.auth_username)
+
+    # Use AES Authentication key if available
+    if options.aesKey is not None:
+        options.use_kerberos = True
+    if options.use_kerberos is True and options.kdcHost is None:
+        print("[!] Specify KDC's Hostname of FQDN using the argument --kdcHost")
+        exit()
+    
+    # Parse hashes
+    if options.auth_hashes is not None:
+        if ":" not in options.auth_hashes:
+            options.auth_hashes = ":" + options.auth_hashes
 
     return options
 
@@ -86,42 +100,33 @@ def main():
 
     options = parseArgs()
 
-    # Parse hashes
-    if options.auth_hashes is not None:
-        if ":" not in options.auth_hashes:
-            options.auth_hashes = ":" + options.auth_hashes
-    auth_lm_hash, auth_nt_hash = parse_lm_nt_hashes(options.auth_hashes)
-
-    # Use AES Authentication key if available
-    if options.auth_key is not None:
-        options.use_kerberos = True
-    if options.use_kerberos is True and options.kdcHost is None:
-        print("[!] Specify KDC's Hostname of FQDN using the argument --kdcHost")
-        exit()
-
     config = Config()
     config.debug = options.debug
     config.no_colors = options.no_colors
     config.not_interactive = options.not_interactive
     config.startup_script = options.startup_script
 
-    sessionsManager = SessionsManager()
+    sessionsManager = SessionsManager(config=config)
 
-    smbSession = SMBSession(
-        address=options.target,
-        port=options.port,
-        domain=options.auth_domain,
-        username=options.auth_username,
-        password=options.auth_password,
-        lmhash=auth_lm_hash,
-        nthash=auth_nt_hash,
-        use_kerberos=options.use_kerberos,
-        config=config
-    )
-    smbSession.init_smb_session()
+    if any([(options.auth_domain != '.'), (options.auth_username is not None), (options.auth_password is not None),(options.auth_hashes is not None)]):
+        credentials = Credentials(
+            domain=options.auth_domain,
+            username=options.auth_username,
+            password=options.auth_password,
+            hashes=options.auth_hashes,
+            use_kerberos=options.use_kerberos,
+            aesKey=options.aesKey,
+            kdcHost=options.kdcHost
+        )
+        sessionsManager.create_new_session(
+            credentials=credentials,
+            host=options.host,
+            port=options.port
+        )
 
+    # Start the main interactive command line
     shell = InteractiveShell(
-        smbSession=smbSession, 
+        sessionsManager=sessionsManager, 
         config=config
     )
     shell.run()
