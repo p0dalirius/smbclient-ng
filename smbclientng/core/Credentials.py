@@ -20,10 +20,10 @@ class Credentials(object):
     username = None
     password = None
     # Hashes
-    nt_hex = None
-    nt_raw = None
-    lm_hex = None
-    lm_raw = None
+    nt_hex = ""
+    nt_raw = ""
+    lm_hex = ""
+    lm_raw = ""
     # Kerberos
     use_kerberos = False
     aesKey = None
@@ -36,10 +36,10 @@ class Credentials(object):
         self.username = username
         self.password = password
         # Hashes
-        self.nt_hex = None
-        self.nt_raw = None
-        self.lm_hex = None
-        self.lm_raw = None
+        self.nt_hex = ""
+        self.nt_raw = ""
+        self.lm_hex = ""
+        self.lm_raw = ""
         self.set_hashes(hashes=hashes)
         # Kerberos
         self.use_kerberos = use_kerberos
@@ -59,10 +59,10 @@ class Credentials(object):
             hashes (str): A string containing LM and NT hashes separated by a colon.
         """
 
-        self.nt_hex = None
-        self.nt_raw = None
-        self.lm_hex = None
-        self.lm_raw = None
+        self.nt_hex = ""
+        self.nt_raw = ""
+        self.lm_hex = ""
+        self.lm_raw = ""
 
         lmhash, nthash = None, None
         if hashes is not None:
