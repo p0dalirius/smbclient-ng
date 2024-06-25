@@ -125,11 +125,12 @@ class SMBSession(object):
                     sess_port=int(self.port)
                 )
             else:
+                self.logger.error("Could not connect to '%s:%d'" % (self.host, int(self.port)))
                 self.connected = False
         except OSError as err:
             if self.config.debug:
                 traceback.print_exc()
-            self.logger.error(err)
+            self.logger.error("Could not connect to '%s:%d': %s" % (self.host, int(self.port), err))
             self.smbClient = None
 
         if self.smbClient is not None:
