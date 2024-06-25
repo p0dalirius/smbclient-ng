@@ -34,6 +34,9 @@
                     <a class="class" href="#ModuleArgumentParser">ModuleArgumentParser</a>
                             <ul class="memberlist">
                         <li>
+                                <a class="variable" href="#ModuleArgumentParser.exit_on_error">exit_on_error</a>
+                        </li>
+                        <li>
                                 <a class="function" href="#ModuleArgumentParser.error">error</a>
                         </li>
                 </ul>
@@ -86,19 +89,21 @@
 </span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="sd">            Overrides the default error handling to provide a more informative error message and display the help text.</span>
 </span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>    <span class="k">def</span> <span class="nf">error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a><span class="sd">        Overrides the default error handling of argparse.ArgumentParser to provide a custom error message and help display.</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a><span class="sd">        This method is called when ArgumentParser encounters an error. It writes the error message to stderr,</span>
-</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a><span class="sd">        displays the help message, and then exits the program with a status code of 2.</span>
-</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>
-</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a><span class="sd">        Args:</span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a><span class="sd">            message (str): The error message to be displayed.</span>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;[!] Error: </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">message</span><span class="p">)</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">print_help</span><span class="p">()</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>    <span class="n">exit_on_error</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>
+</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>    <span class="k">def</span> <span class="nf">error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a><span class="sd">        Overrides the default error handling of argparse.ArgumentParser to provide a custom error message and help display.</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>
+</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a><span class="sd">        This method is called when ArgumentParser encounters an error. It writes the error message to stderr,</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a><span class="sd">        displays the help message, and then exits the program with a status code of 2.</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>
+</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="sd">        Args:</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="sd">            message (str): The error message to be displayed.</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>
+</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">print_help</span><span class="p">()</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">[!] Error: </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">message</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -129,19 +134,21 @@
 </span><span id="ModuleArgumentParser-25"><a href="#ModuleArgumentParser-25"><span class="linenos">25</span></a><span class="sd">            Overrides the default error handling to provide a more informative error message and display the help text.</span>
 </span><span id="ModuleArgumentParser-26"><a href="#ModuleArgumentParser-26"><span class="linenos">26</span></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="ModuleArgumentParser-27"><a href="#ModuleArgumentParser-27"><span class="linenos">27</span></a>
-</span><span id="ModuleArgumentParser-28"><a href="#ModuleArgumentParser-28"><span class="linenos">28</span></a>    <span class="k">def</span> <span class="nf">error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
-</span><span id="ModuleArgumentParser-29"><a href="#ModuleArgumentParser-29"><span class="linenos">29</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="ModuleArgumentParser-30"><a href="#ModuleArgumentParser-30"><span class="linenos">30</span></a><span class="sd">        Overrides the default error handling of argparse.ArgumentParser to provide a custom error message and help display.</span>
-</span><span id="ModuleArgumentParser-31"><a href="#ModuleArgumentParser-31"><span class="linenos">31</span></a>
-</span><span id="ModuleArgumentParser-32"><a href="#ModuleArgumentParser-32"><span class="linenos">32</span></a><span class="sd">        This method is called when ArgumentParser encounters an error. It writes the error message to stderr,</span>
-</span><span id="ModuleArgumentParser-33"><a href="#ModuleArgumentParser-33"><span class="linenos">33</span></a><span class="sd">        displays the help message, and then exits the program with a status code of 2.</span>
-</span><span id="ModuleArgumentParser-34"><a href="#ModuleArgumentParser-34"><span class="linenos">34</span></a>
-</span><span id="ModuleArgumentParser-35"><a href="#ModuleArgumentParser-35"><span class="linenos">35</span></a><span class="sd">        Args:</span>
-</span><span id="ModuleArgumentParser-36"><a href="#ModuleArgumentParser-36"><span class="linenos">36</span></a><span class="sd">            message (str): The error message to be displayed.</span>
-</span><span id="ModuleArgumentParser-37"><a href="#ModuleArgumentParser-37"><span class="linenos">37</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="ModuleArgumentParser-38"><a href="#ModuleArgumentParser-38"><span class="linenos">38</span></a>
-</span><span id="ModuleArgumentParser-39"><a href="#ModuleArgumentParser-39"><span class="linenos">39</span></a>        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;[!] Error: </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">message</span><span class="p">)</span>
-</span><span id="ModuleArgumentParser-40"><a href="#ModuleArgumentParser-40"><span class="linenos">40</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">print_help</span><span class="p">()</span>
+</span><span id="ModuleArgumentParser-28"><a href="#ModuleArgumentParser-28"><span class="linenos">28</span></a>    <span class="n">exit_on_error</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span id="ModuleArgumentParser-29"><a href="#ModuleArgumentParser-29"><span class="linenos">29</span></a>
+</span><span id="ModuleArgumentParser-30"><a href="#ModuleArgumentParser-30"><span class="linenos">30</span></a>    <span class="k">def</span> <span class="nf">error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+</span><span id="ModuleArgumentParser-31"><a href="#ModuleArgumentParser-31"><span class="linenos">31</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="ModuleArgumentParser-32"><a href="#ModuleArgumentParser-32"><span class="linenos">32</span></a><span class="sd">        Overrides the default error handling of argparse.ArgumentParser to provide a custom error message and help display.</span>
+</span><span id="ModuleArgumentParser-33"><a href="#ModuleArgumentParser-33"><span class="linenos">33</span></a>
+</span><span id="ModuleArgumentParser-34"><a href="#ModuleArgumentParser-34"><span class="linenos">34</span></a><span class="sd">        This method is called when ArgumentParser encounters an error. It writes the error message to stderr,</span>
+</span><span id="ModuleArgumentParser-35"><a href="#ModuleArgumentParser-35"><span class="linenos">35</span></a><span class="sd">        displays the help message, and then exits the program with a status code of 2.</span>
+</span><span id="ModuleArgumentParser-36"><a href="#ModuleArgumentParser-36"><span class="linenos">36</span></a>
+</span><span id="ModuleArgumentParser-37"><a href="#ModuleArgumentParser-37"><span class="linenos">37</span></a><span class="sd">        Args:</span>
+</span><span id="ModuleArgumentParser-38"><a href="#ModuleArgumentParser-38"><span class="linenos">38</span></a><span class="sd">            message (str): The error message to be displayed.</span>
+</span><span id="ModuleArgumentParser-39"><a href="#ModuleArgumentParser-39"><span class="linenos">39</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="ModuleArgumentParser-40"><a href="#ModuleArgumentParser-40"><span class="linenos">40</span></a>
+</span><span id="ModuleArgumentParser-41"><a href="#ModuleArgumentParser-41"><span class="linenos">41</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">print_help</span><span class="p">()</span>
+</span><span id="ModuleArgumentParser-42"><a href="#ModuleArgumentParser-42"><span class="linenos">42</span></a>        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">[!] Error: </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">message</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -159,6 +166,18 @@ It is designed to provide clear and user-friendly command-line interfaces for va
 </div>
 
 
+                            <div id="ModuleArgumentParser.exit_on_error" class="classattr">
+                                <div class="attr variable">
+            <span class="name">exit_on_error</span>        =
+<span class="default_value">False</span>
+
+        
+    </div>
+    <a class="headerlink" href="#ModuleArgumentParser.exit_on_error"></a>
+    
+    
+
+                            </div>
                             <div id="ModuleArgumentParser.error" class="classattr">
                                         <input id="ModuleArgumentParser.error-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
@@ -170,19 +189,19 @@ It is designed to provide clear and user-friendly command-line interfaces for va
 
     </div>
     <a class="headerlink" href="#ModuleArgumentParser.error"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="ModuleArgumentParser.error-28"><a href="#ModuleArgumentParser.error-28"><span class="linenos">28</span></a>    <span class="k">def</span> <span class="nf">error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
-</span><span id="ModuleArgumentParser.error-29"><a href="#ModuleArgumentParser.error-29"><span class="linenos">29</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="ModuleArgumentParser.error-30"><a href="#ModuleArgumentParser.error-30"><span class="linenos">30</span></a><span class="sd">        Overrides the default error handling of argparse.ArgumentParser to provide a custom error message and help display.</span>
-</span><span id="ModuleArgumentParser.error-31"><a href="#ModuleArgumentParser.error-31"><span class="linenos">31</span></a>
-</span><span id="ModuleArgumentParser.error-32"><a href="#ModuleArgumentParser.error-32"><span class="linenos">32</span></a><span class="sd">        This method is called when ArgumentParser encounters an error. It writes the error message to stderr,</span>
-</span><span id="ModuleArgumentParser.error-33"><a href="#ModuleArgumentParser.error-33"><span class="linenos">33</span></a><span class="sd">        displays the help message, and then exits the program with a status code of 2.</span>
-</span><span id="ModuleArgumentParser.error-34"><a href="#ModuleArgumentParser.error-34"><span class="linenos">34</span></a>
-</span><span id="ModuleArgumentParser.error-35"><a href="#ModuleArgumentParser.error-35"><span class="linenos">35</span></a><span class="sd">        Args:</span>
-</span><span id="ModuleArgumentParser.error-36"><a href="#ModuleArgumentParser.error-36"><span class="linenos">36</span></a><span class="sd">            message (str): The error message to be displayed.</span>
-</span><span id="ModuleArgumentParser.error-37"><a href="#ModuleArgumentParser.error-37"><span class="linenos">37</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="ModuleArgumentParser.error-38"><a href="#ModuleArgumentParser.error-38"><span class="linenos">38</span></a>
-</span><span id="ModuleArgumentParser.error-39"><a href="#ModuleArgumentParser.error-39"><span class="linenos">39</span></a>        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;[!] Error: </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">message</span><span class="p">)</span>
-</span><span id="ModuleArgumentParser.error-40"><a href="#ModuleArgumentParser.error-40"><span class="linenos">40</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">print_help</span><span class="p">()</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="ModuleArgumentParser.error-30"><a href="#ModuleArgumentParser.error-30"><span class="linenos">30</span></a>    <span class="k">def</span> <span class="nf">error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+</span><span id="ModuleArgumentParser.error-31"><a href="#ModuleArgumentParser.error-31"><span class="linenos">31</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="ModuleArgumentParser.error-32"><a href="#ModuleArgumentParser.error-32"><span class="linenos">32</span></a><span class="sd">        Overrides the default error handling of argparse.ArgumentParser to provide a custom error message and help display.</span>
+</span><span id="ModuleArgumentParser.error-33"><a href="#ModuleArgumentParser.error-33"><span class="linenos">33</span></a>
+</span><span id="ModuleArgumentParser.error-34"><a href="#ModuleArgumentParser.error-34"><span class="linenos">34</span></a><span class="sd">        This method is called when ArgumentParser encounters an error. It writes the error message to stderr,</span>
+</span><span id="ModuleArgumentParser.error-35"><a href="#ModuleArgumentParser.error-35"><span class="linenos">35</span></a><span class="sd">        displays the help message, and then exits the program with a status code of 2.</span>
+</span><span id="ModuleArgumentParser.error-36"><a href="#ModuleArgumentParser.error-36"><span class="linenos">36</span></a>
+</span><span id="ModuleArgumentParser.error-37"><a href="#ModuleArgumentParser.error-37"><span class="linenos">37</span></a><span class="sd">        Args:</span>
+</span><span id="ModuleArgumentParser.error-38"><a href="#ModuleArgumentParser.error-38"><span class="linenos">38</span></a><span class="sd">            message (str): The error message to be displayed.</span>
+</span><span id="ModuleArgumentParser.error-39"><a href="#ModuleArgumentParser.error-39"><span class="linenos">39</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="ModuleArgumentParser.error-40"><a href="#ModuleArgumentParser.error-40"><span class="linenos">40</span></a>
+</span><span id="ModuleArgumentParser.error-41"><a href="#ModuleArgumentParser.error-41"><span class="linenos">41</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">print_help</span><span class="p">()</span>
+</span><span id="ModuleArgumentParser.error-42"><a href="#ModuleArgumentParser.error-42"><span class="linenos">42</span></a>        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">[!] Error: </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">message</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -209,7 +228,6 @@ displays the help message, and then exits the program with a status code of 2.</
                 <dd id="ModuleArgumentParser.fromfile_prefix_chars" class="variable">fromfile_prefix_chars</dd>
                 <dd id="ModuleArgumentParser.add_help" class="variable">add_help</dd>
                 <dd id="ModuleArgumentParser.allow_abbrev" class="variable">allow_abbrev</dd>
-                <dd id="ModuleArgumentParser.exit_on_error" class="variable">exit_on_error</dd>
                 <dd id="ModuleArgumentParser.add_subparsers" class="function">add_subparsers</dd>
                 <dd id="ModuleArgumentParser.parse_args" class="function">parse_args</dd>
                 <dd id="ModuleArgumentParser.parse_known_args" class="function">parse_known_args</dd>
