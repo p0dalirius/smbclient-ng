@@ -138,5 +138,6 @@ def main():
     if options.debug:
         print("[debug] Exiting the console.")
 
+
 if __name__ == "__main__":
     main()
