@@ -6,7 +6,9 @@
 
 import setuptools
 
-VERSION = "1.4"
+
+VERSION = "2.0"
+
 
 long_description = """
 <p align="center">
@@ -52,17 +54,27 @@ long_description = """
 - [x] `reset`: Reset the TTY output, useful if it was broken after printing a binary file on stdout. Syntax: `reset`
 - [x] `rm`: Removes a remote file. Syntax: `rm <file>`
 - [x] `rmdir`: Removes a remote directory. Syntax: `rmdir <directory>`
+- [x] `sessions`: Manage the SMB sessions. Syntax: `sessions [interact|create|delete|execute|list]`
 - [x] `shares`: Lists the SMB shares served by the remote machine. Syntax: `shares`
 - [x] `sizeof`: Recursively compute the size of a folder. Syntax: `sizeof [directory|file]`
 - [x] `tree`: Displays a tree view of the remote directories. Syntax: `tree [directory]`
 - [x] `umount`: Removes a mount point of the remote share on the local machine. Syntax: `umount <local_mount_point>`
 - [x] `use`: Use a SMB share. Syntax: `use <sharename>`
 
+
 ## Install
+
+To install `smbclient-ng`, you can use pip. Run the following command in your terminal:
 
 ```
 python3 -m pip install smbclientng
 ```
+
+
+## Demonstration
+
+![](./.github/example.png)
+
 
 ## Usage
 
@@ -73,10 +85,11 @@ $ ./smbclient-ng.py -h
 / __| '_ ` _ \| '_ \ / __| | |/ _ \ '_ \| __|____| '_ \ / _` |
 \__ \ | | | | | |_) | (__| | |  __/ | | | ||_____| | | | (_| |
 |___/_| |_| |_|_.__/ \___|_|_|\___|_| |_|\__|    |_| |_|\__, |
-    by @podalirius_                               v1.4  |___/  
+    by @podalirius_                               v2.0  |___/  
     
-usage: smbclient-ng.py [-h] [--debug] [--no-colors] --target ip address [--kdcHost FQDN KDC] [-d DOMAIN] [-u USER]
-                       [--no-pass | -p PASSWORD | -H [LMHASH:]NTHASH | --aes-key hex key] [-k]
+usage: smbclient-ng.py [-h] [--debug] [--no-colors] [-S startup_script] [-N] --host HOST [--port PORT]
+                       [--kdcHost FQDN KDC] [-d DOMAIN] [-u USER] [--no-pass | -p [PASSWORD] | -H
+                       [LMHASH:]NTHASH | --aes-key hex key] [-k]
 
 smbclient-ng, a fast and user friendly way to interact with SMB shares.
 
@@ -84,7 +97,14 @@ options:
   -h, --help            show this help message and exit
   --debug               Debug mode.
   --no-colors           No colors mode.
-  --target ip address   IP Address of the SMB Server to connect to.
+  -S startup_script, --startup-script startup_script
+                        File containing the list of commands to be typed at start of the console.
+  -N, --not-interactive
+                        Non interactive mode.
+
+Target:
+  --host HOST           IP address or hostname of the SMB Server to connect to.
+  --port PORT           Port of the SMB Server to connect to. (default: 445)
 
 Authentication & connection:
   --kdcHost FQDN KDC    FQDN of KDC for Kerberos.
@@ -93,13 +113,14 @@ Authentication & connection:
   -u USER, --user USER  User to authenticate with.
 
   --no-pass             Don't ask for password (useful for -k).
-  -p PASSWORD, --password PASSWORD
+  -p [PASSWORD], --password [PASSWORD]
                         Password to authenticate with.
   -H [LMHASH:]NTHASH, --hashes [LMHASH:]NTHASH
                         NT/LM hashes, format is LMhash:NThash.
   --aes-key hex key     AES key to use for Kerberos Authentication (128 or 256 bits).
-  -k, --kerberos        Use Kerberos authentication. Grabs credentials from .ccache file (KRB5CCNAME) based on target parameters. If valid
-                        credentials cannot be found, it will use the ones specified in the command line.
+  -k, --kerberos        Use Kerberos authentication. Grabs credentials from .ccache file (KRB5CCNAME) based on target
+                        parameters. If valid credentials cannot be found, it will use the ones specified in the
+                        command line.
 ```
 
 
@@ -107,8 +128,9 @@ Authentication & connection:
 
  + Connect to a remote SMB server:
     ```
-    ./smbclient-ng.py -u "Administrator" -d LAB -p 'Admin123!' --target "10.0.0.201"
+    ./smbclient-ng.py -d "LAB" -u "Administrator" -p 'Admin123!' --host "10.0.0.201"
     ```
+
 
 ## Contributing
 

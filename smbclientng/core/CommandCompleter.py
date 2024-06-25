@@ -285,7 +285,7 @@ class CommandCompleter(object):
         },
         "sessions": {
             "description": [
-                "Manages the sessions.", 
+                "Manage the SMB sessions.", 
                 "Syntax: 'sessions [access|create|delete|execute|list]'"
             ], 
             "subcommands": ["create", "delete", "execute", "interact", "list"],

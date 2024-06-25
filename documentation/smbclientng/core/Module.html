@@ -52,6 +52,9 @@
                                 <a class="variable" href="#Module.config">config</a>
                         </li>
                         <li>
+                                <a class="variable" href="#Module.logger">logger</a>
+                        </li>
+                        <li>
                                 <a class="function" href="#Module.parseArgs">parseArgs</a>
                         </li>
                         <li>
@@ -106,31 +109,35 @@
 </span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>    <span class="n">smbSession</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>    <span class="n">options</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smbSession</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smbSession</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">logger</span><span class="p">):</span>
 </span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">smbSession</span> <span class="o">=</span> <span class="n">smbSession</span>
 </span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>    <span class="k">def</span> <span class="nf">parseArgs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement this method&quot;</span><span class="p">)</span>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a><span class="sd">        Placeholder method for running the module.</span>
-</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>
-</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a><span class="sd">        This method should be implemented by subclasses to define the specific behavior of the module.</span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement this method&quot;</span><span class="p">)</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>    <span class="k">def</span> <span class="nf">processArguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">arguments</span><span class="p">):</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">arguments</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>            <span class="n">arguments</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">arguments</span><span class="p">)</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>        
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>        <span class="n">__iterableArguments</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">arguments</span><span class="p">)</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">__iterableArguments</span><span class="p">)</span>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>
-</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a>        
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logger</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>    <span class="k">def</span> <span class="nf">parseArgs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement this method&quot;</span><span class="p">)</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>
+</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a><span class="sd">        Placeholder method for running the module.</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>
+</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a><span class="sd">        This method should be implemented by subclasses to define the specific behavior of the module.</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement this method&quot;</span><span class="p">)</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>    <span class="k">def</span> <span class="nf">processArguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">arguments</span><span class="p">):</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">arguments</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>            <span class="n">arguments</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">arguments</span><span class="p">)</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>        
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>        <span class="n">__iterableArguments</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">arguments</span><span class="p">)</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>
+</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">__iterableArguments</span><span class="p">)</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a>        <span class="k">except</span> <span class="ne">SystemExit</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a>            <span class="k">pass</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a>
+</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a>        
 </span></pre></div>
 
 
@@ -158,30 +165,34 @@
 </span><span id="Module-21"><a href="#Module-21"><span class="linenos">21</span></a>    <span class="n">smbSession</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="Module-22"><a href="#Module-22"><span class="linenos">22</span></a>    <span class="n">options</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="Module-23"><a href="#Module-23"><span class="linenos">23</span></a>
-</span><span id="Module-24"><a href="#Module-24"><span class="linenos">24</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smbSession</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+</span><span id="Module-24"><a href="#Module-24"><span class="linenos">24</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smbSession</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">logger</span><span class="p">):</span>
 </span><span id="Module-25"><a href="#Module-25"><span class="linenos">25</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">smbSession</span> <span class="o">=</span> <span class="n">smbSession</span>
 </span><span id="Module-26"><a href="#Module-26"><span class="linenos">26</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
-</span><span id="Module-27"><a href="#Module-27"><span class="linenos">27</span></a>
-</span><span id="Module-28"><a href="#Module-28"><span class="linenos">28</span></a>    <span class="k">def</span> <span class="nf">parseArgs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="Module-29"><a href="#Module-29"><span class="linenos">29</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement this method&quot;</span><span class="p">)</span>
-</span><span id="Module-30"><a href="#Module-30"><span class="linenos">30</span></a>
-</span><span id="Module-31"><a href="#Module-31"><span class="linenos">31</span></a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="Module-32"><a href="#Module-32"><span class="linenos">32</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="Module-33"><a href="#Module-33"><span class="linenos">33</span></a><span class="sd">        Placeholder method for running the module.</span>
-</span><span id="Module-34"><a href="#Module-34"><span class="linenos">34</span></a>
-</span><span id="Module-35"><a href="#Module-35"><span class="linenos">35</span></a><span class="sd">        This method should be implemented by subclasses to define the specific behavior of the module.</span>
-</span><span id="Module-36"><a href="#Module-36"><span class="linenos">36</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="Module-37"><a href="#Module-37"><span class="linenos">37</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement this method&quot;</span><span class="p">)</span>
-</span><span id="Module-38"><a href="#Module-38"><span class="linenos">38</span></a>
-</span><span id="Module-39"><a href="#Module-39"><span class="linenos">39</span></a>    <span class="k">def</span> <span class="nf">processArguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">arguments</span><span class="p">):</span>
-</span><span id="Module-40"><a href="#Module-40"><span class="linenos">40</span></a>        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">arguments</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
-</span><span id="Module-41"><a href="#Module-41"><span class="linenos">41</span></a>            <span class="n">arguments</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">arguments</span><span class="p">)</span>
-</span><span id="Module-42"><a href="#Module-42"><span class="linenos">42</span></a>        
-</span><span id="Module-43"><a href="#Module-43"><span class="linenos">43</span></a>        <span class="n">__iterableArguments</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">arguments</span><span class="p">)</span>
-</span><span id="Module-44"><a href="#Module-44"><span class="linenos">44</span></a>
-</span><span id="Module-45"><a href="#Module-45"><span class="linenos">45</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">__iterableArguments</span><span class="p">)</span>
-</span><span id="Module-46"><a href="#Module-46"><span class="linenos">46</span></a>
-</span><span id="Module-47"><a href="#Module-47"><span class="linenos">47</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span>
+</span><span id="Module-27"><a href="#Module-27"><span class="linenos">27</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logger</span>
+</span><span id="Module-28"><a href="#Module-28"><span class="linenos">28</span></a>
+</span><span id="Module-29"><a href="#Module-29"><span class="linenos">29</span></a>    <span class="k">def</span> <span class="nf">parseArgs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="Module-30"><a href="#Module-30"><span class="linenos">30</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement this method&quot;</span><span class="p">)</span>
+</span><span id="Module-31"><a href="#Module-31"><span class="linenos">31</span></a>
+</span><span id="Module-32"><a href="#Module-32"><span class="linenos">32</span></a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="Module-33"><a href="#Module-33"><span class="linenos">33</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="Module-34"><a href="#Module-34"><span class="linenos">34</span></a><span class="sd">        Placeholder method for running the module.</span>
+</span><span id="Module-35"><a href="#Module-35"><span class="linenos">35</span></a>
+</span><span id="Module-36"><a href="#Module-36"><span class="linenos">36</span></a><span class="sd">        This method should be implemented by subclasses to define the specific behavior of the module.</span>
+</span><span id="Module-37"><a href="#Module-37"><span class="linenos">37</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Module-38"><a href="#Module-38"><span class="linenos">38</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement this method&quot;</span><span class="p">)</span>
+</span><span id="Module-39"><a href="#Module-39"><span class="linenos">39</span></a>
+</span><span id="Module-40"><a href="#Module-40"><span class="linenos">40</span></a>    <span class="k">def</span> <span class="nf">processArguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">arguments</span><span class="p">):</span>
+</span><span id="Module-41"><a href="#Module-41"><span class="linenos">41</span></a>        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">arguments</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+</span><span id="Module-42"><a href="#Module-42"><span class="linenos">42</span></a>            <span class="n">arguments</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">arguments</span><span class="p">)</span>
+</span><span id="Module-43"><a href="#Module-43"><span class="linenos">43</span></a>        
+</span><span id="Module-44"><a href="#Module-44"><span class="linenos">44</span></a>        <span class="n">__iterableArguments</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">arguments</span><span class="p">)</span>
+</span><span id="Module-45"><a href="#Module-45"><span class="linenos">45</span></a>
+</span><span id="Module-46"><a href="#Module-46"><span class="linenos">46</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="Module-47"><a href="#Module-47"><span class="linenos">47</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">__iterableArguments</span><span class="p">)</span>
+</span><span id="Module-48"><a href="#Module-48"><span class="linenos">48</span></a>        <span class="k">except</span> <span class="ne">SystemExit</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span id="Module-49"><a href="#Module-49"><span class="linenos">49</span></a>            <span class="k">pass</span>
+</span><span id="Module-50"><a href="#Module-50"><span class="linenos">50</span></a>
+</span><span id="Module-51"><a href="#Module-51"><span class="linenos">51</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span>
 </span></pre></div>
 
 
@@ -195,15 +206,16 @@
                                         <input id="Module.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
             
-        <span class="name">Module</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">smbSession</span>, </span><span class="param"><span class="n">config</span></span>)</span>
+        <span class="name">Module</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">smbSession</span>, </span><span class="param"><span class="n">config</span>, </span><span class="param"><span class="n">logger</span></span>)</span>
 
                 <label class="view-source-button" for="Module.__init__-view-source"><span>View Source</span></label>
 
     </div>
     <a class="headerlink" href="#Module.__init__"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Module.__init__-24"><a href="#Module.__init__-24"><span class="linenos">24</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smbSession</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Module.__init__-24"><a href="#Module.__init__-24"><span class="linenos">24</span></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smbSession</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">logger</span><span class="p">):</span>
 </span><span id="Module.__init__-25"><a href="#Module.__init__-25"><span class="linenos">25</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">smbSession</span> <span class="o">=</span> <span class="n">smbSession</span>
 </span><span id="Module.__init__-26"><a href="#Module.__init__-26"><span class="linenos">26</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+</span><span id="Module.__init__-27"><a href="#Module.__init__-27"><span class="linenos">27</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logger</span>
 </span></pre></div>
 
 
@@ -269,6 +281,17 @@
     
 
                             </div>
+                            <div id="Module.logger" class="classattr">
+                                <div class="attr variable">
+            <span class="name">logger</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Module.logger"></a>
+    
+    
+
+                            </div>
                             <div id="Module.parseArgs" class="classattr">
                                         <input id="Module.parseArgs-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
@@ -280,8 +303,8 @@
 
     </div>
     <a class="headerlink" href="#Module.parseArgs"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Module.parseArgs-28"><a href="#Module.parseArgs-28"><span class="linenos">28</span></a>    <span class="k">def</span> <span class="nf">parseArgs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="Module.parseArgs-29"><a href="#Module.parseArgs-29"><span class="linenos">29</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement this method&quot;</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Module.parseArgs-29"><a href="#Module.parseArgs-29"><span class="linenos">29</span></a>    <span class="k">def</span> <span class="nf">parseArgs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="Module.parseArgs-30"><a href="#Module.parseArgs-30"><span class="linenos">30</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement this method&quot;</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -299,13 +322,13 @@
 
     </div>
     <a class="headerlink" href="#Module.run"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Module.run-31"><a href="#Module.run-31"><span class="linenos">31</span></a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="Module.run-32"><a href="#Module.run-32"><span class="linenos">32</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="Module.run-33"><a href="#Module.run-33"><span class="linenos">33</span></a><span class="sd">        Placeholder method for running the module.</span>
-</span><span id="Module.run-34"><a href="#Module.run-34"><span class="linenos">34</span></a>
-</span><span id="Module.run-35"><a href="#Module.run-35"><span class="linenos">35</span></a><span class="sd">        This method should be implemented by subclasses to define the specific behavior of the module.</span>
-</span><span id="Module.run-36"><a href="#Module.run-36"><span class="linenos">36</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="Module.run-37"><a href="#Module.run-37"><span class="linenos">37</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement this method&quot;</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Module.run-32"><a href="#Module.run-32"><span class="linenos">32</span></a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="Module.run-33"><a href="#Module.run-33"><span class="linenos">33</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="Module.run-34"><a href="#Module.run-34"><span class="linenos">34</span></a><span class="sd">        Placeholder method for running the module.</span>
+</span><span id="Module.run-35"><a href="#Module.run-35"><span class="linenos">35</span></a>
+</span><span id="Module.run-36"><a href="#Module.run-36"><span class="linenos">36</span></a><span class="sd">        This method should be implemented by subclasses to define the specific behavior of the module.</span>
+</span><span id="Module.run-37"><a href="#Module.run-37"><span class="linenos">37</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Module.run-38"><a href="#Module.run-38"><span class="linenos">38</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement this method&quot;</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -327,15 +350,18 @@
 
     </div>
     <a class="headerlink" href="#Module.processArguments"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Module.processArguments-39"><a href="#Module.processArguments-39"><span class="linenos">39</span></a>    <span class="k">def</span> <span class="nf">processArguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">arguments</span><span class="p">):</span>
-</span><span id="Module.processArguments-40"><a href="#Module.processArguments-40"><span class="linenos">40</span></a>        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">arguments</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
-</span><span id="Module.processArguments-41"><a href="#Module.processArguments-41"><span class="linenos">41</span></a>            <span class="n">arguments</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">arguments</span><span class="p">)</span>
-</span><span id="Module.processArguments-42"><a href="#Module.processArguments-42"><span class="linenos">42</span></a>        
-</span><span id="Module.processArguments-43"><a href="#Module.processArguments-43"><span class="linenos">43</span></a>        <span class="n">__iterableArguments</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">arguments</span><span class="p">)</span>
-</span><span id="Module.processArguments-44"><a href="#Module.processArguments-44"><span class="linenos">44</span></a>
-</span><span id="Module.processArguments-45"><a href="#Module.processArguments-45"><span class="linenos">45</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">__iterableArguments</span><span class="p">)</span>
-</span><span id="Module.processArguments-46"><a href="#Module.processArguments-46"><span class="linenos">46</span></a>
-</span><span id="Module.processArguments-47"><a href="#Module.processArguments-47"><span class="linenos">47</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Module.processArguments-40"><a href="#Module.processArguments-40"><span class="linenos">40</span></a>    <span class="k">def</span> <span class="nf">processArguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">arguments</span><span class="p">):</span>
+</span><span id="Module.processArguments-41"><a href="#Module.processArguments-41"><span class="linenos">41</span></a>        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">arguments</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+</span><span id="Module.processArguments-42"><a href="#Module.processArguments-42"><span class="linenos">42</span></a>            <span class="n">arguments</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">arguments</span><span class="p">)</span>
+</span><span id="Module.processArguments-43"><a href="#Module.processArguments-43"><span class="linenos">43</span></a>        
+</span><span id="Module.processArguments-44"><a href="#Module.processArguments-44"><span class="linenos">44</span></a>        <span class="n">__iterableArguments</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">arguments</span><span class="p">)</span>
+</span><span id="Module.processArguments-45"><a href="#Module.processArguments-45"><span class="linenos">45</span></a>
+</span><span id="Module.processArguments-46"><a href="#Module.processArguments-46"><span class="linenos">46</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="Module.processArguments-47"><a href="#Module.processArguments-47"><span class="linenos">47</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">__iterableArguments</span><span class="p">)</span>
+</span><span id="Module.processArguments-48"><a href="#Module.processArguments-48"><span class="linenos">48</span></a>        <span class="k">except</span> <span class="ne">SystemExit</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span id="Module.processArguments-49"><a href="#Module.processArguments-49"><span class="linenos">49</span></a>            <span class="k">pass</span>
+</span><span id="Module.processArguments-50"><a href="#Module.processArguments-50"><span class="linenos">50</span></a>
+</span><span id="Module.processArguments-51"><a href="#Module.processArguments-51"><span class="linenos">51</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span>
 </span></pre></div>
 
 
