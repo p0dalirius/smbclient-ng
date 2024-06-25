@@ -20,9 +20,10 @@ class Module(object):
     smbSession = None
     options = None
 
-    def __init__(self, smbSession, config):
+    def __init__(self, smbSession, config, logger):
         self.smbSession = smbSession
         self.config = config
+        self.logger = logger
 
     def parseArgs(self):
         raise NotImplementedError("Subclasses must implement this method")
@@ -41,7 +42,10 @@ class Module(object):
         
         __iterableArguments = shlex.split(arguments)
 
-        self.options = parser.parse_args(__iterableArguments)
+        try:
+            self.options = parser.parse_args(__iterableArguments)
+        except SystemExit as e:
+            pass
 
         return self.options
         

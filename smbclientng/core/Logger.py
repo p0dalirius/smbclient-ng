@@ -36,10 +36,9 @@ class Logger(object):
         error(message): Logs a message at the ERROR level.
     """
 
-    def __init__(self, debug=False, logfile=None, no_colors=False):
+    def __init__(self, config, logfile=None):
         super(Logger, self).__init__()
-        self.__debug = debug
-        self.no_colors = no_colors
+        self.config = config
         self.logfile = logfile
         #
         if self.logfile is not None:
@@ -50,41 +49,86 @@ class Logger(object):
                 self.logfile = self.logfile + (".%d" % k)
             open(self.logfile, "w").close()
 
-    def print(self, message=""):
+    def print(self, message="", end='\n'):
+        """
+        Prints a message to stdout and logs it to a file if logging is enabled.
+
+        This method prints the provided message to the standard output and also logs it to a file if a log file path is specified during the Logger instance initialization. The message can include color codes for color-coded output, which can be disabled by setting the `nocolors` attribute to True.
+
+        Args:
+            message (str): The message to be printed and logged.
+        """
+
         nocolor_message = re.sub(r"\x1b[\[]([0-9;]+)m", "", message)
-        if self.no_colors:
-            print(nocolor_message)
+        if self.config.no_colors:
+            print(nocolor_message, end=end)
         else:
-            print(message)
-        self.__write_to_logfile(nocolor_message)
+            print(message, end=end)
+        self.__write_to_logfile(nocolor_message, end=end)
 
     def info(self, message):
+        """
+        Logs a message at the INFO level.
+
+        This method logs the provided message at the INFO level. The message can include color codes for color-coded output, which can be disabled by setting the `nocolors` attribute to True. The message is also logged to a file if a log file path is specified during the Logger instance initialization.
+
+        Args:
+            message (str): The message to be logged at the INFO level.
+        """
+
         nocolor_message = re.sub(r"\x1b[\[]([0-9;]+)m", "", message)
-        if self.no_colors:
+        if self.config.no_colors:
             print("[info] %s" % nocolor_message)
         else:
-            print("[info] %s" % message)
+            print("[\x1b[1;92minfo\x1b[0m] %s" % message)
         self.__write_to_logfile("[info] %s" % nocolor_message)
 
     def debug(self, message):
-        if self.__debug == True:
+        """
+        Logs a message at the DEBUG level if debugging is enabled.
+
+        This method logs the provided message at the DEBUG level if the `debug` attribute is set to True during the Logger instance initialization. The message can include color codes for color-coded output, which can be disabled by setting the `nocolors` attribute to True.
+
+        Args:
+            message (str): The message to be logged.
+        """
+        
+        if self.config.debug == True:
             nocolor_message = re.sub(r"\x1b[\[]([0-9;]+)m", "", message)
-            if self.no_colors:
+            if self.config.no_colors:
                 print("[debug] %s" % nocolor_message)
             else:
                 print("[debug] %s" % message)
             self.__write_to_logfile("[debug] %s" % nocolor_message)
 
     def error(self, message):
+        """
+        Logs an error message to the console and the log file.
+
+        This method logs the provided error message to the standard error output and also logs it to a file if a log file path is specified during the Logger instance initialization. The message can include color codes for color-coded output, which can be disabled by setting the `nocolors` attribute to True.
+
+        Args:
+            message (str): The error message to be logged.
+        """
+
         nocolor_message = re.sub(r"\x1b[\[]([0-9;]+)m", "", message)
-        if self.no_colors:
+        if self.config.no_colors:
             print("[error] %s" % nocolor_message)
         else:
-            print("[error] %s" % message)
+            print("[\x1b[1;91merror\x1b[0m] %s" % message)
         self.__write_to_logfile("[error] %s" % nocolor_message)
 
-    def __write_to_logfile(self, message):
+    def __write_to_logfile(self, message, end='\n'):
+        """
+        Writes the provided message to the log file specified during Logger instance initialization.
+
+        This method appends the provided message to the log file specified by the `logfile` attribute. If no log file path is specified, this method does nothing.
+
+        Args:
+            message (str): The message to be written to the log file.
+        """
+
         if self.logfile is not None:
             f = open(self.logfile, "a")
-            f.write(message + "\n")
+            f.write(message + end)
             f.close()

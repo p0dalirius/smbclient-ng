@@ -27,8 +27,9 @@ class LocalFileIO(object):
         read(self, size): Reads data from the file up to the specified size and updates the progress bar if expected size is provided.
     """
 
-    def __init__(self, mode, path=None, expected_size=None, keepRemotePath=False, debug=False):
+    def __init__(self, mode, path=None, expected_size=None, keepRemotePath=False, logger=None):
         super(LocalFileIO, self).__init__()
+        self.logger = logger
         self.mode = mode
         # Convert remote path format to local operating system path format 
         self.path = path.replace(ntpath.sep, os.path.sep)
@@ -44,12 +45,10 @@ class LocalFileIO(object):
                 self.dir += os.path.dirname(self.path)
 
             if not os.path.exists(self.dir):
-                if self.debug:
-                    print("[debug] Creating local directory '%s'" % self.dir)
+                self.logger.debug("[debug] Creating local directory '%s'" % self.dir)
                 os.makedirs(self.dir)
 
-            if self.debug:
-                print("[debug] Openning local '%s' with mode '%s'" % (self.path, self.mode))
+            self.logger.debug("[debug] Openning local '%s' with mode '%s'" % (self.path, self.mode))
             
             try:
                 self.fd = open(self.dir + os.path.sep + os.path.basename(self.path), self.mode)
@@ -61,8 +60,7 @@ class LocalFileIO(object):
             if ntpath.sep in self.path:
                 self.dir = os.path.dirname(self.path)
 
-            if self.debug:
-                print("[debug] Openning local '%s' with mode '%s'" % (self.path, self.mode))
+            self.logger.debug("[debug] Openning local '%s' with mode '%s'" % (self.path, self.mode))
             
             try:
                 self.fd = open(self.path, self.mode)
