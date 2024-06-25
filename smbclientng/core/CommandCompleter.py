@@ -389,9 +389,9 @@ class CommandCompleter(object):
                             if '\\' in remainder.strip() or '/' in remainder.strip():
                                 path = remainder.strip().replace(ntpath.sep, '/')
                                 path = '/'.join(path.split('/')[:-1]) 
-
+                            # Get remote directory contents
                             directory_contents = self.smbSession.list_contents(path=path).items()
-
+                            # 
                             matching_entries = []
                             for _, entry in directory_contents:
                                 if entry.is_directory() and entry.get_longname() not in [".",".."]:
@@ -399,15 +399,10 @@ class CommandCompleter(object):
                                         matching_entries.append(path + '/' + entry.get_longname() + '/')
                                     else:
                                         matching_entries.append(entry.get_longname() + '/')
-                            
-                            # Add quoting for shlex
-                            matching_entries = [shlex.quote(s) for s in matching_entries]
-
-                            self.matches += [
-                                command + " " + s 
-                                for s in matching_entries
-                                if s.lower().startswith(remainder.lower())
-                            ]
+                            #
+                            for s in matching_entries:
+                                if s.lower().startswith(remainder.lower()) or shlex.quote(s).lower().startswith(remainder.lower()):
+                                    self.matches.append(command + " " + shlex.quote(s))
 
                         # Autocomplete file
                         if "remote_file" in self.commands[command]["autocomplete"]:
@@ -415,26 +410,21 @@ class CommandCompleter(object):
                             path = ""
                             if '\\' in remainder.strip() or '/' in remainder.strip():
                                 path = remainder.strip().replace(ntpath.sep, '/')
-                                path = '/'.join(path.split('/')[:-1]) 
-
+                                path = '/'.join(path.split('/')[:-1])
+                            # Get remote directory contents
                             directory_contents = self.smbSession.list_contents(path=path).items()
-
+                            # 
                             matching_entries = []
                             for _, entry in directory_contents:
-                                if not entry.is_directory() and entry.get_longname() not in [".",".."]:
+                                if (not entry.is_directory()) and entry.get_longname() not in [".",".."]:
                                     if len(path) != 0:
                                         matching_entries.append(path + '/' + entry.get_longname())
                                     else:
                                         matching_entries.append(entry.get_longname())
-                            
-                            # Add quoting for shlex
-                            matching_entries = [shlex.quote(s) for s in matching_entries]
-
-                            self.matches += [
-                                command + " " + s 
-                                for s in matching_entries
-                                if s.lower().startswith(remainder.lower())
-                            ]
+                            # 
+                            for s in matching_entries:
+                                if s.lower().startswith(remainder.lower()) or shlex.quote(s).lower().startswith(remainder.lower()):
+                                    self.matches.append(command + " " + shlex.quote(s))
 
                         # Autocomplete local_directory
                         if "local_directory" in self.commands[command]["autocomplete"]:
@@ -443,11 +433,10 @@ class CommandCompleter(object):
                             if os.path.sep in remainder.strip():
                                 path = path.split(os.path.sep)[:-1]
                                 path = os.path.sep.join(path)
-                            
                             # Current dir
                             if len(path.strip()) == 0:
                                 path = "."
-
+                            #
                             directory_contents = os.listdir(path=path + os.path.sep)
                             matching_entries = []
                             for entry in directory_contents:
@@ -455,12 +444,10 @@ class CommandCompleter(object):
                                     entry_path = path + os.path.sep + entry
                                     if os.path.isdir(entry_path):
                                         matching_entries.append(entry_path + os.path.sep)
-
-                            self.matches += [
-                                command + " " + s
-                                for s in matching_entries
-                                if s.startswith(remainder)
-                            ]
+                            #
+                            for s in matching_entries:
+                                if s.lower().startswith(remainder.lower()) or shlex.quote(s).lower().startswith(remainder.lower()):
+                                    self.matches.append(command + " " + shlex.quote(s))
 
                         # Autocomplete local_file
                         if "local_file" in self.commands[command]["autocomplete"]:
@@ -469,32 +456,28 @@ class CommandCompleter(object):
                             if os.path.sep in remainder.strip():
                                 path = path.split(os.path.sep)[:-1]
                                 path = os.path.sep.join(path)
-                            
                             # Current dir
                             if len(path.strip()) == 0:
                                 path = "."
-
-                            directory_contents = os.listdir(path=path + os.path.sep)
+                            # 
+                            directory_contents = os.listdir(path=(path + os.path.sep))
                             matching_entries = []
                             for entry in directory_contents:
                                 if entry not in [".",".."]:
                                     entry_path = path + os.path.sep + entry
                                     if not os.path.isdir(entry_path):
                                         matching_entries.append(entry_path)
-
-                            self.matches += [
-                                command + " " + s
-                                for s in matching_entries
-                                if s.startswith(remainder)
-                            ]
+                            # 
+                            for s in matching_entries:
+                                if s.lower().startswith(remainder.lower()) or shlex.quote(s).lower().startswith(remainder.lower()):
+                                    self.matches.append(command + " " + shlex.quote(s))
 
                         else:
                             # Generic case for subcommands
-                            self.matches += [
-                                command + " " + s
-                                for s in self.commands[command]["subcommands"]
-                                if s.startswith(remainder)
-                            ]
+                            for s in self.commands[command]["subcommands"]:
+                                if s.startswith(remainder):
+                                    self.matches.append(command + " " + s)
+
                     else:
                         # Unknown subcommand, skipping autocomplete
                         pass
