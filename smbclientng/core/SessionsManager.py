@@ -168,7 +168,7 @@ class SessionsManager(object):
         try:
             options = parser.parse_args(arguments)
         except SystemExit as e:
-            pass
+            return
         
         # Process actions
 
