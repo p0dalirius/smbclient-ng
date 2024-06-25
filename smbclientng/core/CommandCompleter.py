@@ -375,12 +375,9 @@ class CommandCompleter(object):
                             for sharename in shares.keys():
                                 if sharename.lower().startswith(remainder.lower()):
                                     matching_entries.append(shares[sharename]["name"])
-
-                            # Add quoting for shlex
-                            matching_entries = [shlex.quote(s) for s in matching_entries]
-
                             # Final matches
-                            self.matches += [command + " " + m for m in matching_entries]
+                            for m in matching_entries:
+                                self.matches.append(command + " " + shlex.quote(m))
 
                         # Autocomplete directory
                         if "remote_directory" in self.commands[command]["autocomplete"]:
@@ -400,9 +397,9 @@ class CommandCompleter(object):
                                     else:
                                         matching_entries.append(entry.get_longname() + '/')
                             #
-                            for s in matching_entries:
-                                if s.lower().startswith(remainder.lower()) or shlex.quote(s).lower().startswith(remainder.lower()):
-                                    self.matches.append(command + " " + shlex.quote(s))
+                            for m in matching_entries:
+                                if m.lower().startswith(remainder.lower()) or shlex.quote(m).lower().startswith(remainder.lower()):
+                                    self.matches.append(command + " " + shlex.quote(m))
 
                         # Autocomplete file
                         if "remote_file" in self.commands[command]["autocomplete"]:
@@ -422,9 +419,9 @@ class CommandCompleter(object):
                                     else:
                                         matching_entries.append(entry.get_longname())
                             # 
-                            for s in matching_entries:
-                                if s.lower().startswith(remainder.lower()) or shlex.quote(s).lower().startswith(remainder.lower()):
-                                    self.matches.append(command + " " + shlex.quote(s))
+                            for m in matching_entries:
+                                if m.lower().startswith(remainder.lower()) or shlex.quote(m).lower().startswith(remainder.lower()):
+                                    self.matches.append(command + " " + shlex.quote(m))
 
                         # Autocomplete local_directory
                         if "local_directory" in self.commands[command]["autocomplete"]:
@@ -445,9 +442,9 @@ class CommandCompleter(object):
                                     if os.path.isdir(entry_path):
                                         matching_entries.append(entry_path + os.path.sep)
                             #
-                            for s in matching_entries:
-                                if s.lower().startswith(remainder.lower()) or shlex.quote(s).lower().startswith(remainder.lower()):
-                                    self.matches.append(command + " " + shlex.quote(s))
+                            for m in matching_entries:
+                                if m.lower().startswith(remainder.lower()) or shlex.quote(m).lower().startswith(remainder.lower()):
+                                    self.matches.append(command + " " + shlex.quote(m))
 
                         # Autocomplete local_file
                         if "local_file" in self.commands[command]["autocomplete"]:
@@ -468,16 +465,15 @@ class CommandCompleter(object):
                                     if not os.path.isdir(entry_path):
                                         matching_entries.append(entry_path)
                             # 
-                            for s in matching_entries:
-                                if s.lower().startswith(remainder.lower()) or shlex.quote(s).lower().startswith(remainder.lower()):
-                                    self.matches.append(command + " " + shlex.quote(s))
+                            for m in matching_entries:
+                                if m.lower().startswith(remainder.lower()) or shlex.quote(m).lower().startswith(remainder.lower()):
+                                    self.matches.append(command + " " + shlex.quote(m))
 
                         else:
                             # Generic case for subcommands
-                            for s in self.commands[command]["subcommands"]:
-                                if s.startswith(remainder):
-                                    self.matches.append(command + " " + s)
-
+                            for m in self.commands[command]["subcommands"]:
+                                if m.startswith(remainder):
+                                    self.matches.append(command + " " + m)
                     else:
                         # Unknown subcommand, skipping autocomplete
                         pass
