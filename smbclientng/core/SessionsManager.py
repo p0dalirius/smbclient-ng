@@ -4,13 +4,25 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 20 may 2024
 
-
+import datetime
 from smbclientng.core.Credentials import Credentials
 from smbclientng.core.ModuleArgumentParser import ModuleArgumentParser
 from smbclientng.core.SMBSession import SMBSession
+import time
 
 
 class SessionsManager(object):
+    """
+    A class to manage SMB sessions.
+
+    This class is responsible for creating, managing, and switching between multiple SMB sessions. It allows for the creation of new sessions with specified credentials and hosts, and provides methods to switch between existing sessions. It also keeps track of the current session and its ID.
+
+    Attributes:
+        next_session_id (int): The next available session ID.
+        current_session (SMBSession): The currently active SMB session.
+        current_session_id (int): The ID of the currently active session.
+        sessions (dict): A dictionary of all active sessions, keyed by their session ID.
+    """
 
     next_session_id = 1
     current_session = None
@@ -46,7 +58,11 @@ class SessionsManager(object):
         )
         smbSession.init_smb_session()
         
-        self.sessions[self.next_session_id] = {"id":self.next_session_id, "smbSession":smbSession}
+        self.sessions[self.next_session_id] = {
+            "id": self.next_session_id,
+            "smbSession": smbSession,
+            "created_at": int(time.time()),
+        }
         self.switch_session(self.next_session_id)
         self.next_session_id += 1
 
@@ -184,35 +200,43 @@ class SessionsManager(object):
         
         # 
         elif options.action == "delete":
-            if options.session_id is not None:
+            if len(options.session_id) != 0:
                 for session_id in options.session_id:
                     if session_id in self.sessions.keys():
                         self.logger.info("Closing and deleting session #%d" % session_id)
                         self.delete_session(session_id=session_id)
                     else:
                         self.logger.error("No session with id #%d" % session_id)
+            elif options.all == True:
+                all_session_ids = list(self.sessions.keys())
+                for session_id in all_session_ids:
+                    print("[+] Closing and deleting session #%d" % session_id)
+                    self.delete_session(session_id=session_id)
 
         # 
         elif options.action == "execute":
             if options.command is not None:
-                if options.session_id is not None:
-                    if options.session_id in self.sessions.keys():
-                        self.logger.info("Executing '%s to session #%d" % (options.command, options.session_id))
-                    else:
-                        self.logger.error("No session with id #%d" % options.session_id)
+                if len(options.session_id) != 0:
+                    for session_id in session_id:
+                        if session_id in self.sessions.keys():
+                            self.logger.info("Executing '%s to session #%d" % (options.command, options.session_id))
+                        else:
+                            self.logger.error("No session with id #%d" % options.session_id)
                 elif options.all == True:
-                    for session_id in self.sessions.keys():
+                    all_session_ids = list(self.sessions.keys())
+                    for session_id in all_session_ids:
                         pass
         
         # 
         elif options.action == "list":
             for sessionId in sorted(self.sessions.keys()):
                 session = self.sessions[sessionId]["smbSession"]
+                created_at_str = str(datetime.datetime.fromtimestamp(self.sessions[sessionId]["created_at"]))
                 if sessionId == self.current_session_id:
                     if self.config.no_colors:
-                        print(f"=> [Session #{sessionId:<2} - '{session.credentials.domain}\\{session.credentials.username}' @ {session.host}:{session.port}] [current session]")
+                        print(f"=> [#{sessionId:<2} - '{session.credentials.domain}\\{session.credentials.username}' @ {session.host}:{session.port}] created at [{created_at_str}] [current session]")
                     else:
-                        print(f"\x1b[1m=> Session #{sessionId:<2} - '\x1b[1;96m{session.credentials.domain}\x1b[0m\\\x1b[1;96m{session.credentials.username}\x1b[0m\x1b[1m' @ {session.host}:{session.port}\x1b[0m [\x1b[93mcurrent session\x1b[0m]")
+                        print(f"\x1b[48;2;50;50;50m=> #{sessionId:<2} - '\x1b[1;96m{session.credentials.domain}\x1b[0m\x1b[48;2;50;50;50m\\\x1b[1;96m{session.credentials.username}\x1b[0m\x1b[48;2;50;50;50m\x1b[1m' @ {session.host}:{session.port} created at [{created_at_str}]\x1b[0m\x1b[48;2;50;50;50m [\x1b[93mcurrent session\x1b[0m\x1b[48;2;50;50;50m]\x1b[0m")
                 else:
-                    print(f"── Session #{sessionId:<2} - '{session.credentials.domain}\\{session.credentials.username}' @ {session.host}:{session.port}")
+                    print(f"── #{sessionId:<2} - '\x1b[1;96m{session.credentials.domain}\x1b[0m\\\x1b[1;96m{session.credentials.username}\x1b[0m\x1b[1m' @ {session.host}:{session.port} created at [{created_at_str}]\x1b[0m")
                 
