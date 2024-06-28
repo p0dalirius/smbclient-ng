@@ -12,7 +12,6 @@ from Cryptodome.Util.Padding import unpad
 import impacket
 import io
 import ntpath
-import re
 from smbclientng.core.Module import Module
 from smbclientng.core.ModuleArgumentParser import ModuleArgumentParser
 from smbclientng.core.utils import windows_ls_entry

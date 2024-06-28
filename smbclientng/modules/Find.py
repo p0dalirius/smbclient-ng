@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# File name          : InteractiveShell.py
+# File name          : Find.py
 # Author             : Podalirius (@podalirius_)
 # Date created       : 23 may 2024
 
 
-import impacket
 import ntpath
 import re
 from smbclientng.core.Module import Module
