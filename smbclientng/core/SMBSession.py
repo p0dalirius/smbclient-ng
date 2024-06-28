@@ -1248,7 +1248,12 @@ class SMBSession(object):
                 self.smb_share = self.available_shares[shareName.lower()]["name"]
                 self.smb_cwd = ""
                 # Connects the tree
-                self.smb_tree_id = self.smbClient.connectTree(self.smb_share)
+                try:
+                    self.smb_tree_id = self.smbClient.connectTree(self.smb_share)
+                except impacket.smbconnection.SessionError as err:
+                    self.smb_share = None
+                    self.smb_cwd = ""
+                    self.logger.error("Could not access share '%s': %s" % (shareName, err))
             else:
                 self.logger.error("Could not set share '%s', it does not exist remotely." % shareName)
         else:
