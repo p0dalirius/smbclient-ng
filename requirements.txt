@@ -2,4 +2,3 @@ impacket
 rich
 charset-normalizer
 pefile
-shutil
