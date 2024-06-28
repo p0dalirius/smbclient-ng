@@ -1,3 +1,4 @@
 impacket
 rich
 charset-normalizer
+pefile

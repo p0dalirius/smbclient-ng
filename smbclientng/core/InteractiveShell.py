@@ -1068,8 +1068,10 @@ class InteractiveShell(object):
                         module_file = import_module('smbclientng.modules.%s' % (file[:-3]))
                         module = module_file.__getattribute__(file[:-3])
                         self.modules[module.name.lower()] = module
-                    except AttributeError as e:
+                    except AttributeError as err:
                         pass
+                    except ImportError as err:
+                        self.logger.debug("Could not load module '%s': %s" % ((file[:-3]), err))
 
         if self.config.debug:
             if len(self.modules.keys()) == 0:

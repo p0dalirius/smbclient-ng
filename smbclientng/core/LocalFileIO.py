@@ -32,23 +32,23 @@ class LocalFileIO(object):
         self.logger = logger
         self.mode = mode
         # Convert remote path format to local operating system path format 
-        self.path = path.replace(ntpath.sep, os.path.sep)
+        self.path = os.path.normpath(path.replace(ntpath.sep, os.path.sep))
         self.dir = None
-        self.debug = False
         self.expected_size = expected_size
         self.keepRemotePath = keepRemotePath
 
         # Write to local (read remote)
         if self.mode in ["wb"]:
-            self.dir = '.' + os.path.sep
             if keepRemotePath:
-                self.dir += os.path.dirname(self.path)
+                self.dir = os.path.dirname(self.path)
+            else:
+                self.dir = '.' + os.path.sep
 
             if not os.path.exists(self.dir):
-                self.logger.debug("[debug] Creating local directory '%s'" % self.dir)
+                self.logger.debug("Creating local directory '%s'" % self.dir)
                 os.makedirs(self.dir)
 
-            self.logger.debug("[debug] Openning local '%s' with mode '%s'" % (self.path, self.mode))
+            self.logger.debug("Openning local '%s' with mode '%s'" % (self.path, self.mode))
             
             try:
                 self.fd = open(self.dir + os.path.sep + os.path.basename(self.path), self.mode)
@@ -60,7 +60,7 @@ class LocalFileIO(object):
             if ntpath.sep in self.path:
                 self.dir = os.path.dirname(self.path)
 
-            self.logger.debug("[debug] Openning local '%s' with mode '%s'" % (self.path, self.mode))
+            self.logger.debug("Openning local '%s' with mode '%s'" % (self.path, self.mode))
             
             try:
                 self.fd = open(self.path, self.mode)

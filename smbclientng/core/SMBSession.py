@@ -261,7 +261,7 @@ class SMBSession(object):
         else:
             self.logger.error("SMBSession.find(), callback function cannot be None.")
 
-    def get_file(self, path=None, keepRemotePath=False):
+    def get_file(self, path=None, keepRemotePath=False, localDownloadDir="./"):
         """
         Retrieves a file from the specified path on the SMB share.
 
@@ -312,14 +312,14 @@ class SMBSession(object):
             else:
                 try:
                     if ntpath.sep in path:
-                        outputfile = ntpath.dirname(path) + ntpath.sep + entry.get_longname()
+                        outputfile = localDownloadDir + os.path.sep + ntpath.dirname(path) + os.path.sep + entry.get_longname()
                     else:
-                        outputfile = entry.get_longname()
+                        outputfile = localDownloadDir + os.path.sep + entry.get_longname()
                     f = LocalFileIO(
                         mode="wb", 
                         path=outputfile,
                         expected_size=entry.get_filesize(), 
-                        debug=self.config.debug,
+                        logger=self.logger,
                         keepRemotePath=keepRemotePath
                     )
                     self.smbClient.getFile(
@@ -336,7 +336,7 @@ class SMBSession(object):
                         
         return None
 
-    def get_file_recursively(self, path=None):
+    def get_file_recursively(self, path=None, localDownloadDir="./"):
         """
         Recursively retrieves files from a specified path on the SMB share.
 
@@ -350,16 +350,18 @@ class SMBSession(object):
                         If None, it starts from the root of the configured SMB share.
         """
         
-        def recurse_action(base_dir="", path=[]):
+        def recurse_action(base_dir="", path=[], localDownloadDir="./"):
             if len(base_dir) == 0:
-                remote_smb_path = ntpath.sep.join(path)
+                remote_smb_fullpath = ntpath.sep.join(path)
             else:
-                remote_smb_path = base_dir + ntpath.sep + ntpath.sep.join(path)
-            remote_smb_path = ntpath.normpath(remote_smb_path)
+                remote_smb_fullpath = base_dir + ntpath.sep + ntpath.sep.join(path)
+            remote_smb_fullpath = ntpath.normpath(remote_smb_fullpath)
+
+            remote_smb_relativepath = ntpath.normpath(ntpath.sep.join(path))
 
             entries = self.smbClient.listPath(
                 shareName=self.smb_share, 
-                path=remote_smb_path + '\\*'
+                path=remote_smb_fullpath + ntpath.sep + '*'
             )
             if len(entries) != 0:
                 files = [entry for entry in entries if not entry.is_directory()]
@@ -367,20 +369,21 @@ class SMBSession(object):
 
                 # Files
                 if len(files) != 0:
-                    self.logger.print("[>] Retrieving files of '%s'" % remote_smb_path)
+                    self.logger.print("[>] Retrieving files of '%s'" % remote_smb_relativepath)
                 for entry_file in files:
                     if not entry_file.is_directory():
+                        downloadToPath = localDownloadDir + os.path.sep + remote_smb_relativepath + os.path.sep + entry_file.get_longname()
                         f = LocalFileIO(
                             mode="wb",
-                            path=remote_smb_path + ntpath.sep + entry_file.get_longname(), 
+                            path=downloadToPath, 
                             expected_size=entry_file.get_filesize(),
                             keepRemotePath=True,
-                            debug=self.config.debug
+                            logger=self.logger
                         )
                         try:
                             self.smbClient.getFile(
                                 shareName=self.smb_share, 
-                                pathName=remote_smb_path + ntpath.sep + entry_file.get_longname(), 
+                                pathName=(remote_smb_fullpath + ntpath.sep + entry_file.get_longname()), 
                                 callback=f.write
                             )
                             f.close()
@@ -396,14 +399,16 @@ class SMBSession(object):
                 for entry_directory in directories:
                     if entry_directory.is_directory():
                         recurse_action(
-                            base_dir=self.smb_cwd, 
-                            path=path+[entry_directory.get_longname()]
+                            base_dir=self.smb_cwd,
+                            path=path+[entry_directory.get_longname()],
+                            localDownloadDir=localDownloadDir
                         )                   
         # Entrypoint
         try:
             recurse_action(
                 base_dir=self.smb_cwd, 
-                path=[path]
+                path=[path],
+                localDownloadDir=localDownloadDir
             )
         except (BrokenPipeError, KeyboardInterrupt) as e:
             print("\x1b[v\x1b[o\r[!] Interrupted.")

@@ -5,11 +5,8 @@
 # Date created       : 23 may 2024
 
 
-import ntpath
-import re
 from smbclientng.core.Module import Module
 from smbclientng.core.ModuleArgumentParser import ModuleArgumentParser
-from smbclientng.core.utils import windows_ls_entry
 
 
 class Users(Module):
