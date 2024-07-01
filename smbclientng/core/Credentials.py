@@ -79,6 +79,24 @@ class Credentials(object):
                 self.nt_hex = nthash
                 self.nt_raw = binascii.unhexlify(nthash)
 
+    def is_anonymous(self):
+        """
+        Determines if the credentials are anonymous.
+
+        This method checks if the username is None or an empty string to determine if the credentials are anonymous.
+
+        Returns:
+            bool: True if the credentials are anonymous, False otherwise.
+        """
+        anonymous = False
+        if self.username is None:
+            anonymous = True
+        elif len(self.username) == 0:
+            anonymous = True
+        else:
+            anonymous = False
+        return anonymous
+
     def canPassTheHash(self):
         """
         Determines if the current credentials can be used for a pass-the-hash attack.
