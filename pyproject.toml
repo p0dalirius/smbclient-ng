@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "smbclientng"
-version = "2.1"
+version = "2.1.1"
 description = "smbclient-ng, a fast and user friendly way to interact with SMB shares."
 authors = ["p0dalirius"]
 
