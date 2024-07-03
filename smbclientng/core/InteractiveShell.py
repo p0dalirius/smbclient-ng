@@ -314,7 +314,7 @@ class InteractiveShell(object):
         # SMB share needed             : Yes
 
         # Parse wildcards
-        files_and_directories = resolve_local_files(arguments)
+        files_and_directories = resolve_remote_files(self.sessionsManager.current_session, arguments)
 
         for path_to_file in files_and_directories:
             if self.sessionsManager.current_session.path_isfile(pathFromRoot=path_to_file):
@@ -363,7 +363,7 @@ class InteractiveShell(object):
         # SMB share needed             : Yes
 
         # Parse wildcards
-        files_and_directories = resolve_local_files(arguments)
+        files_and_directories = resolve_remote_files(self.sessionsManager.current_session, arguments)
 
         for path_to_file in files_and_directories:
             if self.sessionsManager.current_session.path_isfile(pathFromRoot=path_to_file):
@@ -404,19 +404,25 @@ class InteractiveShell(object):
             is_recursive = True
             arguments.remove('-r')
 
+        # This is the usecase of 'get -r' with no other argument
+        if len(arguments) == 0:
+            arguments = ['*']
+
         # Parse wildcards
         files_and_directories = resolve_remote_files(self.sessionsManager.current_session, arguments)
 
         # 
         for remotepath in files_and_directories:
             try:
-                if is_recursive and self.sessionsManager.current_session.path_isdir(remotepath):
+                if is_recursive and self.sessionsManager.current_session.path_isdir(pathFromRoot=remotepath):
                     # Get files recursively
                     self.sessionsManager.current_session.get_file_recursively(path=remotepath)
                 else:
                     # Get this single file
                     self.sessionsManager.current_session.get_file(path=remotepath)
             except impacket.smbconnection.SessionError as e:
+                if self.config.debug:
+                    traceback.print_exc()
                 self.logger.error("[!] SMB Error: %s" % e)
 
     def command_help(self, arguments, command):
@@ -783,6 +789,10 @@ class InteractiveShell(object):
         while '-r' in arguments:
             is_recursive = True
             arguments.remove('-r')
+
+        # This is the usecase of 'put -r' with no other argument
+        if len(arguments) == 0:
+            arguments = ['*']
 
         # Parse wildcards
         files_and_directories = resolve_local_files(arguments)

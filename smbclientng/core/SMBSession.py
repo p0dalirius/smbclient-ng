@@ -405,8 +405,15 @@ class SMBSession(object):
                         )                   
         # Entrypoint
         try:
+            if path.startswith(ntpath.sep):
+                base_dir = ntpath.dirname(path)
+                path = ntpath.basename(path)
+            else:
+                base_dir = self.smb_cwd
+                path = path
+
             recurse_action(
-                base_dir=self.smb_cwd, 
+                base_dir=base_dir, 
                 path=[path],
                 localDownloadDir=localDownloadDir
             )
