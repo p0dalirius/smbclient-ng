@@ -373,36 +373,80 @@ def resolve_remote_files(smbSession, arguments):
         list: A list of resolved remote file paths that match the provided arguments.
     """
 
-    resolved_files = []
-    for arg in arguments:
-        if '*' in arg:
-            # Parse path
-            if arg == '*' or ((ntpath.sep not in arg) and (os.path.sep not in arg)):
-                path = smbSession.smb_cwd
-            elif arg.startswith(ntpath.sep):
-                path = ntpath.dirname(arg)
-            else:
-                path = ntpath.normpath(smbSession.smb_cwd + ntpath.sep + ntpath.dirname(arg))
+    DEBUG = False
 
-            try:
+    resolved_pathFromRoot_files = []
+    for arg in arguments:
+        # Parse argument values
+        if DEBUG: print("[debug] Parsing argument '%s'" % arg)
+        if arg == '*':
+            if DEBUG: print("[debug] |--> Argument is a wildcard")
+            # Find all the remote files in current directory
+            # Path types:
+            # *
+            contents = smbSession.smbClient.listPath(
+                shareName=smbSession.smb_share,
+                path=(smbSession.smb_cwd + ntpath.sep + '*')
+            )
+            contents = [e for e in contents if e.get_longname() not in ['.', '..']]
+            for entry in contents:
+                resolved_pathFromRoot_files.append(
+                    ntpath.sep + ntpath.join(smbSession.smb_cwd, entry.get_longname())
+                )
+        
+        # Relative paths
+        elif not arg.startswith(ntpath.sep):
+            if arg.endswith('*'):
+                if DEBUG: print("[debug] |--> Argument is a relative path LIKE this path")
+                # Find all the remote relative paths LIKE this path
+                # Path types:
+                # Users/*
+                # Users/Admi*
                 contents = smbSession.smbClient.listPath(
                     shareName=smbSession.smb_share,
-                    path=path + ntpath.sep + '*'
+                    path=(ntpath.dirname(arg) + ntpath.sep + '*')
                 )
                 contents = [e for e in contents if e.get_longname() not in ['.', '..']]
-
                 for entry in contents:
                     if fnmatch.fnmatch(entry.get_longname(), ntpath.basename(arg)):
-                        resolved_files.append(ntpath.join(path, entry.get_longname()))
+                        resolved_pathFromRoot_files.append(
+                            ntpath.sep + ntpath.join(smbSession.smb_cwd, ntpath.dirname(arg), entry.get_longname())
+                        )
+            else:
+                if DEBUG: print("[debug] |--> Argument is a relative path")
+                # Find all the remote files in absolute path to directory
+                resolved_pathFromRoot_files.append(
+                    ntpath.sep + smbSession.smb_cwd + ntpath.sep + arg
+                )
 
-            except Exception as err:
-                pass
-        else:
-            resolved_files.append(arg)
+        # Absolute paths
+        elif arg.startswith(ntpath.sep):
+            if arg.endswith('*'):
+                if DEBUG: print("[debug] |--> Argument is a abolute path LIKE this path")
+                # Find all the remote absolute files LIKE this path
+                # Path types:
+                # /Users/*
+                # /Users/Admi*
+                contents = smbSession.smbClient.listPath(
+                    shareName=smbSession.smb_share,
+                    path=(ntpath.dirname(arg) + ntpath.sep + '*')
+                )
+                contents = [e for e in contents if e.get_longname() not in ['.', '..']]
+                for entry in contents:
+                    if fnmatch.fnmatch(entry.get_longname(), ntpath.basename(arg)):
+                        resolved_pathFromRoot_files.append(
+                            ntpath.sep + ntpath.join(ntpath.dirname(arg), entry.get_longname())
+                        )
+            else:
+                if DEBUG: print("[debug] |--> Argument is a absolute path")
+                # Add absolute path to directory
+                resolved_pathFromRoot_files.append(
+                    ntpath.sep + arg
+                )
 
-    resolved_files = sorted(list(set(resolved_files)))
+    resolved_pathFromRoot_files = sorted(list(set(resolved_pathFromRoot_files)))
     
-    return resolved_files
+    return resolved_pathFromRoot_files
 
 
 def is_port_open(target, port) -> bool:

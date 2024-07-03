@@ -14,32 +14,35 @@ class Users(Module):
     name = "users"
     description = "Detects habits of users by the presence of cache files."
 
+    users_directory = "/Users"
+
     checks = {
         "browser": {
             "name": "Browser Profiles",
             "checks": {
-                "Brave": "/Users/{user}/AppData/Local/BraveSoftware/",
-                "Google Chrome": "/Users/{user}/AppData/Local/Google/Chrome/",
-                "Microsoft Edge": "/Users/{user}/AppData/Local/Microsoft/Edge/",
-                "Mozilla Firefox": "/Users/{user}/AppData/Local/Mozilla/Firefox/",
-                "Opera": "/Users/{user}/AppData/Local/Opera Software/",
-                "Safari": "/Users/{user}/AppData/Local/Apple Computer/Safari/"
+                "Brave": "/{users_directory}/{user}/AppData/Local/BraveSoftware/",
+                "Google Chrome": "/{users_directory}/{user}/AppData/Local/Google/Chrome/",
+                "Microsoft Edge": "/{users_directory}/{user}/AppData/Local/Microsoft/Edge/",
+                "Mozilla Firefox": "/{users_directory}/{user}/AppData/Local/Mozilla/Firefox/",
+                "Opera": "/{users_directory}/{user}/AppData/Local/Opera Software/",
+                "Safari": "/{users_directory}/{user}/AppData/Local/Apple Computer/Safari/"
             }
         },
         "email": {
             "name": "Email Clients",
             "checks": {
-                "Microsoft Outlook": "/Users/{user}/AppData/Local/Microsoft/Outlook/",
-                "Mozilla Thunderbird": "/Users/{user}/AppData/Local/Mozilla/Thunderbird/",
-                "Windows Mail": "/Users/{user}/AppData/Local/Microsoft/Windows Mail/"
+                "Microsoft Outlook": "/{users_directory}/{user}/AppData/Local/Microsoft/Outlook/",
+                "Mozilla Thunderbird": "/{users_directory}/{user}/AppData/Local/Mozilla/Thunderbird/",
+                "Windows Mail": "/{users_directory}/{user}/AppData/Local/Microsoft/Windows Mail/"
             }
         },
         "productivity": {
             "name": "Productivity Software",
             "checks": {
-                "Microsoft Office": "/Users/{user}/AppData/Local/Microsoft/Office/",
-                "LibreOffice": "/Users/{user}/AppData/Local/LibreOffice/",
-                "OpenOffice": "/Users/{user}/AppData/Local/OpenOffice/"
+                "Microsoft Office": "/{users_directory}/{user}/AppData/Local/Microsoft/Office/",
+                "LibreOffice": "/{users_directory}/{user}/AppData/Local/LibreOffice/",
+                "OpenOffice": "/{users_directory}/{user}/AppData/Local/OpenOffice/",
+                "ShareX": "/{users_directory}/{user}/Documents/ShareX/Screenshots/"
             }
         }
     }
@@ -59,6 +62,7 @@ class Users(Module):
 
         parser = ModuleArgumentParser(prog=self.name, description=self.description)
 
+        parser.add_argument("-d", "--users-directory", dest="users_directory", default="/Users", help="Specify the directory where user home directories are located.")
         parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose mode.")
     
         self.options = self.processArguments(parser, arguments)
@@ -80,8 +84,8 @@ class Users(Module):
 
         users = []
         self.smbSession.set_share('C$')
-        if self.smbSession.path_isdir("/Users/"):
-            self.smbSession.set_cwd("/Users/")
+        if self.smbSession.path_isdir(self.users_directory):
+            self.smbSession.set_cwd(self.users_directory)
             for entryname, entry in self.smbSession.list_contents("").items():
                 if (entry.get_longname() not in [".",".."]) and (entry.is_directory()):
                     users.append(entry.get_longname())
@@ -98,7 +102,7 @@ class Users(Module):
             category = self.checks[category_key]
             at_least_one_found = False
             for check_name, check_path in category["checks"].items():
-                check_path = check_path.format(user=user)
+                check_path = check_path.format(user=user, users_directory=self.users_directory)
                 if self.smbSession.path_isdir(pathFromRoot=check_path):
                     if not at_least_one_found:
                         print("  ├──> %s:" % category["name"])
@@ -113,6 +117,7 @@ class Users(Module):
         self.options = self.parseArgs(arguments=arguments)
 
         if self.options is not None:
+            self.users_directory = self.options.users_directory
             # Entrypoint
             try:
                 users = self.getListOfUsersHomes()
