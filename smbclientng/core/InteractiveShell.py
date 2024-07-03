@@ -314,7 +314,7 @@ class InteractiveShell(object):
         # SMB share needed             : Yes
 
         # Parse wildcards
-        files_and_directories = resolve_local_files(arguments)
+        files_and_directories = resolve_remote_files(self.sessionsManager.current_session, arguments)
 
         for path_to_file in files_and_directories:
             if self.sessionsManager.current_session.path_isfile(pathFromRoot=path_to_file):
@@ -363,7 +363,7 @@ class InteractiveShell(object):
         # SMB share needed             : Yes
 
         # Parse wildcards
-        files_and_directories = resolve_local_files(arguments)
+        files_and_directories = resolve_remote_files(self.sessionsManager.current_session, arguments)
 
         for path_to_file in files_and_directories:
             if self.sessionsManager.current_session.path_isfile(pathFromRoot=path_to_file):

@@ -376,7 +376,8 @@ def resolve_remote_files(smbSession, arguments):
     resolved_files = []
     for arg in arguments:
         if '*' in arg:
-            if arg == '*':
+            # Parse path
+            if arg == '*' or ((ntpath.sep not in arg) and (os.path.sep not in arg)):
                 path = smbSession.smb_cwd
             elif arg.startswith(ntpath.sep):
                 path = ntpath.dirname(arg)
@@ -398,7 +399,9 @@ def resolve_remote_files(smbSession, arguments):
                 pass
         else:
             resolved_files.append(arg)
+
     resolved_files = sorted(list(set(resolved_files)))
+    
     return resolved_files
 
 
