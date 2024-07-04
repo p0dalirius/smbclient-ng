@@ -183,6 +183,10 @@ class InteractiveShell(object):
             # debug
             elif command == "debug":
                 self.command_debug(arguments, command)
+            
+            # Find
+            elif command == "find":
+                self.command_find(arguments, command)
 
             # Get a file
             elif command == "get":
@@ -195,14 +199,6 @@ class InteractiveShell(object):
             # List directory contents in a share
             elif command in ["ls", "dir"]:
                 self.command_ls(arguments, command)
-
-            # Creates a new remote directory
-            elif command == "mkdir":
-                self.command_mkdir(arguments, command)
-
-            # Put a file
-            elif command == "put":
-                self.command_put(arguments, command)
 
             # Shows the content of a local file
             elif command == "lcat":
@@ -248,6 +244,10 @@ class InteractiveShell(object):
             elif command == "ltree":
                 self.command_ltree(arguments, command)
 
+            # Creates a new remote directory
+            elif command == "mkdir":
+                self.command_mkdir(arguments, command)
+
             # Modules
             elif command == "module":
                 self.command_module(arguments, command)
@@ -255,6 +255,10 @@ class InteractiveShell(object):
             # Creates a mount point of the remote share on the local machine
             elif command == "mount":
                 self.command_mount(arguments, command)
+
+            # Put a file
+            elif command == "put":
+                self.command_put(arguments, command)
 
             # Reconnects the current SMB session
             elif command in ["connect", "reconnect"]:
@@ -390,6 +394,16 @@ class InteractiveShell(object):
         self.sessionsManager.current_session.ping_smb_session()
         if self.sessionsManager.current_session.connected:
             self.sessionsManager.current_session.close_smb_session()
+
+    def command_find(self, arguments, command):
+        module_name = "find"
+
+        if module_name in self.modules.keys():
+            module = self.modules[module_name](self.sessionsManager.current_session, self.config, self.logger)
+            arguments_string = ' '.join(arguments)
+            module.run(arguments_string)
+        else:
+            self.logger.error("Module '%s' does not exist." % module_name)
 
     @command_arguments_required
     @active_smb_connection_needed
@@ -741,8 +755,6 @@ class InteractiveShell(object):
         self.sessionsManager.current_session.mkdir(path=arguments[0])
 
     @command_arguments_required
-    @active_smb_connection_needed
-    @smb_share_is_set
     def command_module(self, arguments, command):
         module_name = arguments[0]
 
