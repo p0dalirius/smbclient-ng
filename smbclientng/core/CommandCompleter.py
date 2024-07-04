@@ -91,6 +91,16 @@ class CommandCompleter(object):
             "subcommands": [],
             "autocomplete": []
         },
+        "find": {
+            "description": [
+                "Search for files in a directory hierarchy",
+                "Syntax: find [-h] [-name NAME] [-iname INAME] [-type TYPE] [-size SIZE] [-ls]",
+                "             [-download] [-maxdepth MAXDEPTH] [-mindepth MINDEPTH]",
+                "             [PATH ...]"
+            ],
+            "subcommands": [],
+            "autocomplete": []
+        },
         "get": {
             "description": [
                 "Get a remote file.",

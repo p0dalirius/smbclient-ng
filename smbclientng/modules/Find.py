@@ -181,9 +181,9 @@ class Find(Module):
                         windows_ls_entry(entry, fullpath)
                 else:
                     if entry.is_directory():
-                        print("%s" % fullpath)
+                        print("%s" % fullpath.replace(ntpath.sep, '/'))
                     else:
-                        print("%s" % fullpath)
+                        print("%s" % fullpath.replace(ntpath.sep, '/'))
                         
         return None
 
