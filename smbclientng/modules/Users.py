@@ -15,6 +15,7 @@ class Users(Module):
     description = "Detects habits of users by the presence of cache files."
 
     users_directory = "/Users"
+    share = "C$"
 
     checks = {
         "browser": {
@@ -41,7 +42,12 @@ class Users(Module):
             "checks": {
                 "Microsoft Office": "/{users_directory}/{user}/AppData/Local/Microsoft/Office/",
                 "LibreOffice": "/{users_directory}/{user}/AppData/Local/LibreOffice/",
-                "OpenOffice": "/{users_directory}/{user}/AppData/Local/OpenOffice/",
+                "OpenOffice": "/{users_directory}/{user}/AppData/Local/OpenOffice/"
+            }
+        },
+        "screenshot_tools": {
+            "name": "Screenshot Tools",
+            "checks": {
                 "ShareX": "/{users_directory}/{user}/Documents/ShareX/Screenshots/"
             }
         }
@@ -62,6 +68,7 @@ class Users(Module):
 
         parser = ModuleArgumentParser(prog=self.name, description=self.description)
 
+        parser.add_argument("-s", "--share", dest="share", default="C$", help="Specify the share where user home directories are located.")
         parser.add_argument("-d", "--users-directory", dest="users_directory", default="/Users", help="Specify the directory where user home directories are located.")
         parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose mode.")
     
@@ -83,7 +90,7 @@ class Users(Module):
         old_pwd = self.smbSession.smb_cwd
 
         users = []
-        self.smbSession.set_share('C$')
+        self.smbSession.set_share(self.share)
         if self.smbSession.path_isdir(self.users_directory):
             self.smbSession.set_cwd(self.users_directory)
             for entryname, entry in self.smbSession.list_contents("").items():
@@ -118,6 +125,8 @@ class Users(Module):
 
         if self.options is not None:
             self.users_directory = self.options.users_directory
+            self.share = self.options.share
+
             # Entrypoint
             try:
                 users = self.getListOfUsersHomes()
