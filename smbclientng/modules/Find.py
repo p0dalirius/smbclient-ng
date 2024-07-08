@@ -73,16 +73,13 @@ class Find(Module):
     def __find_callback(self, entry, fullpath, depth):
         # Documentation for __find_callback function
         """
-        This function serves as a callback for the find operation. It applies filters based on the command line arguments
-        and decides whether to print, download, or list the entry in 'ls -dils' format if it matches the specified filters.
+        This function serves as a callback for the find operation. It applies filters based on the command line arguments and decides whether to print, download, or list the entry in 'ls -dils' format if it matches the specified filters.
 
         Args:
             entry (SMBEntry): The current file or directory entry being processed.
             fullpath (str): The full path to the entry.
 
-        The function checks against filters such as file name, case sensitivity, file type, and size. If the entry matches
-        the filters, it will perform actions like printing the entry's details, downloading the entry, or listing the entry
-        based on the options provided in the command line arguments.
+        The function checks against filters such as file name, case sensitivity, file type, and size. If the entry matches the filters, it will perform actions like printing the entry's details, downloading the entry, or listing the entry based on the options provided in the command line arguments.
         """
 
         # Match and print results
@@ -166,6 +163,24 @@ class Find(Module):
                         else:
                             do_print_entry = (entry.get_longname().lower() == self.options.iname.lower())
 
+            # Check the size
+            if do_print_entry and self.options.size is not None:
+                size_filter = self.options.size
+                if (size_filter[1:].isdigit()):
+                    size = int(size_filter[1:])
+                else:
+                    size = int(size_filter[1:-1])
+                    units = ["B","K","M","G","T"]
+                    if size_filter[-1].upper() in units:
+                        size = size * (1024**units.index(size_filter[-1]))
+                    else:
+                        pass
+
+                if size_filter[0] == '+':
+                    do_print_entry = entry.get_filesize() >= size
+                elif size_filter[0] == '-':
+                    do_print_entry = entry.get_filesize() <= size
+
             if do_print_entry:
                 # Actions on matches
                 if self.options.download:
@@ -176,9 +191,9 @@ class Find(Module):
                 # Output formats
                 if self.options.ls:
                     if entry.is_directory():
-                        windows_ls_entry(entry, fullpath)
+                        windows_ls_entry(entry=entry, config=self.config, pathToPrint=fullpath)
                     else:
-                        windows_ls_entry(entry, fullpath)
+                        windows_ls_entry(entry=entry, config=self.config, pathToPrint=fullpath)
                 else:
                     if entry.is_directory():
                         print("%s" % fullpath.replace(ntpath.sep, '/'))
