@@ -127,10 +127,12 @@ class SMBSession(object):
             else:
                 self.logger.error("Could not connect to '%s:%d'" % (self.host, int(self.port)))
                 self.connected = False
+                self.smbClient = None
         except OSError as err:
             if self.config.debug:
                 traceback.print_exc()
             self.logger.error("Could not connect to '%s:%d': %s" % (self.host, int(self.port), err))
+            self.connected = False
             self.smbClient = None
 
         if self.smbClient is not None:
@@ -279,7 +281,10 @@ class SMBSession(object):
         # Parse path
         path = path.replace('/', ntpath.sep)
         if ntpath.sep in path:
-            tmp_search_path = ntpath.normpath(self.smb_cwd + ntpath.sep + ntpath.dirname(path))
+            if path.startswith(ntpath.sep):
+                tmp_search_path = ntpath.normpath(ntpath.dirname(path))
+            else:
+                tmp_search_path = ntpath.normpath(self.smb_cwd + ntpath.sep + ntpath.dirname(path))
         else:
             tmp_search_path = ntpath.normpath(self.smb_cwd + ntpath.sep)
         # Parse filename
@@ -840,7 +845,7 @@ class SMBSession(object):
                         f = LocalFileIO(
                             mode="rb", 
                             path=localpath, 
-                            debug=self.config.debug
+                            logger=self.logger
                         )
                         self.smbClient.putFile(
                             shareName=self.smb_share, 
