@@ -48,6 +48,7 @@ class Logger(object):
                     k += 1
                 self.logfile = self.logfile + (".%d" % k)
             open(self.logfile, "w").close()
+            self.debug("Writting logs to logfile: '%s'" % self.logfile)
 
     def print(self, message="", end='\n'):
         """
@@ -64,7 +65,7 @@ class Logger(object):
             print(nocolor_message, end=end)
         else:
             print(message, end=end)
-        self.__write_to_logfile(nocolor_message, end=end)
+        self.write_to_logfile(nocolor_message, end=end)
 
     def info(self, message):
         """
@@ -81,7 +82,7 @@ class Logger(object):
             print("[info] %s" % nocolor_message)
         else:
             print("[\x1b[1;92minfo\x1b[0m] %s" % message)
-        self.__write_to_logfile("[info] %s" % nocolor_message)
+        self.write_to_logfile("[info] %s" % nocolor_message)
 
     def debug(self, message):
         """
@@ -99,7 +100,7 @@ class Logger(object):
                 print("[debug] %s" % nocolor_message)
             else:
                 print("[debug] %s" % message)
-            self.__write_to_logfile("[debug] %s" % nocolor_message)
+            self.write_to_logfile("[debug] %s" % nocolor_message)
 
     def error(self, message):
         """
@@ -116,9 +117,9 @@ class Logger(object):
             print("[error] %s" % nocolor_message)
         else:
             print("[\x1b[1;91merror\x1b[0m] %s" % message)
-        self.__write_to_logfile("[error] %s" % nocolor_message)
+        self.write_to_logfile("[error] %s" % nocolor_message)
 
-    def __write_to_logfile(self, message, end='\n'):
+    def write_to_logfile(self, message, end='\n'):
         """
         Writes the provided message to the log file specified during Logger instance initialization.
 
@@ -130,5 +131,6 @@ class Logger(object):
 
         if self.logfile is not None:
             f = open(self.logfile, "a")
-            f.write(message + end)
+            nocolor_message = re.sub(r"\x1b[\[]([0-9;]+)m", "", message)
+            f.write(nocolor_message + end)
             f.close()
