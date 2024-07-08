@@ -124,6 +124,7 @@ class InteractiveShell(object):
             while self.running:
                 try:
                     user_input = input(self.__prompt()).strip()
+                    self.logger.write_to_logfile(self.__prompt() + user_input)
                     self.process_line(commandLine=user_input)
                 except KeyboardInterrupt as e:
                     self.logger.print()

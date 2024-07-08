@@ -30,6 +30,7 @@ def parseArgs():
     parser.add_argument("--no-colors", dest="no_colors", action="store_true", default=False, help="No colors mode.")
     parser.add_argument("-S", "--startup-script", metavar="startup_script", required=False, type=str, help="File containing the list of commands to be typed at start of the console.")  
     parser.add_argument("-N", "--not-interactive", dest="not_interactive", required=False, action="store_true", default=False, help="Non interactive mode.")
+    parser.add_argument("-L", "--logfile", dest="logfile", metavar="LOGFILE", required=False, default=None, type=str, help="File to write logs to.")
 
     group_target = parser.add_argument_group("Target")
     group_target.add_argument("--host", action="store", metavar="HOST", required=True, type=str, help="IP address or hostname of the SMB Server to connect to.")  
@@ -107,7 +108,7 @@ def main():
     config.not_interactive = options.not_interactive
     config.startup_script = options.startup_script
 
-    logger = Logger(config=config, logfile=None)
+    logger = Logger(config=config, logfile=options.logfile)
 
     sessionsManager = SessionsManager(config=config, logger=logger)
 
@@ -135,8 +136,7 @@ def main():
     )
     shell.run()
 
-    if options.debug:
-        print("[debug] Exiting the console.")
+    logger.debug("Exiting the console.")
 
 
 if __name__ == "__main__":
