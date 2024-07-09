@@ -191,16 +191,19 @@ def windows_ls_entry(entry, config, pathToPrint=None):
 
     date_str = datetime.datetime.fromtimestamp(entry.get_atime_epoch()).strftime("%Y-%m-%d %H:%M")
     
+    output_str = ""
     if entry.is_directory():
         if config.no_colors:
-            print("%s %10s  %s  %s\\" % (meta_string, size_str, date_str, pathToPrint))
+            output_str = ("%s %10s  %s  %s\\" % (meta_string, size_str, date_str, pathToPrint))
         else:
-            print("%s %10s  %s  \x1b[1;96m%s\x1b[0m\\" % (meta_string, size_str, date_str, pathToPrint))
+            output_str = ("%s %10s  %s  \x1b[1;96m%s\x1b[0m\\" % (meta_string, size_str, date_str, pathToPrint))
     else:
         if config.no_colors:
-            print("%s %10s  %s  %s" % (meta_string, size_str, date_str, pathToPrint))
+            output_str = ("%s %10s  %s  %s" % (meta_string, size_str, date_str, pathToPrint))
         else:
-            print("%s %10s  %s  \x1b[1m%s\x1b[0m" % (meta_string, size_str, date_str, pathToPrint))
+            output_str = ("%s %10s  %s  \x1b[1m%s\x1b[0m" % (meta_string, size_str, date_str, pathToPrint))
+
+    return output_str
 
 
 def local_tree(path, config):

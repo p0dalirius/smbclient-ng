@@ -5,6 +5,7 @@
 # Date created       : 23 may 2024
 
 
+import os
 import ntpath
 import re
 from smbclientng.core.Module import Module
@@ -39,6 +40,7 @@ class Find(Module):
 
         # Adding positional arguments
         parser.add_argument("paths", metavar="PATH", type=str, nargs="*", default=[], help="The starting point(s) for the search.")
+        parser.add_argument("-q", "--quiet", action="store_true", default=False, help="Suppress normal output.")
 
         # Adding options for filtering
         parser.add_argument("-name", type=str, help="Base of file name (the path with the leading directories removed).")
@@ -52,6 +54,7 @@ class Find(Module):
         # Adding actions
         parser.add_argument("-ls", action="store_true", default=False, help="List current file in ls -dils format on standard output.")
         parser.add_argument("-download", action="store_true", default=False, help="List current file in ls -dils format on standard output.")
+        parser.add_argument("-o", "--outputfile", type=str, help="Write the names of the files found to the specified file.")
 
         # Other options
         parser.add_argument("-maxdepth", type=int, help="Descend at most levels (a non-negative integer) levels of directories below the command line arguments.")
@@ -189,17 +192,25 @@ class Find(Module):
                     else:
                         self.smbSession.get_file(path=fullpath, keepRemotePath=True)
                 # Output formats
+                output_str = ""
                 if self.options.ls:
                     if entry.is_directory():
-                        windows_ls_entry(entry=entry, config=self.config, pathToPrint=fullpath)
+                        output_str = windows_ls_entry(entry=entry, config=self.config, pathToPrint=fullpath)
                     else:
-                        windows_ls_entry(entry=entry, config=self.config, pathToPrint=fullpath)
+                        output_str = windows_ls_entry(entry=entry, config=self.config, pathToPrint=fullpath)
                 else:
                     if entry.is_directory():
-                        print("%s" % fullpath.replace(ntpath.sep, '/'))
+                        output_str = ("%s" % fullpath.replace(ntpath.sep, '/'))
                     else:
-                        print("%s" % fullpath.replace(ntpath.sep, '/'))
-                        
+                        output_str = ("%s" % fullpath.replace(ntpath.sep, '/'))
+                
+                if self.options.outputfile is not None:
+                    with open(self.options.outputfile, 'a') as f:
+                        f.write(output_str + '\n')
+
+                if not self.options.quiet:
+                    print(output_str)
+
         return None
 
     def run(self, arguments):
@@ -219,6 +230,11 @@ class Find(Module):
 
         if self.options is not None:
             # Entrypoint
+            if self.options.outputfile is not None:
+                if not os.path.exists(os.path.dirname(self.options.outputfile)):
+                    os.makedirs(os.path.dirname(self.options.outputfile))
+                open(self.options.outputfile, 'w').close()
+
             try:
                 next_directories_to_explore = []
                 for path in list(set(self.options.paths)):
