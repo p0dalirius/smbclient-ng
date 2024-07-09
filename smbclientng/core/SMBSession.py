@@ -1043,7 +1043,7 @@ class SMBSession(object):
                 if self.config.debug:
                     traceback.print_exc()
 
-    def tree(self, path=None):
+    def tree(self, path=None, quiet=False, outputfile=None):
         """
         Recursively lists the directory structure of the SMB share starting from the specified path.
 
@@ -1056,7 +1056,7 @@ class SMBSession(object):
                                   Defaults to the root of the current share.
         """
         
-        def recurse_action(base_dir="", path=[], prompt=[]):
+        def recurse_action(base_dir="", path=[], prompt=[], quiet=False, outputfile=None):
             bars = ["│   ", "├── ", "└── "]
 
             remote_smb_path = ntpath.normpath(base_dir + ntpath.sep + ntpath.sep.join(path))
@@ -1070,10 +1070,14 @@ class SMBSession(object):
             except impacket.smbconnection.SessionError as err:
                 code, const, text = err.getErrorCode(), err.getErrorString()[0], err.getErrorString()[1]
                 errmsg = "Error 0x%08x (%s): %s" % (code, const, text)
-                if self.config.no_colors:
-                    self.logger.print("%s%s" % (''.join(prompt+[bars[2]]), errmsg))
-                else:
-                    self.logger.print("%s\x1b[1;91m%s\x1b[0m" % (''.join(prompt+[bars[2]]), errmsg))
+                if not quiet:
+                    if self.config.no_colors:
+                        self.logger.print("%s%s" % (''.join(prompt+[bars[2]]), errmsg))
+                    else:
+                        self.logger.print("%s\x1b[1;91m%s\x1b[0m" % (''.join(prompt+[bars[2]]), errmsg))
+                if outputfile is not None:
+                    with open(outputfile, 'a') as f:
+                        f.write("%s%s\n" % (''.join(prompt+[bars[2]]), errmsg))
                 return 
 
             entries = [e for e in entries if e.get_longname() not in [".", ".."]]
@@ -1087,77 +1091,111 @@ class SMBSession(object):
                     # This is the first entry 
                     if index == 0:
                         if entry.is_directory():
-                            if self.config.no_colors:
-                                self.logger.print("%s%s\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
-                            else:
-                                self.logger.print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                            if not quiet:
+                                if self.config.no_colors:
+                                    self.logger.print("%s%s\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                                else:
+                                    self.logger.print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                            if outputfile is not None:
+                                with open(outputfile, 'a') as f:
+                                    f.write("%s%s\\\n" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+
                             recurse_action(
                                 base_dir=base_dir, 
                                 path=path+[entry.get_longname()],
                                 prompt=prompt+["│   "]
                             )
                         else:
-                            if self.config.no_colors:
-                                self.logger.print("%s%s" % (''.join(prompt+[bars[1]]), entry.get_longname()))
-                            else:
-                                self.logger.print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[1]]), entry.get_longname()))
-
+                            if not quiet:
+                                if self.config.no_colors:
+                                    self.logger.print("%s%s" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                                else:
+                                    self.logger.print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                            if outputfile is not None:
+                                with open(outputfile, 'a') as f:
+                                    f.write("%s%s\n" % (''.join(prompt+[bars[1]]), entry.get_longname()))
                     # This is the last entry
                     elif index == len(entries):
                         if entry.is_directory():
-                            if self.config.no_colors:
-                                self.logger.print("%s%s\\" % (''.join(prompt+[bars[2]]), entry.get_longname()))
-                            else:
-                                self.logger.print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+                            if not quiet:
+                                if self.config.no_colors:
+                                    self.logger.print()
+                                else:
+                                    self.logger.print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+                            if outputfile is not None:
+                                with open(outputfile, 'a') as f:
+                                    f.write("%s%s\\\n" % (''.join(prompt+[bars[2]]), entry.get_longname()))
                             recurse_action(
                                 base_dir=base_dir, 
                                 path=path+[entry.get_longname()],
                                 prompt=prompt+["    "]
                             )
                         else:
-                            if self.config.no_colors:
-                                self.logger.print("%s%s" % (''.join(prompt+[bars[2]]), entry.get_longname()))
-                            else:
-                                self.logger.print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[2]]), entry.get_longname()))
-                        
+                            if not quiet:
+                                if self.config.no_colors:
+                                    self.logger.print("%s%s" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+                                else:
+                                    self.logger.print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+                            if outputfile is not None:
+                                with open(outputfile, 'a') as f:
+                                    f.write("%s%s\n" % (''.join(prompt+[bars[2]]), entry.get_longname()))
                     # These are entries in the middle
                     else:
                         if entry.is_directory():
-                            if self.config.no_colors:
-                                self.logger.print("%s%s\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
-                            else:
-                                self.logger.print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                            if not quiet:
+                                if self.config.no_colors:
+                                    self.logger.print("%s%s\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                                else:
+                                    self.logger.print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                            if outputfile is not None:
+                                with open(outputfile, 'a') as f:
+                                    f.write("%s%s\\\n" % (''.join(prompt+[bars[1]]), entry.get_longname()))
                             recurse_action(
                                 base_dir=base_dir, 
                                 path=path+[entry.get_longname()],
                                 prompt=prompt+["│   "]
                             )
                         else:
-                            if self.config.no_colors:
-                                self.logger.print("%s%s" % (''.join(prompt+[bars[1]]), entry.get_longname()))
-                            else:
-                                self.logger.print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[1]]), entry.get_longname()))
-
+                            if not quiet:
+                                if self.config.no_colors:
+                                    self.logger.print("%s%s" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                                else:
+                                    self.logger.print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[1]]), entry.get_longname()))
+                            if outputfile is not None:
+                                with open(outputfile, 'a') as f:
+                                    f.write("%s%s\n" % (''.join(prompt+[bars[1]]), entry.get_longname()))
             # 
             elif len(entries) == 1:
                 entry = entries[0]
                 if entry.is_directory():
-                    if self.config.no_colors:
-                        self.logger.print("%s%s\\" % (''.join(prompt+[bars[2]]), entry.get_longname()))
-                    else:
-                        self.logger.print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+                    if not quiet:
+                        if self.config.no_colors:
+                            self.logger.print("%s%s\\" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+                        else:
+                            self.logger.print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+                    if outputfile is not None:
+                        with open(outputfile, 'a') as f:
+                            f.write("%s%s\\\n" % (''.join(prompt+[bars[2]]), entry.get_longname()))
                     recurse_action(
                         base_dir=base_dir, 
                         path=path+[entry.get_longname()],
                         prompt=prompt+["    "]
                     )
                 else:
-                    if self.config.no_colors:
-                        self.logger.print("%s%s" % (''.join(prompt+[bars[2]]), entry.get_longname()))
-                    else:
-                        self.logger.print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[2]]), entry.get_longname()))
-
+                    if not quiet:
+                        if self.config.no_colors:
+                            self.logger.print("%s%s" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+                        else:
+                            self.logger.print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[2]]), entry.get_longname()))
+                    if outputfile is not None:
+                        with open(outputfile, 'a') as f:
+                            f.write("%s%s\n" % (''.join(prompt+[bars[2]]), entry.get_longname()))
         # Entrypoint
+        if outputfile is not None:
+            if not os.path.exists(os.path.dirname(outputfile)):
+                os.makedirs(os.path.dirname(outputfile))
+            open(outputfile, 'w').close()
+
         try:
             if self.config.no_colors:
                 self.logger.print("%s\\" % path)
@@ -1166,7 +1204,9 @@ class SMBSession(object):
             recurse_action(
                 base_dir=self.smb_cwd, 
                 path=[path],
-                prompt=[""]
+                prompt=[""],
+                quiet=quiet,
+                outputfile=outputfile
             )
         except (BrokenPipeError, KeyboardInterrupt) as e:
             self.logger.error("Interrupted.")
