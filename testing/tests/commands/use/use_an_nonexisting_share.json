@@ -1,5 +1,7 @@
 {
-    "title": "Command 'use': with an existing share",
+    "title": "Command 'use': with a non existing share",
+    "category": "commands",
+    "subcategory": "use",
     "parameters": {
         "-d": "{auth_domain}", 
         "-u": "{auth_username}", 
@@ -7,7 +9,11 @@
         "--host": "{target_host}"
     },
     "smbclientng_commands": [
-        "use 'C$'"
+        "use '{random_string}'"
     ],
-    "expected_output": "NT_STATUS_BAD_NETWORK_NAME"
+    "expected_output": {
+        "messages": ["[error] No share named "],
+        "error": true,
+        "traceback": false
+    }
 }
