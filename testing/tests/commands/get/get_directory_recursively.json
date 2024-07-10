@@ -1,0 +1,22 @@
+{
+    "title": "Command 'get': retrieves a remote directory recursively",
+    "category": "commands",
+    "subcategory": "get",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "use 'C$'",
+        "get -r './Users/John/Documents/projects/'"
+    ],
+    "expected_output": {
+        "messages": [
+            "Directory './Users/John/Documents/projects/' downloaded successfully."
+        ],
+        "error": false,
+        "traceback": false
+    }
+}

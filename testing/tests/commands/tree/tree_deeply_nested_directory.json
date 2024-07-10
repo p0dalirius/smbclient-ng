@@ -1,0 +1,20 @@
+{
+    "title": "Command 'tree': with a deeply nested directory",
+    "category": "commands",
+    "subcategory": "tree",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "use 'C$'",
+        "tree './Users/Administrator/'"
+    ],
+    "expected_output": {
+        "messages": [],
+        "error": false,
+        "traceback": false
+    }
+}

@@ -51,7 +51,7 @@ def parseLogfileContents(contents):
                 parsed.append({
                     "command": command,
                     "output": buffer,
-                    "error": any(["[error]" in l.startswith() for l in buffer]),
+                    "error": any([l.startswith("[error]") for l in buffer]),
                     "traceback": any([l.startswith("Traceback") for l in buffer]),
                 })
                 command = None

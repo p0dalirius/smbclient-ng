@@ -1,0 +1,24 @@
+{
+    "title": "Command 'connect': reconnects after a connection timeout",
+    "category": "commands",
+    "subcategory": "connect",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "use 'C$'",
+        "connect",
+        "dir"
+    ],
+    "expected_output": {
+        "messages": [
+            "Connected to the SMB server.",
+            "Directory listing..."
+        ],
+        "error": false,
+        "traceback": false
+    }
+}

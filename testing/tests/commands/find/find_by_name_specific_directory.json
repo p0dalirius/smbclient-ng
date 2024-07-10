@@ -1,0 +1,22 @@
+{
+    "title": "Command 'find': search for files by name in a specific directory",
+    "category": "commands",
+    "subcategory": "find",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "use 'C$'",
+        "find -name 'document.pdf' './Users/Administrator'"
+    ],
+    "expected_output": {
+        "messages": [
+            "./Users/John/Documents/document.pdf"
+        ],
+        "error": false,
+        "traceback": false
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "title": "Command 'close': attempts to close SMB connection without an active connection",
+    "category": "commands",
+    "subcategory": "close",
+    "parameters": {},
+    "smbclientng_commands": [
+        "close"
+    ],
+    "expected_output": {
+        "messages": [
+            "Error: No active SMB connection to close."
+        ],
+        "error": true,
+        "traceback": false
+    }
+}

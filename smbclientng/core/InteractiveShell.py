@@ -43,7 +43,7 @@ def active_smb_connection_needed(func):
         if self.sessionsManager.current_session.connected:
             return func(*args, **kwargs)
         else:
-            print("[!] SMB Session is disconnected.")
+            self.logger.error("SMB Session is disconnected.")
             return None
     return wrapper
 
@@ -53,7 +53,7 @@ def smb_share_is_set(func):
         if self.sessionsManager.current_session.smb_share is not None:
             return func(*args, **kwargs)
         else:
-            print("[!] You must open a share first, try the 'use <share>' command.")
+            self.logger.error("You must open a share first, try the 'use <share>' command.")
             return None
     return wrapper
 
@@ -459,6 +459,9 @@ class InteractiveShell(object):
         print_server_info = False
         print_share_info = False
         if len(arguments) != 0:
+            if arguments[0].lower() not in ["server", "share"]:
+                self.logger.error("'%s' is not a valid parameter. Use 'server' or 'share'." % arguments[0])
+                return None
             print_server_info = (arguments[0].lower() == "server")
             print_share_info = (arguments[0].lower() == "share")
         else:
@@ -471,7 +474,7 @@ class InteractiveShell(object):
                 server=print_server_info
             )
         except impacket.smbconnection.SessionError as e:
-            self.logger.error("[!] SMB Error: %s" % e)
+            self.logger.error("SMB Error: %s" % e)
 
     @command_arguments_required
     def command_lbat(self, arguments, command):
