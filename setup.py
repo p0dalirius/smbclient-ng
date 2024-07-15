@@ -7,7 +7,7 @@
 import setuptools
 
 
-VERSION = "2.1.2"
+VERSION = "2.1.3"
 
 
 long_description = """
@@ -85,7 +85,7 @@ $ ./smbclient-ng.py -h
 / __| '_ ` _ \| '_ \ / __| | |/ _ \ '_ \| __|____| '_ \ / _` |
 \__ \ | | | | | |_) | (__| | |  __/ | | | ||_____| | | | (_| |
 |___/_| |_| |_|_.__/ \___|_|_|\___|_| |_|\__|    |_| |_|\__, |
-    by @podalirius_                             v2.1.1  |___/  
+    by @podalirius_                             v2.1.3  |___/  
     
 usage: smbclient-ng.py [-h] [--debug] [--no-colors] [-S startup_script] [-N] --host HOST [--port PORT]
                        [--kdcHost FQDN KDC] [-d DOMAIN] [-u USER] [--no-pass | -p [PASSWORD] | -H
