@@ -1246,7 +1246,7 @@ class SMBSession(object):
 
     # Other functions
 
-    def test_rights(self, sharename): 
+    def test_rights(self, sharename, test_write=False): 
         """
         Tests the read and write access rights of the current SMB session.
 
@@ -1263,19 +1263,24 @@ class SMBSession(object):
         self.set_share(shareName=sharename)
 
         access_rights = {"readable": False, "writable": False}
+
+        # READ
         try:
             self.smbClient.listPath(self.smb_share, '*', password=None)
             access_rights["readable"] = True
         except impacket.smbconnection.SessionError as e:
             access_rights["readable"] = False
-
-        try:
-            temp_dir = ntpath.normpath("\\" + ''.join([random.choice("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPRSTUVWXYZ0123456759") for k in range(16)]))
-            self.smbClient.createDirectory(self.smb_share, temp_dir)
-            self.smbClient.deleteDirectory(self.smb_share, temp_dir)
-            access_rights["writable"] = True
-        except impacket.smbconnection.SessionError as e:
-            access_rights["writable"] = False
+        
+        
+        if test_write:
+            # WRITE
+            try:
+                temp_dir = ntpath.normpath("\\" + ''.join([random.choice("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPRSTUVWXYZ0123456759") for k in range(16)]))
+                self.smbClient.createDirectory(self.smb_share, temp_dir)
+                self.smbClient.deleteDirectory(self.smb_share, temp_dir)
+                access_rights["writable"] = True
+            except impacket.smbconnection.SessionError as e:
+                access_rights["writable"] = False
 
         # Restore the current share
         self.set_share(shareName=current_share)
