@@ -41,15 +41,25 @@ if __name__ == "__main__":
             nb_testcases += len(testCases[category][subcategory].keys())
     logger.info("Registered %d tests." % nb_testcases)
 
+
+    tests_passed = 0
+    tests_failed = 0
     for category in sorted(testCases.keys()):
-        logger.print("\x1b[1;48;2;170;170;170;30m├──[+] Category: %-64s\x1b[0m" % category)
+        logger.print("\x1b[1;48;2;170;170;170;30m├──[+] Category: %-84s\x1b[0m" % category)
 
         for subcategory in sorted(testCases[category].keys()):
-            logger.print("\x1b[1;48;2;200;200;200;30m├───┼──[+] Subcategory: %-57s\x1b[0m" % subcategory)
+            logger.print("\x1b[1;48;2;200;200;200;30m├───┼──[+] Subcategory: %-77s\x1b[0m" % subcategory)
 
             for pathToTestCase, testCase in testCases[category][subcategory].items():
                 logger.debug("Testing: %s" % testCase["title"])
                 c = Check(logger=logger, options=options, test_case=testCase)
-                c.run()
+                
+                if c.run() == True:
+                    tests_passed += 1
+                else:
+                    tests_failed += 1
 
+    logger.print("\x1b[1;48;2;170;170;170;30m[+] %-96s \x1b[0m" % "All done!")
     logger.info("Finished tests.")
+    logger.info("Tests PASSED: (%d/%d) %d%%" % (tests_passed, nb_testcases, (tests_passed / nb_testcases)*100))
+    logger.info("Tests FAILED: (%d/%d) %d%%" % (tests_failed, nb_testcases, (tests_failed / nb_testcases)*100))

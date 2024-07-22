@@ -1,0 +1,22 @@
+{
+    "title": "Command 'cat': attempts to get the contents of a non-existing remote file",
+    "category": "commands",
+    "subcategory": "cat",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "use 'C$'",
+        "cat './Users/John/Documents/non_existing_file.txt'"
+    ],
+    "expected_output": {
+        "messages": [
+            "Error: File './Users/John/Documents/non_existing_file.txt' not found."
+        ],
+        "error": true,
+        "traceback": false
+    }
+}

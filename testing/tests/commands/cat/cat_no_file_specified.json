@@ -1,0 +1,22 @@
+{
+    "title": "Command 'cat': without specifying a file",
+    "category": "commands",
+    "subcategory": "cat",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "use 'C$'",
+        "cat"
+    ],
+    "expected_output": {
+        "messages": [
+            "Error: No file specified."
+        ],
+        "error": true,
+        "traceback": false
+    }
+}

@@ -20,31 +20,47 @@ class Check(object):
 
     def run(self):
         data = self.exec()
-        parsed = parseLogfileContents(data)
-        last_line = parsed[-1]
 
-        check_passed = True
-        for expectedMessage in self.test_case["expected_output"]["messages"]:
-            if expectedMessage not in ''.join(last_line["output"]):
-                check_passed = False
-            else:
-                self.logger.debug("'%s' is not present in output" % expectedMessage)
-
-        # Error output is matching what is expected
-        if self.test_case["expected_output"]["error"] != last_line["error"]:
-            self.logger.debug("Error output is not matching what is expected.")
+        if data is None:
             check_passed = False
-
-        # Traceback output is matching what is expected
-        if self.test_case["expected_output"]["traceback"] != last_line["traceback"]:
-            self.logger.debug("Traceback output is not matching what is expected.")
-            check_passed = False
+            return check_passed
         
-        # Final print of check
-        if check_passed:
-            self.__print_passed()
         else:
-            self.__print_failed()
+            parsed = parseLogfileContents(data)
+
+            if len(parsed) != 0:
+                last_line = parsed[-1]
+
+                check_passed = True
+                for expectedMessage in self.test_case["expected_output"]["messages"]:
+                    if expectedMessage not in ''.join(last_line["output"]):
+                        check_passed = False
+                    else:
+                        self.logger.debug("'%s' is not present in output" % expectedMessage)
+
+                # Error output is matching what is expected
+                if self.test_case["expected_output"]["error"] != last_line["error"]:
+                    self.logger.debug("Error output is not matching what is expected.")
+                    self.logger.debug("=[Output]====================================")
+                    self.logger.debug('\n'.join(last_line["output"]))
+                    self.logger.debug("=============================================")
+                    check_passed = False
+
+                # Traceback output is matching what is expected
+                if self.test_case["expected_output"]["traceback"] != last_line["traceback"]:
+                    self.logger.debug("Traceback output is not matching what is expected.")
+                    self.logger.debug("=[Output]====================================")
+                    self.logger.debug('\n'.join(last_line["output"]))
+                    self.logger.debug("=============================================")
+                    check_passed = False
+                
+                # Final print of check
+                if check_passed:
+                    self.__print_passed()
+                    return True
+                else:
+                    self.__print_failed()
+                    return False
 
     def exec(self):
         # Create scriptfile
@@ -95,10 +111,10 @@ class Check(object):
             return None
     
     def __print_passed(self):
-        title = (self.test_case["title"]+" ").ljust(60,'─')
+        title = (self.test_case["title"]+" ").ljust(80,'─')
         self.logger.print("├───┼───┼── %s \x1b[1;48;2;83;170;51;97m PASSED \x1b[0m" % title)
 
     def __print_failed(self):
-        title = (self.test_case["title"]+" ").ljust(60,'─')
+        title = (self.test_case["title"]+" ").ljust(80,'─')
         self.logger.print("├───┼───┼── %s \x1b[1;48;2;233;61;3;97m FAILED \x1b[0m" % title)
 

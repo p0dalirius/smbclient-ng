@@ -1,0 +1,24 @@
+{
+    "title": "Command 'close': closes an already closed SMB connection",
+    "category": "commands",
+    "subcategory": "close",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "use 'C$'",
+        "close",
+        "close"
+    ],
+    "expected_output": {
+        "messages": [
+            "SMB connection closed.",
+            "Error: No active SMB connection to close."
+        ],
+        "error": true,
+        "traceback": false
+    }
+}

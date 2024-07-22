@@ -1,0 +1,22 @@
+{
+    "title": "Command 'get': without specifying a file",
+    "category": "commands",
+    "subcategory": "get",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "use 'C$'",
+        "get"
+    ],
+    "expected_output": {
+        "messages": [
+            "Error: No file specified."
+        ],
+        "error": true,
+        "traceback": false
+    }
+}

@@ -515,7 +515,8 @@ class CommandCompleter(object):
 
         if command is not None:
             if command not in list(self.commands.keys())+["format"]:
-                command = None
+                self.logger.error("Help for command '%s' does not exist." % command)
+                return
         
         # Print help for a specific command
         if command is not None:

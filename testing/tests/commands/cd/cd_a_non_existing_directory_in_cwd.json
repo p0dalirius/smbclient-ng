@@ -1,0 +1,20 @@
+{
+    "title": "Command 'cd': with a non-existing directory in CWD",
+    "category": "commands",
+    "subcategory": "cd",
+    "parameters": {
+        "-d": "{auth_domain}", 
+        "-u": "{auth_username}", 
+        "-p": "{auth_password}", 
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "use 'C$'",
+        "cd './{random_string_8}/'"
+    ],
+    "expected_output": {
+        "messages": ["[error] Remote directory '", "' does not exist."],
+        "error": true,
+        "traceback": false
+    }
+}

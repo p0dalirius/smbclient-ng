@@ -1,0 +1,22 @@
+{
+    "title": "Command 'info': with an invalid parameter",
+    "category": "commands",
+    "subcategory": "info",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "use 'C$'",
+        "info invalid"
+    ],
+    "expected_output": {
+        "messages": [
+            "[error] 'invalid' is not a valid parameter. Use 'server' or 'share'."
+        ],
+        "error": true,
+        "traceback": false
+    }
+}

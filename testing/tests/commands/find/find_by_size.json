@@ -1,0 +1,22 @@
+{
+    "title": "Command 'find': search for files by size",
+    "category": "commands",
+    "subcategory": "find",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "use 'C$'",
+        "find -size +100M './Users/Administrator/'"
+    ],
+    "expected_output": {
+        "messages": [
+            "./Users/John/Videos/movie.mp4"
+        ],
+        "error": false,
+        "traceback": false
+    }
+}

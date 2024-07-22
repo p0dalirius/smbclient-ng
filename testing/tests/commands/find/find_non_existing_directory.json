@@ -1,0 +1,22 @@
+{
+    "title": "Command 'find': search in a non-existing directory",
+    "category": "commands",
+    "subcategory": "find",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "use 'C$'",
+        "find -name 'file.txt' './non_existing_directory'"
+    ],
+    "expected_output": {
+        "messages": [
+            "Error: Directory './non_existing_directory' not found."
+        ],
+        "error": true,
+        "traceback": false
+    }
+}

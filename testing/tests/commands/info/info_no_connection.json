@@ -1,0 +1,16 @@
+{
+    "title": "Command 'info': with correct parameters but connection not established",
+    "category": "commands",
+    "subcategory": "info",
+    "parameters": {},
+    "smbclientng_commands": [
+        "info"
+    ],
+    "expected_output": {
+        "messages": [
+            "[error] SMB Session is disconnected."
+        ],
+        "error": true,
+        "traceback": false
+    }
+}
