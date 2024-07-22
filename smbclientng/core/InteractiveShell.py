@@ -969,10 +969,24 @@ class InteractiveShell(object):
         # Active SMB connection needed : Yes
         # SMB share needed             : No
 
+        test_write = False
         do_check_rights = False
         if len(arguments) != 0:
             if arguments[0] == "rights":
                 do_check_rights = True
+                test_write = False
+
+        self.logger.print("WARNING: Checking WRITE access to shares in offensive tools implies creating a folder and trying to delete it.")
+        self.logger.print("| If you have CREATE_CHILD rights but no DELETE_CHILD rights, the folder cannot be deleted and will remain on the target.")
+        self.logger.print("| Do you want to continue? [N/y] ", end='')
+        user_response = input()
+        self.logger.write_to_logfile(user_response)
+        while user_response.lower().strip() not in ['y', 'n']:
+            self.logger.print("| Invalid response, Do you want to continue? [N/y] ", end='')
+            user_response = input()
+            self.logger.write_to_logfile(user_response)
+        if user_response.lower().strip() == 'y':
+            test_write = True
 
         shares = self.sessionsManager.current_session.list_shares()
         if len(shares.keys()) != 0:
@@ -1000,7 +1014,7 @@ class InteractiveShell(object):
                     str_comment = "[bold bright_yellow]" + shares[sharename]["comment"] + "[/bold bright_yellow]"
 
                 if do_check_rights:
-                    access_rights = self.sessionsManager.current_session.test_rights(sharename=shares[sharename]["name"])
+                    access_rights = self.sessionsManager.current_session.test_rights(sharename=shares[sharename]["name"], test_write=test_write)
                     str_access_rights = "[bold yellow]NO ACCESS[/bold yellow]"
                     if access_rights["readable"] and access_rights["writable"]:
                         str_access_rights = "[bold green]READ[/bold green], [bold red]WRITE[/bold red]"
