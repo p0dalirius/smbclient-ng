@@ -548,7 +548,7 @@ class SMBSession(object):
         if path is not None and len(path) > 0:
             dest_path.append(path.rstrip(ntpath.sep))
         dest_path.append('*')
-        path = ntpath.sep.join(dest_path)
+        path = ntpath.normpath(ntpath.sep.join(dest_path))
 
         contents = {}
         entries = self.smbClient.listPath(

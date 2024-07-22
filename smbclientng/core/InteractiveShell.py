@@ -743,7 +743,7 @@ class InteractiveShell(object):
                     directory_contents = {}
 
             for longname in sorted(directory_contents.keys(), key=lambda x:x.lower()):
-                windows_ls_entry(directory_contents[longname], self.config)
+                self.logger.print(windows_ls_entry(directory_contents[longname], self.config))
 
             if len(arguments) > 1:
                 self.logger.print()
