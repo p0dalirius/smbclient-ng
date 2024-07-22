@@ -13,7 +13,7 @@ from smbclientng.core.Logger import Logger
 from smbclientng.core.SessionsManager import SessionsManager
 
 
-VERSION = "2.1.3"
+VERSION = "2.1.4"
 
 
 def parseArgs():
