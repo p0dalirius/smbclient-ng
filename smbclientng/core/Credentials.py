@@ -66,10 +66,10 @@ class Credentials(object):
 
         lmhash, nthash = None, None
         if hashes is not None:
-            matched = re.search("([0-9a-f]{32})(:)?([0-9a-f]{32})?", hashes.lower(), re.IGNORECASE)
+            matched = re.search("([0-9a-f]{32})?:([0-9a-f]{32})?", hashes.lower(), re.IGNORECASE)
             if matched is not None:
                 lmhash = matched.groups()[0]
-                nthash = matched.groups()[2]
+                nthash = matched.groups()[1]
                 if lmhash is None:
                     lmhash = "aad3b435b51404eeaad3b435b51404ee"
                 if nthash is None:
