@@ -1097,7 +1097,7 @@ class InteractiveShell(object):
         self.modules.clear()
 
         modules_dir = os.path.normpath(os.path.dirname(__file__) + os.path.sep + ".." + os.path.sep + "modules")
-        self.logger.debug("Loading modules from %s ..." % modules_dir)
+        self.logger.debug("[>] Loading modules from %s ..." % modules_dir)
         sys.path.extend([modules_dir])
 
         for file in os.listdir(modules_dir):
@@ -1111,17 +1111,17 @@ class InteractiveShell(object):
                     except AttributeError as err:
                         pass
                     except ImportError as err:
-                        self.logger.debug("Could not load module '%s': %s" % ((file[:-3]), err))
+                        self.logger.debug("[!] Could not load module '%s': %s" % ((file[:-3]), err))
 
         if self.config.debug:
             if len(self.modules.keys()) == 0:
-                self.logger.debug("Loaded 0 modules.")
+                self.logger.debug("[>] Loaded 0 modules.")
             elif len(self.modules.keys()) == 1:
-                self.logger.debug("Loaded 1 module:")
+                self.logger.debug("[>] Loaded 1 module:")
             else:
-                self.logger.debug("Loaded %d modules:" % len(self.modules.keys()))
+                self.logger.debug("[>] Loaded %d modules:" % len(self.modules.keys()))
             for modulename in sorted(self.modules.keys()):
-                self.logger.debug("%s : \"%s\" (%s)" % (self.modules[modulename].name, self.modules[modulename].description, self.modules[modulename]))
+                self.logger.debug("  | %s : \"%s\" (%s)" % (self.modules[modulename].name, self.modules[modulename].description, self.modules[modulename]))
 
         if self.commandCompleterObject is not None:
             self.commandCompleterObject.commands["module"]["subcommands"] = list(self.modules.keys())
