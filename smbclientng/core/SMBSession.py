@@ -155,21 +155,43 @@ class SMBSession(object):
                     self.connected = False
 
             else:
-                self.logger.debug("[>] Authenticating as '%s\\%s' with NTLM ... " % (self.credentials.domain, self.credentials.username))
-                
-                try:
-                    self.connected = self.smbClient.login(
-                        user=self.credentials.username,
-                        password=self.credentials.password,
-                        domain=self.credentials.domain,
-                        lmhash=self.credentials.lm_hex,
-                        nthash=self.credentials.nt_hex
-                    )
-                except impacket.smbconnection.SessionError as err:
-                    if self.config.debug:
-                        traceback.print_exc()
-                    self.logger.error("Could not login: %s" % err)
-                    self.connected = False
+                if len(self.credentials.lm_hex) != 0 and len(self.credentials.nt_hex) != 0:
+                    self.logger.debug("[>] Authenticating as '%s\\%s' with NTLM with pass the hash ... " % (self.credentials.domain, self.credentials.username))
+                    try:
+                        self.logger.debug("  | user     = %s" % self.credentials.username)
+                        self.logger.debug("  | password = %s" % self.credentials.password)
+                        self.logger.debug("  | domain   = %s" % self.credentials.domain)
+                        self.logger.debug("  | lmhash   = %s" % self.credentials.lm_hex)
+                        self.logger.debug("  | nthash   = %s" % self.credentials.nt_hex)
+                        
+                        self.connected = self.smbClient.login(
+                            user=self.credentials.username,
+                            password=self.credentials.password,
+                            domain=self.credentials.domain,
+                            lmhash=self.credentials.lm_hex,
+                            nthash=self.credentials.nt_hex
+                        )
+                    except impacket.smbconnection.SessionError as err:
+                        if self.config.debug:
+                            traceback.print_exc()
+                        self.logger.error("Could not login: %s" % err)
+                        self.connected = False
+
+                else:
+                    self.logger.debug("[>] Authenticating as '%s\\%s' with NTLM with password ... " % (self.credentials.domain, self.credentials.username))
+                    try:
+                        self.connected = self.smbClient.login(
+                            user=self.credentials.username,
+                            password=self.credentials.password,
+                            domain=self.credentials.domain,
+                            lmhash=self.credentials.lm_hex,
+                            nthash=self.credentials.nt_hex
+                        )
+                    except impacket.smbconnection.SessionError as err:
+                        if self.config.debug:
+                            traceback.print_exc()
+                        self.logger.error("Could not login: %s" % err)
+                        self.connected = False
 
             if self.connected:
                 self.logger.print("[+] Successfully authenticated to '%s' as '%s\\%s'!" % (self.host, self.credentials.domain, self.credentials.username))
