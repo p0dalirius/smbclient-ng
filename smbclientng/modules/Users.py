@@ -50,6 +50,14 @@ class Users(Module):
             "checks": {
                 "ShareX": "/{users_directory}/{user}/Documents/ShareX/Screenshots/"
             }
+        },
+        "credentials": {
+            "name": "Credentials",
+            "checks": {
+                "Aws": "/{users_directory}/{user}/.aws/",
+                "GCP": "/{users_directory}/{user}/AppData/Roaming/gcloud",
+                "Ssh": "/{users_directory}/{user}/.ssh/"
+            }
         }
     }
 
