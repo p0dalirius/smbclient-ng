@@ -31,6 +31,7 @@ def parseArgs():
     parser.add_argument("-S", "--startup-script", metavar="startup_script", required=False, type=str, help="File containing the list of commands to be typed at start of the console.")  
     parser.add_argument("-N", "--not-interactive", dest="not_interactive", required=False, action="store_true", default=False, help="Non interactive mode.")
     parser.add_argument("-L", "--logfile", dest="logfile", metavar="LOGFILE", required=False, default=None, type=str, help="File to write logs to.")
+    parser.add_argument( "--timeout", dest="timeout", metavar="TIMEOUT", required=False, type=float, default=3, help="Timeout in seconds for SMB connections (default: 3)")
 
     group_target = parser.add_argument_group("Target")
     group_target.add_argument("--host", action="store", metavar="HOST", required=True, type=str, help="IP address or hostname of the SMB Server to connect to.")  
@@ -125,7 +126,8 @@ def main():
         sessionsManager.create_new_session(
             credentials=credentials,
             host=options.host,
-            port=options.port
+            port=options.port,
+            timeout=options.timeout,
         )
 
     # Start the main interactive command line

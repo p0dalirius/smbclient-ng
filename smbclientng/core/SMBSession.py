@@ -53,7 +53,7 @@ class SMBSession(object):
         test_rights(sharename): Tests read and write access rights on a share.
     """
 
-    def __init__(self, host, port, credentials, config=None, logger=None):
+    def __init__(self, host, port, timeout, credentials, config=None, logger=None):
         super(SMBSession, self).__init__()
         # Objects
         self.config = config
@@ -63,6 +63,8 @@ class SMBSession(object):
         self.host = host
         # Target port (by default on 445)
         self.port = port
+        # Timeout (default 3 seconds)
+        self.timeout = timeout
 
         # Credentials
         self.credentials = credentials
@@ -118,14 +120,17 @@ class SMBSession(object):
         self.logger.debug("[>] Connecting to remote SMB server '%s' ... " % self.host)
         
         try:
-            if is_port_open(self.host, self.port):
+            result, error = is_port_open(self.host, self.port, self.timeout)
+            if result:
                 self.smbClient = impacket.smbconnection.SMBConnection(
                     remoteName=self.host,
                     remoteHost=self.host,
-                    sess_port=int(self.port)
+                    sess_port=int(self.port),
+                    timeout=self.timeout,
                 )
+                self.connected = True
             else:
-                self.logger.error("Could not connect to '%s:%d'" % (self.host, int(self.port)))
+                self.logger.error(f"Could not connect to '{self.host}:{self.port}', {error}.")
                 self.connected = False
                 self.smbClient = None
         except OSError as err:
@@ -211,7 +216,8 @@ class SMBSession(object):
             bool: True if the echo command succeeds (indicating the session is active), False otherwise.
         """
 
-        if not is_port_open(self.host, self.port):
+        result, error = is_port_open(self.host, self.port, self.timeout)
+        if result:
             self.connected = False
         else:
             try:

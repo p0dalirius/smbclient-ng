@@ -38,7 +38,7 @@ class SessionsManager(object):
         self.config = config
         self.logger = logger
 
-    def create_new_session(self, credentials, host, port=445):
+    def create_new_session(self, credentials, host, timeout, port=445):
         """
         Creates a new session with the given session information.
 
@@ -52,6 +52,7 @@ class SessionsManager(object):
         smbSession = SMBSession(
             host=host,
             port=port,
+            timeout=timeout,
             credentials=credentials,
             config=self.config,
             logger=self.logger
@@ -129,6 +130,7 @@ class SessionsManager(object):
         group_target = mode_create.add_argument_group("Target")
         group_target.add_argument("--host", action="store", metavar="HOST", required=True, type=str, help="IP address or hostname of the SMB Server to connect to.")  
         group_target.add_argument("--port", action="store", metavar="PORT", type=int, default=445, help="Port of the SMB Server to connect to. (default: 445)")
+        group_target.add_argument( "--timeout", dest="timeout", metavar="TIMEOUT", required=False, type=float, default=3, help="Timeout in seconds for SMB connections (default: 3)")
         authconn = mode_create.add_argument_group("Authentication & connection")
         authconn.add_argument("--kdcHost", dest="kdcHost", action="store", metavar="FQDN KDC", help="FQDN of KDC for Kerberos.")
         authconn.add_argument("-d", "--domain", dest="auth_domain", metavar="DOMAIN", action="store", default='.', help="(FQDN) domain to authenticate to.")
@@ -195,7 +197,8 @@ class SessionsManager(object):
             self.create_new_session(
                 credentials=credentials,
                 host=options.host,
-                port=options.port
+                port=options.port,
+                timeout=options.timeout
             )
         
         # 

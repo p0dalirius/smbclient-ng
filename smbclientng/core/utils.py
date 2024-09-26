@@ -452,26 +452,27 @@ def resolve_remote_files(smbSession, arguments):
     return resolved_pathFromRoot_files
 
 
-def is_port_open(target, port) -> bool:
+def is_port_open(target, port, timeout):
     """
     Check if a specific port on a target host is open.
 
     This function attempts to establish a TCP connection to the specified port on the target host.
     If the connection is successful, it indicates that the port is open. If the connection fails,
-    it indicates that the port is closed or the host is unreachable.
+    it returns the error message.
 
     Args:
         target (str): The hostname or IP address of the target host.
         port (int): The port number to check.
+        timeout (float): The timeout in seconds for the connection attempt. Default is 1.0 second.
 
     Returns:
-        bool: True if the port is open, False otherwise.
+        bool, str: True if the port is open, otherwise False and error message.
     """
-
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.settimeout(0.1)
-        # Non-existant domains cause a lot of errors, added error handling
-        try:
-            return s.connect_ex((target, port)) == 0
-        except Exception as e:
-            return False
+    
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(timeout)
+            s.connect((target, port))
+            return True, None
+    except Exception as e:
+        return False, str(e)
