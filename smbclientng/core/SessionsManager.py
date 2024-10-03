@@ -38,7 +38,7 @@ class SessionsManager(object):
         self.config = config
         self.logger = logger
 
-    def create_new_session(self, credentials, host, timeout, port=445):
+    def create_new_session(self, credentials, host, timeout, port=445, advertisedName=None):
         """
         Creates a new session with the given session information.
 
@@ -54,6 +54,7 @@ class SessionsManager(object):
             port=port,
             timeout=timeout,
             credentials=credentials,
+            advertisedName=advertisedName,
             config=self.config,
             logger=self.logger
         )
@@ -127,6 +128,7 @@ class SessionsManager(object):
 
         # Create
         mode_create = ModuleArgumentParser(add_help=False, description="Create a new session.")
+        mode_create.add_argument("--advertised-name", dest="advertisedName", metavar="ADVERTISED_NAME", required=False, type=str, help="Advertised name of your machine to the SMB client.")
         group_target = mode_create.add_argument_group("Target")
         group_target.add_argument("--host", action="store", metavar="HOST", required=True, type=str, help="IP address or hostname of the SMB Server to connect to.")  
         group_target.add_argument("--port", action="store", metavar="PORT", type=int, default=445, help="Port of the SMB Server to connect to. (default: 445)")

@@ -13,7 +13,7 @@ from smbclientng.core.Logger import Logger
 from smbclientng.core.SessionsManager import SessionsManager
 
 
-VERSION = "2.1.5"
+VERSION = "2.1.6"
 
 
 def parseArgs():
@@ -31,7 +31,8 @@ def parseArgs():
     parser.add_argument("-S", "--startup-script", metavar="startup_script", required=False, type=str, help="File containing the list of commands to be typed at start of the console.")  
     parser.add_argument("-N", "--not-interactive", dest="not_interactive", required=False, action="store_true", default=False, help="Non interactive mode.")
     parser.add_argument("-L", "--logfile", dest="logfile", metavar="LOGFILE", required=False, default=None, type=str, help="File to write logs to.")
-    parser.add_argument( "--timeout", dest="timeout", metavar="TIMEOUT", required=False, type=float, default=3, help="Timeout in seconds for SMB connections (default: 3)")
+    parser.add_argument("--timeout", dest="timeout", metavar="TIMEOUT", required=False, type=float, default=3, help="Timeout in seconds for SMB connections (default: 3)")
+    parser.add_argument("--advertised-name", dest="advertisedName", metavar="ADVERTISED_NAME", required=False, type=str, help="Advertised name of your machine to the SMB client.")
 
     group_target = parser.add_argument_group("Target")
     group_target.add_argument("--host", action="store", metavar="HOST", required=True, type=str, help="IP address or hostname of the SMB Server to connect to.")  
@@ -113,7 +114,7 @@ def main():
 
     sessionsManager = SessionsManager(config=config, logger=logger)
 
-    if any([(options.auth_domain != '.'), (options.auth_username is not None), (options.auth_password is not None),(options.auth_hashes is not None)]):
+    if any([(options.auth_domain != '.'), (options.auth_username is not None), (options.auth_password is not None), (options.auth_hashes is not None)]):
         credentials = Credentials(
             domain=options.auth_domain,
             username=options.auth_username,
@@ -128,6 +129,7 @@ def main():
             host=options.host,
             port=options.port,
             timeout=options.timeout,
+            advertisedName=options.advertisedName
         )
 
     # Start the main interactive command line
