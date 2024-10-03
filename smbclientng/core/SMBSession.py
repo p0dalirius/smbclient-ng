@@ -185,6 +185,12 @@ class SMBSession(object):
                 else:
                     self.logger.debug("[>] Authenticating as '%s\\%s' with NTLM with password ... " % (self.credentials.domain, self.credentials.username))
                     try:
+                        self.logger.debug("  | user     = %s" % self.credentials.username)
+                        self.logger.debug("  | password = %s" % self.credentials.password)
+                        self.logger.debug("  | domain   = %s" % self.credentials.domain)
+                        self.logger.debug("  | lmhash   = %s" % self.credentials.lm_hex)
+                        self.logger.debug("  | nthash   = %s" % self.credentials.nt_hex)
+
                         self.connected = self.smbClient.login(
                             user=self.credentials.username,
                             password=self.credentials.password,
@@ -216,11 +222,12 @@ class SMBSession(object):
             bool: True if the echo command succeeds (indicating the session is active), False otherwise.
         """
 
-        result, error = is_port_open(self.host, self.port, self.timeout)
-        if result:
+        portIsOpen, error = is_port_open(self.host, self.port, self.timeout)
+        if portIsOpen == False:
             self.connected = False
         else:
             try:
+                # Try to ping the SMB server to see if we timed out
                 self.smbClient.getSMBServer().echo()
             except Exception as e:
                 self.connected = False
@@ -423,7 +430,6 @@ class SMBSession(object):
                         except BrokenPipeError as err:
                             f.set_error(message="[bold red]Failed downloading '%s': %s" % (f.path, err))
                             f.close(remove=True)
-                            break
                         except Exception as err:
                             f.set_error(message="[bold red]Failed downloading '%s': %s" % (f.path, err))
                             f.close(remove=True)
