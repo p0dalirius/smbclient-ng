@@ -53,7 +53,7 @@ class SMBSession(object):
         test_rights(sharename): Tests read and write access rights on a share.
     """
 
-    def __init__(self, host, port, timeout, credentials, config=None, logger=None):
+    def __init__(self, host, port, timeout, credentials, advertisedName=None, config=None, logger=None):
         super(SMBSession, self).__init__()
         # Objects
         self.config = config
@@ -65,6 +65,7 @@ class SMBSession(object):
         self.port = port
         # Timeout (default 3 seconds)
         self.timeout = timeout
+        self.advertisedName = advertisedName
 
         # Credentials
         self.credentials = credentials
@@ -125,6 +126,7 @@ class SMBSession(object):
                 self.smbClient = impacket.smbconnection.SMBConnection(
                     remoteName=self.host,
                     remoteHost=self.host,
+                    myName=self.advertisedName,
                     sess_port=int(self.port),
                     timeout=self.timeout,
                 )
