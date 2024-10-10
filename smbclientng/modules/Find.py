@@ -47,10 +47,12 @@ class Find(Module):
         parser.add_argument("-iname", type=str, help="Like -name, but the match is case insensitive.")
         parser.add_argument("-type", type=str, default=None, help="File type (e.g., f for regular file, d for directory).")
         parser.add_argument("-size", type=str, help="File uses n units of space.")
+        parser.add_argument("-exclude-dir", type=str, action='append', default=[], help="Subdirectories to exclude from the search.")
+        parser.add_argument("-exclude-dir-depth", type=int, default=0, help="Specify the depth at which to exclude directories. Use -1 to exclude directories at all levels. Default is 0 (initial level only).")
         # parser.add_argument("-mtime", type=str, help="File's data was last modified n*24 hours ago")
         # parser.add_argument("-ctime", type=str, help="File's status was last changed n*24 hours ago")
         # parser.add_argument("-atime", type=str, help="File was last accessed n*24 hours ago")
-        
+
         # Adding actions
         parser.add_argument("-ls", action="store_true", default=False, help="List current file in ls -dils format on standard output.")
         parser.add_argument("-download", action="store_true", default=False, help="List current file in ls -dils format on standard output.")
@@ -93,7 +95,7 @@ class Find(Module):
         if self.options.maxdepth is not None:
             if depth > self.options.maxdepth:
                 do_print_results = False
-        
+
         if do_print_results:
             do_print_entry = False
             # Print directory
@@ -102,7 +104,7 @@ class Find(Module):
                     # No name filtering
                     if self.options.name is None and self.options.iname is None:
                         do_print_entry = True
-                    
+
                     # Filtering on names case sensitive
                     elif self.options.name is not None:
                         if '*' in self.options.name:
@@ -130,7 +132,7 @@ class Find(Module):
                                 do_print_entry = False
                         else:
                             do_print_entry = (entry.get_longname().lower() == self.options.iname.lower())
-                            
+
             # Print file
             else:
                 if (self.options.type == 'f' or self.options.type is None):
@@ -175,7 +177,7 @@ class Find(Module):
                     size = int(size_filter[1:-1])
                     units = ["B","K","M","G","T"]
                     if size_filter[-1].upper() in units:
-                        size = size * (1024**units.index(size_filter[-1]))
+                        size = size * (1024 ** units.index(size_filter[-1]))
                     else:
                         pass
 
@@ -203,7 +205,7 @@ class Find(Module):
                         output_str = ("%s" % fullpath.replace(ntpath.sep, '/'))
                     else:
                         output_str = ("%s" % fullpath.replace(ntpath.sep, '/'))
-                
+
                 if self.options.outputfile is not None:
                     with open(self.options.outputfile, 'a') as f:
                         f.write(output_str + '\n')
@@ -240,16 +242,15 @@ class Find(Module):
                 for path in list(set(self.options.paths)):
                     next_directories_to_explore.append(ntpath.normpath(path) + ntpath.sep)
                 next_directories_to_explore = sorted(list(set(next_directories_to_explore)))
-                
+
                 self.smbSession.find(
                     paths=next_directories_to_explore,
-                    callback=self.__find_callback
+                    callback=self.__find_callback,
+                    excluded_dirs=self.options.exclude_dir,
+                    exclude_dir_depth=self.options.exclude_dir_depth
                 )
 
             except (BrokenPipeError, KeyboardInterrupt) as e:
                 print("[!] Interrupted.")
                 self.smbSession.close_smb_session()
                 self.smbSession.init_smb_session()
-
-
-
