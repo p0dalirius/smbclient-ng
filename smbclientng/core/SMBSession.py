@@ -238,7 +238,7 @@ class SMBSession(object):
 
     # Operations
 
-    def find(self, paths=[], callback=None):
+    def find(self, paths=[], callback=None, excluded_dirs=[], exclude_dir_depth=0):
         """
         Finds files and directories on the SMB share based on the provided paths and executes a callback function on each entry.
 
@@ -250,6 +250,7 @@ class SMBSession(object):
             paths (list, optional): A list of paths to start the search from. Defaults to an empty list.
             callback (function, optional): A function to be called on each entry found. The function should accept three arguments:
                                            the entry object, the full path of the entry, and the current depth of recursion. Defaults to None.
+            excluded_dirs (list, optional): A list of directories to exclude from the search. Defaults to None.
 
         Note:
             If the callback function is None, the method will print an error message and return without performing any action.
@@ -262,32 +263,44 @@ class SMBSession(object):
             next_directories_to_explore = []
 
             for path in paths:
+                normalized_path = ntpath.normpath(path)
+                # Exclude paths that are in the exclude list based on depth
+                if exclude_dir_depth == -1 or depth == exclude_dir_depth:
+                    if any(excluded.lower() == ntpath.basename(normalized_path).lower() for excluded in excluded_dirs):
+                        continue  # Skip this path
+
                 remote_smb_path = ntpath.normpath(self.smb_cwd + ntpath.sep + path)
                 entries = []
-                
+
                 try:
                     entries = self.smbClient.listPath(
-                        shareName=self.smb_share, 
+                        shareName=self.smb_share,
                         path=(remote_smb_path + ntpath.sep + '*')
                     )
                 except impacket.smbconnection.SessionError as err:
-                    continue 
+                    continue
                 # Remove dot names
                 entries = [e for e in entries if e.get_longname() not in [".", ".."]]
                 # Sort the entries ignoring case
-                entries = sorted(entries, key=lambda x:x.get_longname().lower())
-                
+                entries = sorted(entries, key=lambda x: x.get_longname().lower())
+
                 for entry in entries:
+                    fullpath = ntpath.join(path, entry.get_longname())
+
                     if entry.is_directory():
-                        fullpath = path + ntpath.sep + entry.get_longname() + ntpath.sep
+                        # Exclude directories during traversal based on exclude_dir_depth
+                        if exclude_dir_depth == -1 or depth + 1 == exclude_dir_depth:
+                            if any(excluded.lower() == entry.get_longname().lower() for excluded in excluded_dirs):
+                                continue  # Skip this directory
+
                         next_directories_to_explore.append(fullpath)
-                    else:
-                        fullpath = path + ntpath.sep + entry.get_longname()
+
+                    # Process the entry
                     fullpath = re.sub(r'\\\\+', r'\\', fullpath)
                     callback(entry, fullpath, depth)
-                     
+
             return next_directories_to_explore
-        # 
+        
         if callback is not None:
             depth = 0
             while len(paths) != 0:
