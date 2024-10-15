@@ -269,9 +269,9 @@ class SMBSession(object):
                 bool: True if the directory should be excluded, False otherwise.
             """
             for rule in exclusion_rules:
-                if rule['depth'] != -1 and rule['depth'] != depth:
-                    continue  # Depth does not match
-
+                # Check if the depth is within the exclusion range
+                if rule['depth'] != -1 and depth > rule['depth']:
+                    continue  # Current depth is beyond the specified depth, do not exclude
                 # Perform matching based on case sensitivity
                 if rule['case_sensitive']:
                     if dir_name == rule['dirname']:
