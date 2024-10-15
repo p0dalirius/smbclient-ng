@@ -250,8 +250,8 @@ class SMBSession(object):
             paths (list, optional): A list of paths to start the search from. Defaults to an empty list.
             callback (function, optional): A function to be called on each entry found. The function should accept three arguments:
                                            the entry object, the full path of the entry, and the current depth of recursion. Defaults to None.
-        exclusion_rules (list, optional): A list of exclusion rules, each being a dictionary with keys:
-                                          'dirname', 'depth', 'case_sensitive'.
+            exclusion_rules (list, optional): A list of exclusion rules, each being a dictionary with keys:
+                                            'dirname', 'depth', 'case_sensitive'.
 
         Note:
             If the callback function is None, the method will print an error message and return without performing any action.
