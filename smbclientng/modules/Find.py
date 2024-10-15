@@ -48,7 +48,7 @@ class Find(Module):
         parser.add_argument("-type", type=str, default=None, help="File type (e.g., f for regular file, d for directory).")
         parser.add_argument("-size", type=str, help="File uses n units of space.")
         parser.add_argument('--exclude-dir', action='append', default=[], metavar='DIRNAME[:DEPTH[:CASE]]',
-                    help=("Exclude directories matching DIRNAME at specified depth and case sensitivity. "
+                    help=("Exclude directories matching DIRNAME until specified depth and case sensitivity. "
                           "DEPTH specifies the recursion depth (-1 for all depths, default is 0). "
                           "CASE can be 'i' for case-insensitive or 's' for case-sensitive (default). "
                           "Format: DIRNAME[:DEPTH[:CASE]]"))
@@ -84,7 +84,7 @@ class Find(Module):
 
         Each exclusion rule is a dictionary with keys:
             - 'dirname': The directory name to exclude.
-            - 'depth': The depth at which to exclude the directory (-1 for all depths).
+            - 'depth': The depth until which to exclude the directory (-1 for all depths).
             - 'case_sensitive': Boolean indicating if the match is case-sensitive.
         """
         exclusion_rules = []
