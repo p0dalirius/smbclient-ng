@@ -47,8 +47,11 @@ class Find(Module):
         parser.add_argument("-iname", type=str, help="Like -name, but the match is case insensitive.")
         parser.add_argument("-type", type=str, default=None, help="File type (e.g., f for regular file, d for directory).")
         parser.add_argument("-size", type=str, help="File uses n units of space.")
-        parser.add_argument("-exclude-dir", type=str, action='append', default=[], help="Subdirectories to exclude from the search.")
-        parser.add_argument("-exclude-dir-depth", type=int, default=0, help="Specify the depth at which to exclude directories. Use -1 to exclude directories at all levels. Default is 0 (initial level only).")
+        parser.add_argument('--exclude-dir', action='append', default=[], metavar='DIRNAME[:DEPTH[:CASE]]',
+                    help=("Exclude directories matching DIRNAME until specified depth and case sensitivity. "
+                          "DEPTH specifies the recursion depth (-1 for all depths, default is 0). "
+                          "CASE can be 'i' for case-insensitive or 's' for case-sensitive (default). "
+                          "Format: DIRNAME[:DEPTH[:CASE]]"))
         # parser.add_argument("-mtime", type=str, help="File's data was last modified n*24 hours ago")
         # parser.add_argument("-ctime", type=str, help="File's status was last changed n*24 hours ago")
         # parser.add_argument("-atime", type=str, help="File was last accessed n*24 hours ago")
@@ -74,6 +77,47 @@ class Find(Module):
                 self.options = None
 
         return self.options
+    
+    def parse_exclude_dirs(self, exclude_dirs):
+        """
+        Parses the exclude directory arguments and returns a list of exclusion rules.
+
+        Each exclusion rule is a dictionary with keys:
+            - 'dirname': The directory name to exclude.
+            - 'depth': The depth until which to exclude the directory (-1 for all depths).
+            - 'case_sensitive': Boolean indicating if the match is case-sensitive.
+        """
+        exclusion_rules = []
+        for item in exclude_dirs:
+            parts = item.split(':')
+            dirname = parts[0]
+            depth = 0  # Default depth
+            case_sensitive = False  # Default to case-insensitive
+
+            # Parse depth if provided
+            if len(parts) > 1 and parts[1]:
+                try:
+                    depth = int(parts[1])
+                except ValueError:
+                    depth = 0  # Default if depth is invalid
+
+            # Parse case sensitivity if provided
+            if len(parts) > 2 and parts[2]:
+                case_flag = parts[2].lower()
+                if case_flag == 's':
+                    case_sensitive = True
+                elif case_flag == 'i':
+                    case_sensitive = False
+                else:
+                    # Invalid case flag, default to case-sensitive
+                    case_sensitive = True
+
+            exclusion_rules.append({
+                'dirname': dirname,
+                'depth': depth,
+                'case_sensitive': case_sensitive
+            })
+        return exclusion_rules
 
     def __find_callback(self, entry, fullpath, depth):
         # Documentation for __find_callback function
@@ -243,11 +287,12 @@ class Find(Module):
                     next_directories_to_explore.append(ntpath.normpath(path) + ntpath.sep)
                 next_directories_to_explore = sorted(list(set(next_directories_to_explore)))
 
+                exclusion_rules = self.parse_exclude_dirs(self.options.exclude_dir)
+
                 self.smbSession.find(
                     paths=next_directories_to_explore,
                     callback=self.__find_callback,
-                    excluded_dirs=self.options.exclude_dir,
-                    exclude_dir_depth=self.options.exclude_dir_depth
+                    exclusion_rules=exclusion_rules
                 )
 
             except (BrokenPipeError, KeyboardInterrupt) as e:

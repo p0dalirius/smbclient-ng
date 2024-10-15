@@ -238,7 +238,7 @@ class SMBSession(object):
 
     # Operations
 
-    def find(self, paths=[], callback=None, excluded_dirs=[], exclude_dir_depth=0):
+    def find(self, paths=[], callback=None,  exclusion_rules=[]):
         """
         Finds files and directories on the SMB share based on the provided paths and executes a callback function on each entry.
 
@@ -250,11 +250,36 @@ class SMBSession(object):
             paths (list, optional): A list of paths to start the search from. Defaults to an empty list.
             callback (function, optional): A function to be called on each entry found. The function should accept three arguments:
                                            the entry object, the full path of the entry, and the current depth of recursion. Defaults to None.
-            excluded_dirs (list, optional): A list of directories to exclude from the search. Defaults to None.
+            exclusion_rules (list, optional): A list of exclusion rules, each being a dictionary with keys:
+                                            'dirname', 'depth', 'case_sensitive'.
 
         Note:
             If the callback function is None, the method will print an error message and return without performing any action.
         """
+
+        def should_exclude(dir_name, depth):
+            """
+            Determines whether a directory should be excluded based on the exclusion rules.
+
+            Args:
+                dir_name (str): The name of the directory.
+                depth (int): The current depth in the traversal.
+
+            Returns:
+                bool: True if the directory should be excluded, False otherwise.
+            """
+            for rule in exclusion_rules:
+                # Check if the depth is within the exclusion range
+                if rule['depth'] != -1 and depth > rule['depth']:
+                    continue  # Current depth is beyond the specified depth, do not exclude
+                # Perform matching based on case sensitivity
+                if rule['case_sensitive']:
+                    if dir_name == rule['dirname']:
+                        return True
+                else:
+                    if dir_name.lower() == rule['dirname'].lower():
+                        return True
+            return False
 
         def recurse_action(paths=[], depth=0, callback=None):
             if callback is None:
@@ -264,10 +289,11 @@ class SMBSession(object):
 
             for path in paths:
                 normalized_path = ntpath.normpath(path)
-                # Exclude paths that are in the exclude list based on depth
-                if exclude_dir_depth == -1 or depth == exclude_dir_depth:
-                    if any(excluded.lower() == ntpath.basename(normalized_path).lower() for excluded in excluded_dirs):
-                        continue  # Skip this path
+                dir_name = ntpath.basename(normalized_path)
+
+                # Check if current path should be excluded
+                if should_exclude(dir_name, depth):
+                    continue  # Skip this path
 
                 remote_smb_path = ntpath.normpath(self.smb_cwd + ntpath.sep + path)
                 entries = []
@@ -285,13 +311,13 @@ class SMBSession(object):
                 entries = sorted(entries, key=lambda x: x.get_longname().lower())
 
                 for entry in entries:
+                    entry_name = entry.get_longname()
                     fullpath = ntpath.join(path, entry.get_longname())
 
                     if entry.is_directory():
-                        # Exclude directories during traversal based on exclude_dir_depth
-                        if exclude_dir_depth == -1 or depth + 1 == exclude_dir_depth:
-                            if any(excluded.lower() == entry.get_longname().lower() for excluded in excluded_dirs):
-                                continue  # Skip this directory
+                        # Check if this directory should be excluded
+                        if should_exclude(entry_name, depth + 1):
+                            continue  # Skip this directory
 
                         next_directories_to_explore.append(fullpath)
 
