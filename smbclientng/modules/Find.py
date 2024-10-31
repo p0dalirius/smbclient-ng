@@ -10,7 +10,7 @@ import ntpath
 import re
 from smbclientng.core.Module import Module
 from smbclientng.core.ModuleArgumentParser import ModuleArgumentParser
-from smbclientng.core.utils import windows_ls_entry
+from smbclientng.core.utils import windows_ls_entry, smb_entry_iterator
 
 
 class Find(Module):
@@ -119,183 +119,60 @@ class Find(Module):
             })
         return exclusion_rules
 
-    def __find_callback(self, entry, fullpath, depth):
-        # Documentation for __find_callback function
-        """
-        This function serves as a callback for the find operation. It applies filters based on the command line arguments and decides whether to print, download, or list the entry in 'ls -dils' format if it matches the specified filters.
-
-        Args:
-            entry (SMBEntry): The current file or directory entry being processed.
-            fullpath (str): The full path to the entry.
-
-        The function checks against filters such as file name, case sensitivity, file type, and size. If the entry matches the filters, it will perform actions like printing the entry's details, downloading the entry, or listing the entry based on the options provided in the command line arguments.
-        """
-
-        # Match and print results
-        do_print_results = True
-        if self.options.mindepth is not None:
-            if depth < self.options.mindepth:
-                do_print_results = False
-        if self.options.maxdepth is not None:
-            if depth > self.options.maxdepth:
-                do_print_results = False
-
-        if do_print_results:
-            do_print_entry = False
-            # Print directory
-            if entry.is_directory():
-                if (self.options.type == 'd' or self.options.type is None):
-                    # No name filtering
-                    if self.options.name is None and self.options.iname is None:
-                        do_print_entry = True
-
-                    # Filtering on names case sensitive
-                    elif self.options.name is not None:
-                        if '*' in self.options.name:
-                            regex = self.options.name
-                            regex = regex.replace('.', '\\.')
-                            regex = regex.replace('*', '.*')
-                            regex = '^' + regex + '$'
-                            if re.match(regex, entry.get_longname()):
-                                do_print_entry = True
-                            else:
-                                do_print_entry = False
-                        else:
-                            do_print_entry = (entry.get_longname().lower() == self.options.name.lower())
-                    
-                    # Filtering on names case insensitive  
-                    elif self.options.iname is not None:
-                        if '*' in self.options.iname:
-                            regex = self.options.iname
-                            regex = regex.replace('.', '\\.')
-                            regex = regex.replace('*', '.*')
-                            regex = '^' + regex + '$'
-                            if re.match(regex, entry.get_longname(), re.IGNORECASE):
-                                do_print_entry = True
-                            else:
-                                do_print_entry = False
-                        else:
-                            do_print_entry = (entry.get_longname().lower() == self.options.iname.lower())
-
-            # Print file
-            else:
-                if (self.options.type == 'f' or self.options.type is None):
-                    # No name filtering
-                    if self.options.name is None and self.options.iname is None:
-                        do_print_entry = True
-                    
-                    # Filtering on names case sensitive
-                    elif self.options.name is not None:
-                        if '*' in self.options.name:
-                            regex = self.options.name
-                            regex = regex.replace('.', '\\.')
-                            regex = regex.replace('*', '.*')
-                            regex = '^' + regex + '$'
-                            if re.match(regex, entry.get_longname()):
-                                do_print_entry = True
-                            else:
-                                do_print_entry = False
-                        else:
-                            do_print_entry = (entry.get_longname().lower() == self.options.name.lower())
-                    
-                    # Filtering on names case insensitive
-                    elif self.options.iname is not None:
-                        if '*' in self.options.iname:
-                            regex = self.options.iname
-                            regex = regex.replace('.', '\\.')
-                            regex = regex.replace('*', '.*')
-                            regex = '^' + regex + '$'
-                            if re.match(regex, entry.get_longname(), re.IGNORECASE):
-                                do_print_entry = True
-                            else:
-                                do_print_entry = False
-                        else:
-                            do_print_entry = (entry.get_longname().lower() == self.options.iname.lower())
-
-            # Check the size
-            if do_print_entry and self.options.size is not None:
-                size_filter = self.options.size
-                if (size_filter[1:].isdigit()):
-                    size = int(size_filter[1:])
-                else:
-                    size = int(size_filter[1:-1])
-                    units = ["B","K","M","G","T"]
-                    if size_filter[-1].upper() in units:
-                        size = size * (1024 ** units.index(size_filter[-1]))
-                    else:
-                        pass
-
-                if size_filter[0] == '+':
-                    do_print_entry = entry.get_filesize() >= size
-                elif size_filter[0] == '-':
-                    do_print_entry = entry.get_filesize() <= size
-
-            if do_print_entry:
-                # Actions on matches
-                if self.options.download:
-                    if entry.is_directory():
-                        self.smbSession.get_file_recursively(path=fullpath)
-                    else:
-                        self.smbSession.get_file(path=fullpath, keepRemotePath=True)
-                # Output formats
-                output_str = ""
-                if self.options.ls:
-                    if entry.is_directory():
-                        output_str = windows_ls_entry(entry=entry, config=self.config, pathToPrint=fullpath)
-                    else:
-                        output_str = windows_ls_entry(entry=entry, config=self.config, pathToPrint=fullpath)
-                else:
-                    if entry.is_directory():
-                        output_str = ("%s" % fullpath.replace(ntpath.sep, '/'))
-                    else:
-                        output_str = ("%s" % fullpath.replace(ntpath.sep, '/'))
-
-                if self.options.outputfile is not None:
-                    with open(self.options.outputfile, 'a') as f:
-                        f.write(output_str + '\n')
-
-                if not self.options.quiet:
-                    print(output_str)
-
-        return None
-
     def run(self, arguments):
-        """
-        This function recursively searches for files in a directory hierarchy and prints the results based on specified criteria.
-
-        Args:
-            base_dir (str): The base directory to start the search from.
-            paths (list): List of paths to search within the base directory.
-            depth (int): The current depth level in the directory hierarchy.
-
-        Returns:
-            None
-        """
-
         self.options = self.parseArgs(arguments=arguments)
 
         if self.options is not None:
-            # Entrypoint
+            # Prepare output file
             if self.options.outputfile is not None:
-                if not os.path.exists(os.path.dirname(self.options.outputfile)):
-                    os.makedirs(os.path.dirname(self.options.outputfile))
+                os.makedirs(os.path.dirname(self.options.outputfile), exist_ok=True)
                 open(self.options.outputfile, 'w').close()
 
             try:
-                next_directories_to_explore = []
-                for path in list(set(self.options.paths)):
-                    next_directories_to_explore.append(ntpath.normpath(path) + ntpath.sep)
-                next_directories_to_explore = sorted(list(set(next_directories_to_explore)))
-
                 exclusion_rules = self.parse_exclude_dirs(self.options.exclude_dir)
+                start_paths = self.options.paths or [self.smbSession.smb_cwd]
 
-                self.smbSession.find(
-                    paths=next_directories_to_explore,
-                    callback=self.__find_callback,
-                    exclusion_rules=exclusion_rules
+                # Prepare filters
+                filters = {}
+                if self.options.type:
+                    filters['type'] = self.options.type
+                if self.options.name:
+                    filters['name'] = self.options.name
+                if self.options.iname:
+                    filters['iname'] = self.options.iname
+                if self.options.size:
+                    filters['size'] = self.options.size
+
+                generator = smb_entry_iterator(
+                    smb_client=self.smbSession.smbClient,
+                    smb_share=self.smbSession.smb_share,
+                    start_paths=start_paths,
+                    exclusion_rules=exclusion_rules,
+                    max_depth=self.options.maxdepth,
+                    min_depth=self.options.mindepth or 0,
+                    filters=filters
                 )
 
-            except (BrokenPipeError, KeyboardInterrupt) as e:
+                for entry, fullpath, depth, is_last_entry in generator:
+                    # Actions on matches
+                    if self.options.download:
+                        if not entry.is_directory():
+                            self.smbSession.get_file(path=fullpath, keepRemotePath=True)
+                    # Output formats
+                    output_str = ""
+                    if self.options.ls:
+                        output_str = windows_ls_entry(entry=entry, config=self.config, pathToPrint=fullpath)
+                    else:
+                        output_str = fullpath.replace(ntpath.sep, '/')
+
+                    if self.options.outputfile is not None:
+                        with open(self.options.outputfile, 'a') as f:
+                            f.write(output_str + '\n')
+
+                    if not self.options.quiet and not self.options.download:
+                        print(output_str)
+
+            except (BrokenPipeError, KeyboardInterrupt):
                 print("[!] Interrupted.")
                 self.smbSession.close_smb_session()
                 self.smbSession.init_smb_session()

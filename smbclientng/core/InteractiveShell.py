@@ -20,7 +20,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.syntax import Syntax
 from smbclientng.core.CommandCompleter import CommandCompleter
-from smbclientng.core.utils import b_filesize, unix_permissions, windows_ls_entry, local_tree, resolve_local_files, resolve_remote_files
+from smbclientng.core.utils import b_filesize, unix_permissions, windows_ls_entry, local_tree, resolve_local_files, resolve_remote_files, smb_entry_iterator
 
 
 ## Decorators
@@ -415,26 +415,32 @@ class InteractiveShell(object):
         # SMB share needed             : Yes
 
         is_recursive = False
+        keep_remote_path = False  
+        # Parse '-r' option
         while '-r' in arguments:
             is_recursive = True
             arguments.remove('-r')
+        
+        # Parse '-k' option for keepRemotePath if you have it
+        while '-k' in arguments:
+            keep_remote_path = True
+            arguments.remove('-k')
 
-        # This is the usecase of 'get -r' with no other argument
+        # Handle 'get -r' with no other argument
         if len(arguments) == 0:
             arguments = ['*']
 
         # Parse wildcards
         files_and_directories = resolve_remote_files(self.sessionsManager.current_session, arguments)
 
-        # 
+        # Download files/directories
         for remotepath in files_and_directories:
             try:
-                if is_recursive and self.sessionsManager.current_session.path_isdir(pathFromRoot=remotepath):
-                    # Get files recursively
-                    self.sessionsManager.current_session.get_file_recursively(path=remotepath)
-                else:
-                    # Get this single file
-                    self.sessionsManager.current_session.get_file(path=remotepath)
+                self.sessionsManager.current_session.get_file(
+                    path=remotepath,
+                    keepRemotePath=keep_remote_path,
+                    is_recursive=is_recursive
+                )
             except impacket.smbconnection.SessionError as e:
                 if self.config.debug:
                     traceback.print_exc()
@@ -899,69 +905,66 @@ class InteractiveShell(object):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        class RecursiveSizeOfPrint(object):
-            def __init__(self, entry, sessionsManager, config, logger):
-                self.entry = entry
-                self.config = config
-                self.logger = logger
-                self.sessionsManager = sessionsManager
-                self.size = 0
-            
-            def update(self, entry, fullpath, depth):
-                self.size += entry.get_filesize()
-                self.print(end='\r')
-            
-            def print(self, end='\n'):
-                # Directory
-                if self.entry.is_directory():
-                    if self.config.no_colors:
-                        path = "%s\\" % self.entry.get_longname()
-                    else:
-                        path = "\x1b[1;96m%s\x1b[0m\\" % self.entry.get_longname()
-                # File
-                else:
-                    if self.config.no_colors:
-                        path = "%s" % self.entry.get_longname()
-                    else:
-                        path = "\x1b[1m%s\x1b[0m" % self.entry.get_longname()
-                self.logger.print("%10s  %s" % (b_filesize(self.size), path), end=end)
-
-        entries = []
+        # Parse the arguments to get the path(s)
         if len(arguments) == 0:
-            entries = self.sessionsManager.current_session.list_contents()
-            entries = [entry for name, entry in entries.items() if name not in ['.', '..']]
+            paths = [self.sessionsManager.current_session.smb_cwd or '']
         else:
-            entry = self.sessionsManager.current_session.get_entry(path=' '.join(arguments))
-            entries = []
-            if entry is not None:
-                entries = [entry]
-            else:
-                self.logger.print("[!] Path '%s' does not exist." % ' '.join(arguments))
+            paths = arguments  # Assuming arguments is a list of paths
 
-        total = 0
-        for entry in entries:
-            rsop = RecursiveSizeOfPrint(
-                entry=entry, 
-                sessionsManager=self.sessionsManager, 
-                config=self.config,
-                logger=self.logger
-            )
-            # Directory
-            if entry.is_directory():
-                self.sessionsManager.current_session.find(
-                    paths=[entry.get_longname()],
-                    callback=rsop.update
-                )
-            # File
+        total_size = 0
+        for path in paths:
+            # Normalize and parse the path
+            path = path.replace('/', ntpath.sep)
+            path = ntpath.normpath(path)
+            path = path.strip(ntpath.sep)
+
+            # Handle relative and absolute paths
+            if not ntpath.isabs(path):
+                path = ntpath.normpath(ntpath.join(self.sessionsManager.current_session.smb_cwd or '', path))
             else:
-                rsop.update(entry=entry, fullpath=entry.get_longname(), depth=0)
-            # Close the print
-            rsop.print()
-            total += rsop.size
-        
-        if len(entries) > 1:
+                path = path.lstrip(ntpath.sep)
+                path = ntpath.normpath(path)
+
+            try:
+                # Initialize the generator
+                generator = smb_entry_iterator(
+                    smb_client=self.sessionsManager.current_session.smbClient,
+                    smb_share=self.sessionsManager.current_session.smb_share,
+                    start_paths=[path],
+                    exclusion_rules=[],
+                    max_depth=None
+                )
+
+                path_size = 0
+                for entry, fullpath, depth, is_last_entry in generator:
+                    if not entry.is_directory():
+                        path_size += entry.get_filesize()
+
+                total_size += path_size
+
+                # Format and print the result for the current path
+                size_str = b_filesize(path_size)
+                if self.config.no_colors:
+                    path_display = path
+                else:
+                    path_display = f"\x1b[1;96m{path}\x1b[0m"
+
+                self.logger.print(f"{size_str}\t{path_display}")
+
+            except impacket.smbconnection.SessionError as e:
+                self.logger.error(f"Failed to access '{path}': {e}")
+            except (BrokenPipeError, KeyboardInterrupt):
+                self.logger.error("Interrupted.")
+                self.close_smb_session()
+                self.init_smb_session()
+                return
+            except Exception as e:
+                self.logger.error(f"Error while processing '{path}': {e}")
+
+        # If multiple paths, print the total size
+        if len(paths) > 1:
             self.logger.print("──────────────────────")
-            self.logger.print("     total  %s" % b_filesize(total))
+            self.logger.print(f"Total size: {b_filesize(total_size)}")
 
     @active_smb_connection_needed
     def command_shares(self, arguments, command):
