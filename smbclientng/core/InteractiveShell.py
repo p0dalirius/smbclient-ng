@@ -936,20 +936,28 @@ class InteractiveShell(object):
                 )
 
                 path_size = 0
-                for entry, fullpath, depth, is_last_entry in generator:
-                    if not entry.is_directory():
-                        path_size += entry.get_filesize()
+                
+                LINE_CLEAR = '\x1b[2K'
 
-                total_size += path_size
-
-                # Format and print the result for the current path
-                size_str = b_filesize(path_size)
+                # Prepare the path display
                 if self.config.no_colors:
                     path_display = path
                 else:
                     path_display = f"\x1b[1;96m{path}\x1b[0m"
 
-                self.logger.print(f"{size_str}\t{path_display}")
+                for entry, fullpath, depth, is_last_entry in generator:
+                    if not entry.is_directory():
+                        path_size += entry.get_filesize()
+                        # Update the size display each time path_size is incremented
+                        size_str = b_filesize(path_size)
+                        output_line = f"\r{size_str}\t{path_display}"
+                        # Clear the line after the cursor
+                        print(output_line, end='\r')
+
+                # After processing all entries, format and print the result for the current path
+                print(end=LINE_CLEAR)
+                print(f"{size_str}\t{path_display}")
+                total_size += path_size
 
             except impacket.smbconnection.SessionError as e:
                 self.logger.error(f"Failed to access '{path}': {e}")
