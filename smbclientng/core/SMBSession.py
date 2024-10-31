@@ -1111,6 +1111,7 @@ class SMBSession(object):
 
         # Initialize variables
         prefix_stack = []
+        prev_is_last = False
 
         try:
             # Initialize the generator
