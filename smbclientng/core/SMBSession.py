@@ -14,7 +14,7 @@ import re
 import sys
 import traceback
 from smbclientng.core.LocalFileIO import LocalFileIO
-from smbclientng.core.utils import b_filesize, STYPE_MASK, is_port_open
+from smbclientng.core.utils import b_filesize, STYPE_MASK, is_port_open, smb_entry_iterator
 
 
 class SMBSession(object):
@@ -237,185 +237,144 @@ class SMBSession(object):
         return self.connected
 
     # Operations
-
-    def find(self, paths=[], callback=None,  exclusion_rules=[]):
+    def get_file(self, path=None, keepRemotePath=False, localDownloadDir="./", is_recursive=False):
         """
-        Finds files and directories on the SMB share based on the provided paths and executes a callback function on each entry.
-
-        This method traverses the specified paths on the SMB share, recursively exploring directories and invoking the callback
-        function on each file or directory found. The callback function is called with three arguments: the entry object, the
-        full path of the entry, and the current depth of recursion.
-
-        Args:
-            paths (list, optional): A list of paths to start the search from. Defaults to an empty list.
-            callback (function, optional): A function to be called on each entry found. The function should accept three arguments:
-                                           the entry object, the full path of the entry, and the current depth of recursion. Defaults to None.
-            exclusion_rules (list, optional): A list of exclusion rules, each being a dictionary with keys:
-                                            'dirname', 'depth', 'case_sensitive'.
-
-        Note:
-            If the callback function is None, the method will print an error message and return without performing any action.
-        """
-
-        def should_exclude(dir_name, depth):
-            """
-            Determines whether a directory should be excluded based on the exclusion rules.
-
-            Args:
-                dir_name (str): The name of the directory.
-                depth (int): The current depth in the traversal.
-
-            Returns:
-                bool: True if the directory should be excluded, False otherwise.
-            """
-            for rule in exclusion_rules:
-                # Check if the depth is within the exclusion range
-                if rule['depth'] != -1 and depth > rule['depth']:
-                    continue  # Current depth is beyond the specified depth, do not exclude
-                # Perform matching based on case sensitivity
-                if rule['case_sensitive']:
-                    if dir_name == rule['dirname']:
-                        return True
-                else:
-                    if dir_name.lower() == rule['dirname'].lower():
-                        return True
-            return False
-
-        def recurse_action(paths=[], depth=0, callback=None):
-            if callback is None:
-                return []
-            
-            next_directories_to_explore = []
-
-            for path in paths:
-                normalized_path = ntpath.normpath(path)
-                dir_name = ntpath.basename(normalized_path)
-
-                # Check if current path should be excluded
-                if should_exclude(dir_name, depth):
-                    continue  # Skip this path
-
-                remote_smb_path = ntpath.normpath(self.smb_cwd + ntpath.sep + path)
-                entries = []
-
-                try:
-                    entries = self.smbClient.listPath(
-                        shareName=self.smb_share,
-                        path=(remote_smb_path + ntpath.sep + '*')
-                    )
-                except impacket.smbconnection.SessionError as err:
-                    continue
-                # Remove dot names
-                entries = [e for e in entries if e.get_longname() not in [".", ".."]]
-                # Sort the entries ignoring case
-                entries = sorted(entries, key=lambda x: x.get_longname().lower())
-
-                for entry in entries:
-                    entry_name = entry.get_longname()
-                    fullpath = ntpath.join(path, entry.get_longname())
-
-                    if entry.is_directory():
-                        # Check if this directory should be excluded
-                        if should_exclude(entry_name, depth + 1):
-                            continue  # Skip this directory
-
-                        next_directories_to_explore.append(fullpath)
-
-                    # Process the entry
-                    fullpath = re.sub(r'\\\\+', r'\\', fullpath)
-                    callback(entry, fullpath, depth)
-
-            return next_directories_to_explore
-        
-        if callback is not None:
-            depth = 0
-            while len(paths) != 0:
-                paths = recurse_action(
-                    paths=paths,
-                    depth=depth,
-                    callback=callback
-                )
-                depth = depth + 1
-        else:
-            self.logger.error("SMBSession.find(), callback function cannot be None.")
-
-    def get_file(self, path=None, keepRemotePath=False, localDownloadDir="./"):
-        """
-        Retrieves a file from the specified path on the SMB share.
+        Retrieves files or directories from the specified path(s) on the SMB share.
 
         This method attempts to retrieve a file from the given path within the currently connected SMB share.
         If the path points to a directory, it skips the retrieval. It handles file retrieval by creating a local
         file object and writing the contents of the remote file to it using the SMB client's getFile method.
 
         Parameters:
-            path (str): The path of the file to retrieve. If None, uses the current smb_path.
+            path (str): The path of the file, directory, or pattern to retrieve.
+            keepRemotePath (bool): Whether to preserve the remote directory structure locally.
+            localDownloadDir (str): The local directory to download files into.
 
         Returns:
             None
         """
+        if path is None:
+            path = self.smb_cwd or ''
 
-        # Parse path
+        # Normalize and parse the path
         path = path.replace('/', ntpath.sep)
-        if ntpath.sep in path:
-            if path.startswith(ntpath.sep):
-                tmp_search_path = ntpath.normpath(ntpath.dirname(path))
-            else:
-                tmp_search_path = ntpath.normpath(self.smb_cwd + ntpath.sep + ntpath.dirname(path))
+        path = ntpath.normpath(path)
+
+        # Handle paths starting with './' or '.\'
+        if path.startswith('.' + ntpath.sep) or path.startswith('.' + os.path.sep):
+            # Remove the './' or '.\' prefix
+            path = path[2:]
+            path = ntpath.normpath(ntpath.join(self.smb_cwd or '', path))
+        elif not ntpath.isabs(path):
+            # Relative path
+            path = ntpath.normpath(ntpath.join(self.smb_cwd or '', path))
         else:
-            tmp_search_path = ntpath.normpath(self.smb_cwd + ntpath.sep)
-        # Parse filename
-        filename = ntpath.basename(path)
+            # Absolute path (remove leading backslash)
+            path = path.lstrip(ntpath.sep)
+            path = ntpath.normpath(path)
+            
+        if self.path_isdir(path):
+            # Handle directories
+            max_depth = None if is_recursive else 0
+            start_paths = [path]
 
-        # Search for the file
-        matches = self.smbClient.listPath(
-            shareName=self.smb_share, 
-            path=tmp_search_path + ntpath.sep + '*'
-        )   
+            generator = smb_entry_iterator(
+                smb_client=self.smbClient,
+                smb_share=self.smb_share,
+                start_paths=start_paths,
+                exclusion_rules=[],
+                max_depth=max_depth
+            )
 
-        # Filter the entries
-        matching_entries = []
-        for entry in matches:
-            if entry.is_directory():
-                # Skip directories
-                continue
-            if entry.get_longname() == filename:
-                matching_entries.append(entry)
-            elif '*' in filename:
-                regexp = filename.replace('.', '\\.').replace('*', '.*')
-                if re.match(regexp, entry.get_longname()):
-                    matching_entries.append(entry)
-        
-        matching_entries = sorted(list(set(matching_entries)), key=lambda x: x.get_longname())
-
-        for entry in matching_entries:
-            if entry.is_directory():
-                self.logger.debug("[>] Skipping '%s' because it is a directory." % (tmp_search_path + ntpath.sep + entry.get_longname()))
-            else:
+            entry_count = 0
+            for entry, fullpath, depth, is_last_entry in generator:
+                entry_count += 1
                 try:
-                    if ntpath.sep in path:
-                        outputfile = localDownloadDir + os.path.sep + ntpath.dirname(path) + os.path.sep + entry.get_longname()
+                    if entry.is_directory():
+                        if keepRemotePath:
+                            base_path = './'  # Use root as base
+                            relative_path = ntpath.relpath(fullpath, base_path)
+                            relative_path = relative_path.replace(ntpath.sep, os.path.sep)
+                            output_path = os.path.normpath(os.path.join(localDownloadDir, relative_path))
+                            os.makedirs(output_path, exist_ok=True)
+                            self.logger.info(f"Created directory: {output_path}")
+                        else:
+                            # Do not create directories when keepRemotePath is False
+                            pass
                     else:
-                        outputfile = localDownloadDir + os.path.sep + entry.get_longname()
-                    f = LocalFileIO(
-                        mode="wb", 
-                        path=outputfile,
-                        expected_size=entry.get_filesize(), 
-                        logger=self.logger,
-                        keepRemotePath=keepRemotePath
-                    )
+                        if keepRemotePath:
+                            base_path = './' # Use root as base
+                            relative_path = ntpath.relpath(fullpath, base_path)
+                            relative_path = relative_path.replace(ntpath.sep, os.path.sep)
+                            output_path = os.path.normpath(os.path.join(localDownloadDir, relative_path))
+                        else:
+                            relative_path = ntpath.basename(fullpath)
+                            output_path = os.path.normpath(os.path.join(localDownloadDir, relative_path))
+
+                        # Ensure the parent directory exists
+                        output_dir = os.path.dirname(output_path)
+                        if output_dir and not os.path.exists(output_dir):
+                            os.makedirs(output_dir, exist_ok=True)
+
+                        self.download_file(fullpath, output_path, keepRemotePath)
+                except Exception as e:
+                    self.logger.error(f"Failed to process '{fullpath}': {e}")
+
+            self.logger.info(f"Total entries processed in the directory '{fullpath}': {entry_count}")
+        else:
+            # Handle files
+            try:
+                entry_name = ntpath.basename(path)
+                if not entry_name:
+                    self.logger.error(f"Cannot determine the file name from the path: '{path}'")
+                    return
+                if keepRemotePath:
+                    base_path = './' # Use root as base
+                    relative_path = ntpath.relpath(path, base_path)
+                    relative_path = relative_path.replace(ntpath.sep, os.path.sep)
+                    output_filepath = os.path.normpath(os.path.join(localDownloadDir, relative_path))
+                else:
+                    relative_path = entry_name
+                    output_filepath = os.path.normpath(os.path.join(localDownloadDir, relative_path))
+
+                # Ensure the parent directory exists
+                output_dir = os.path.dirname(output_filepath)
+                if output_dir and not os.path.exists(output_dir):
+                    os.makedirs(output_dir, exist_ok=True)
+
+                self.download_file(path, output_filepath, keepRemotePath)
+            except Exception as e:
+                self.logger.error(f"Failed to download '{path}': {e}")
+
+
+    def download_file(self, full_path, outputfile, keepRemotePath):
+        """Downloads a single file."""
+        try:
+            # Get the file entry
+            entries = self.smbClient.listPath(self.smb_share, full_path)
+            # Ensure no directory will be processed
+            entries = [e for e in entries if e.get_longname() not in ['.', '..']]
+            if len(entries) == 1 and not entries[0].is_directory():
+                entry = entries[0]
+                # Download the file
+                f = LocalFileIO(
+                    mode="wb",
+                    path=outputfile,
+                    expected_size=entry.get_filesize(),
+                    keepRemotePath=keepRemotePath,
+                    logger=self.logger
+                )
+                try:
                     self.smbClient.getFile(
-                        shareName=self.smb_share, 
-                        pathName=tmp_search_path + ntpath.sep + entry.get_longname(), 
+                        shareName=self.smb_share,
+                        pathName=full_path,
                         callback=f.write
                     )
+                finally:
                     f.close()
-                except (BrokenPipeError, KeyboardInterrupt) as e:
-                    f.close()
-                    print("\x1b[v\x1b[o\r[!] Interrupted.")
-                    self.close_smb_session()
-                    self.init_smb_session()
-                        
-        return None
+        except Exception as e:
+            self.logger.error(f"Failed to download '{full_path}': {e}")
+
 
     def get_file_recursively(self, path=None, localDownloadDir="./"):
         """
@@ -1130,163 +1089,85 @@ class SMBSession(object):
             path (str, optional): The starting path on the SMB share from which to begin listing the tree.
                                   Defaults to the root of the current share.
         """
-        
-        def recurse_action(base_dir="", path=[], prompt=[], quiet=False, outputfile=None):
-            bars = ["│   ", "├── ", "└── "]
+        if path is None:
+            path = self.smb_cwd or ''
 
-            remote_smb_path = ntpath.normpath(base_dir + ntpath.sep + ntpath.sep.join(path))
+        # Normalize and parse the path
+        path = path.replace('/', ntpath.sep)
+        path = ntpath.normpath(path)
+        path = path.strip(ntpath.sep)
 
-            entries = []
-            try:
-                entries = self.smbClient.listPath(
-                    shareName=self.smb_share, 
-                    path=remote_smb_path+'\\*'
-                )
-            except impacket.smbconnection.SessionError as err:
-                code, const, text = err.getErrorCode(), err.getErrorString()[0], err.getErrorString()[1]
-                errmsg = "Error 0x%08x (%s): %s" % (code, const, text)
-                if not quiet:
-                    if self.config.no_colors:
-                        self.logger.print("%s%s" % (''.join(prompt+[bars[2]]), errmsg))
-                    else:
-                        self.logger.print("%s\x1b[1;91m%s\x1b[0m" % (''.join(prompt+[bars[2]]), errmsg))
-                if outputfile is not None:
-                    with open(outputfile, 'a') as f:
-                        f.write("%s%s\n" % (''.join(prompt+[bars[2]]), errmsg))
-                return 
+        # Handle relative and absolute paths
+        if not ntpath.isabs(path):
+            path = ntpath.normpath(ntpath.join(self.smb_cwd or '', path))
+        else:
+            path = path.lstrip(ntpath.sep)
+            path = ntpath.normpath(path)
 
-            entries = [e for e in entries if e.get_longname() not in [".", ".."]]
-            entries = sorted(entries, key=lambda x:x.get_longname())
-
-            # 
-            if len(entries) > 1:
-                index = 0
-                for entry in entries:
-                    index += 1
-                    # This is the first entry 
-                    if index == 0:
-                        if entry.is_directory():
-                            if not quiet:
-                                if self.config.no_colors:
-                                    self.logger.print("%s%s\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
-                                else:
-                                    self.logger.print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
-                            if outputfile is not None:
-                                with open(outputfile, 'a') as f:
-                                    f.write("%s%s\\\n" % (''.join(prompt+[bars[1]]), entry.get_longname()))
-
-                            recurse_action(
-                                base_dir=base_dir, 
-                                path=path+[entry.get_longname()],
-                                prompt=prompt+["│   "]
-                            )
-                        else:
-                            if not quiet:
-                                if self.config.no_colors:
-                                    self.logger.print("%s%s" % (''.join(prompt+[bars[1]]), entry.get_longname()))
-                                else:
-                                    self.logger.print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[1]]), entry.get_longname()))
-                            if outputfile is not None:
-                                with open(outputfile, 'a') as f:
-                                    f.write("%s%s\n" % (''.join(prompt+[bars[1]]), entry.get_longname()))
-                    # This is the last entry
-                    elif index == len(entries):
-                        if entry.is_directory():
-                            if not quiet:
-                                if self.config.no_colors:
-                                    self.logger.print()
-                                else:
-                                    self.logger.print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[2]]), entry.get_longname()))
-                            if outputfile is not None:
-                                with open(outputfile, 'a') as f:
-                                    f.write("%s%s\\\n" % (''.join(prompt+[bars[2]]), entry.get_longname()))
-                            recurse_action(
-                                base_dir=base_dir, 
-                                path=path+[entry.get_longname()],
-                                prompt=prompt+["    "]
-                            )
-                        else:
-                            if not quiet:
-                                if self.config.no_colors:
-                                    self.logger.print("%s%s" % (''.join(prompt+[bars[2]]), entry.get_longname()))
-                                else:
-                                    self.logger.print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[2]]), entry.get_longname()))
-                            if outputfile is not None:
-                                with open(outputfile, 'a') as f:
-                                    f.write("%s%s\n" % (''.join(prompt+[bars[2]]), entry.get_longname()))
-                    # These are entries in the middle
-                    else:
-                        if entry.is_directory():
-                            if not quiet:
-                                if self.config.no_colors:
-                                    self.logger.print("%s%s\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
-                                else:
-                                    self.logger.print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[1]]), entry.get_longname()))
-                            if outputfile is not None:
-                                with open(outputfile, 'a') as f:
-                                    f.write("%s%s\\\n" % (''.join(prompt+[bars[1]]), entry.get_longname()))
-                            recurse_action(
-                                base_dir=base_dir, 
-                                path=path+[entry.get_longname()],
-                                prompt=prompt+["│   "]
-                            )
-                        else:
-                            if not quiet:
-                                if self.config.no_colors:
-                                    self.logger.print("%s%s" % (''.join(prompt+[bars[1]]), entry.get_longname()))
-                                else:
-                                    self.logger.print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[1]]), entry.get_longname()))
-                            if outputfile is not None:
-                                with open(outputfile, 'a') as f:
-                                    f.write("%s%s\n" % (''.join(prompt+[bars[1]]), entry.get_longname()))
-            # 
-            elif len(entries) == 1:
-                entry = entries[0]
-                if entry.is_directory():
-                    if not quiet:
-                        if self.config.no_colors:
-                            self.logger.print("%s%s\\" % (''.join(prompt+[bars[2]]), entry.get_longname()))
-                        else:
-                            self.logger.print("%s\x1b[1;96m%s\x1b[0m\\" % (''.join(prompt+[bars[2]]), entry.get_longname()))
-                    if outputfile is not None:
-                        with open(outputfile, 'a') as f:
-                            f.write("%s%s\\\n" % (''.join(prompt+[bars[2]]), entry.get_longname()))
-                    recurse_action(
-                        base_dir=base_dir, 
-                        path=path+[entry.get_longname()],
-                        prompt=prompt+["    "]
-                    )
-                else:
-                    if not quiet:
-                        if self.config.no_colors:
-                            self.logger.print("%s%s" % (''.join(prompt+[bars[2]]), entry.get_longname()))
-                        else:
-                            self.logger.print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[2]]), entry.get_longname()))
-                    if outputfile is not None:
-                        with open(outputfile, 'a') as f:
-                            f.write("%s%s\n" % (''.join(prompt+[bars[2]]), entry.get_longname()))
-        # Entrypoint
+        # Prepare output file
         if outputfile is not None:
-            if not os.path.exists(os.path.dirname(outputfile)):
-                os.makedirs(os.path.dirname(outputfile))
+            os.makedirs(os.path.dirname(outputfile), exist_ok=True)
             open(outputfile, 'w').close()
 
+        # Initialize variables
+        prefix_stack = []
+        prev_is_last = False
+
         try:
-            if self.config.no_colors:
-                self.logger.print("%s\\" % path)
-            else:
-                self.logger.print("\x1b[1;96m%s\x1b[0m\\" % path)
-            recurse_action(
-                base_dir=self.smb_cwd, 
-                path=[path],
-                prompt=[""],
-                quiet=quiet,
-                outputfile=outputfile
+            # Initialize the generator
+            generator = smb_entry_iterator(
+                smb_client=self.smbClient,
+                smb_share=self.smb_share,
+                start_paths=[path],
+                exclusion_rules=[],
+                max_depth=None
             )
-        except (BrokenPipeError, KeyboardInterrupt) as e:
+
+            last_depth = -1
+            for entry, fullpath, depth, is_last_entry in generator:
+                # Adjust the prefix stack based on the current depth
+                if depth > last_depth:
+                    if last_depth >= 0:
+                        prefix_stack.append('│   ' if not prev_is_last else '    ')
+                elif depth < last_depth:
+                    prefix_stack = prefix_stack[:depth]
+
+                # Determine the connector
+                connector = '└── ' if is_last_entry else '├── '
+
+                # Build the prefix
+                prefix = ''.join(prefix_stack)
+
+                # Format the entry name
+                entry_name = entry.get_longname()
+                if entry.is_directory():
+                    if not self.config.no_colors:
+                        entry_display = f"\x1b[1;96m{entry_name}\x1b[0m/"
+                    else:
+                        entry_display = f"{entry_name}/"
+                else:
+                    entry_display = entry_name
+
+                line = f"{prefix}{connector}{entry_display}"
+
+                # Output
+                if not quiet:
+                    self.logger.print(line)
+
+                if outputfile is not None:
+                    with open(outputfile, 'a') as f:
+                        f.write(f"{line}\n")
+
+                # Update variables for next iteration
+                last_depth = depth
+                prev_is_last = is_last_entry
+
+        except (BrokenPipeError, KeyboardInterrupt):
             self.logger.error("Interrupted.")
             self.close_smb_session()
             self.init_smb_session()
+        except Exception as e:
+            self.logger.error(f"Error during tree traversal: {e}")
 
     def umount(self, local_mount_point):
         """

@@ -96,7 +96,7 @@ class CommandCompleter(object):
                 "Search for files in a directory hierarchy",
                 "Syntax: find [-h] [-name NAME] [-iname INAME] [-type TYPE] [-size SIZE] [-ls]",
                 "             [-download] [-maxdepth MAXDEPTH] [-mindepth MINDEPTH]",
-                "             [PATH ...]"
+                "             [--exclude-dir DIRNAME[:DEPTH[:CASE]]] [PATH ...]"
             ],
             "subcommands": [],
             "autocomplete": []
@@ -104,7 +104,7 @@ class CommandCompleter(object):
         "get": {
             "description": [
                 "Get a remote file.",
-                "Syntax: 'get [-r] <directory or file>'"
+                "Syntax: 'get [-r] [-k] <directory or file>'"
             ], 
             "subcommands": [],
             "autocomplete": ["remote_file"]

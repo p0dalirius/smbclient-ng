@@ -41,6 +41,8 @@ class LocalFileIO(object):
         if self.mode in ["wb"]:
             if keepRemotePath:
                 self.dir = os.path.dirname(self.path)
+                if not self.dir:
+                    self.dir = '.' + os.path.sep
             else:
                 self.dir = '.' + os.path.sep
 
