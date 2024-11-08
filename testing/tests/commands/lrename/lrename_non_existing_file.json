@@ -1,0 +1,21 @@
+{
+    "title": "Command 'lrename': attempts to rename a non-existing local file",
+    "category": "commands",
+    "subcategory": "lrename",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "lrename 'C:\\Users\\John\\Documents\\non_existing_file.txt' 'C:\\Users\\John\\Documents\\renamed_non_existing_file.txt'"
+    ],
+    "expected_output": {
+        "messages": [
+            "Error: File 'C:\\Users\\John\\Documents\\non_existing_file.txt' not found."
+        ],
+        "error": true,
+        "traceback": false
+    }
+}

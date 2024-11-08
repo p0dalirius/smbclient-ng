@@ -1,0 +1,21 @@
+{
+    "title": "Command 'lcd': changes to a local directory with insufficient permissions",
+    "category": "commands",
+    "subcategory": "lcd",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "lcd 'C:\\Windows\\System32'"
+    ],
+    "expected_output": {
+        "messages": [
+            "Error: Permission denied for 'C:\\Windows\\System32'."
+        ],
+        "error": true,
+        "traceback": false
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "title": "Command 'reconnect': fails to reconnect to a non-responsive server",
+    "category": "commands",
+    "subcategory": "reconnect",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "non_responsive_host"
+    },
+    "smbclientng_commands": [
+        "use 'C$'",
+        "reconnect"
+    ],
+    "expected_output": {
+        "messages": [
+            "Error: Unable to connect to the SMB server."
+        ],
+        "error": true,
+        "traceback": false
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "title": "Command 'mkdir': without specifying a directory name",
+    "category": "commands",
+    "subcategory": "mkdir",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "use 'C$'",
+        "mkdir"
+    ],
+    "expected_output": {
+        "messages": [
+            "Error: No directory name specified."
+        ],
+        "error": true,
+        "traceback": false
+    }
+}

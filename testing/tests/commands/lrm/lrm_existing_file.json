@@ -1,0 +1,21 @@
+{
+    "title": "Command 'lrm': removes an existing local file",
+    "category": "commands",
+    "subcategory": "lrm",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "lrm 'C:\\Users\\John\\Documents\\file.txt'"
+    ],
+    "expected_output": {
+        "messages": [
+            "File 'C:\\Users\\John\\Documents\\file.txt' removed successfully."
+        ],
+        "error": false,
+        "traceback": false
+    }
+}

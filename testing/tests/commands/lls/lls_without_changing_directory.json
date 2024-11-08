@@ -1,0 +1,22 @@
+{
+    "title": "Command 'lls': without changing the directory",
+    "category": "commands",
+    "subcategory": "lls",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "lls"
+    ],
+    "expected_output": {
+        "messages": [
+            "Listing local directory contents...",
+            "..."
+        ],
+        "error": false,
+        "traceback": false
+    }
+}

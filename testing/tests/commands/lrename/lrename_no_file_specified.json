@@ -1,0 +1,21 @@
+{
+    "title": "Command 'lrename': without specifying old and new file names",
+    "category": "commands",
+    "subcategory": "lrename",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "lrename"
+    ],
+    "expected_output": {
+        "messages": [
+            "Error: No old and new file names specified."
+        ],
+        "error": true,
+        "traceback": false
+    }
+}

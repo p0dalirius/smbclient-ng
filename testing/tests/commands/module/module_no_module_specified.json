@@ -1,0 +1,21 @@
+{
+    "title": "Command 'module': without specifying a module name",
+    "category": "commands",
+    "subcategory": "module",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "module"
+    ],
+    "expected_output": {
+        "messages": [
+            "Error: No module name specified."
+        ],
+        "error": true,
+        "traceback": false
+    }
+}

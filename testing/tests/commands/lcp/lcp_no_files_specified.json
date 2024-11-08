@@ -1,0 +1,21 @@
+{
+    "title": "Command 'lcp': without specifying source and destination files",
+    "category": "commands",
+    "subcategory": "lcp",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "lcp"
+    ],
+    "expected_output": {
+        "messages": [
+            "Error: No source or destination file specified."
+        ],
+        "error": true,
+        "traceback": false
+    }
+}

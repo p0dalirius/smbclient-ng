@@ -1,0 +1,22 @@
+{
+    "title": "Command 'lpwd': shows the current local directory in root directory",
+    "category": "commands",
+    "subcategory": "lpwd",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "lcd 'C:\\'",
+        "lpwd"
+    ],
+    "expected_output": {
+        "messages": [
+            "Current local directory: C:\\"
+        ],
+        "error": false,
+        "traceback": false
+    }
+}

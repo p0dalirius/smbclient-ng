@@ -1,0 +1,21 @@
+{
+    "title": "Command 'lrmdir': removes an existing local directory",
+    "category": "commands",
+    "subcategory": "lrmdir",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "lrmdir 'C:\\Users\\John\\Documents\\ExistingFolder'"
+    ],
+    "expected_output": {
+        "messages": [
+            "Directory 'C:\\Users\\John\\Documents\\ExistingFolder' removed successfully."
+        ],
+        "error": false,
+        "traceback": false
+    }
+}

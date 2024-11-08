@@ -1,0 +1,21 @@
+{
+    "title": "Command 'ltree': displays a tree view of a directory with insufficient permissions",
+    "category": "commands",
+    "subcategory": "ltree",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "ltree 'C:\\Windows\\System32'"
+    ],
+    "expected_output": {
+        "messages": [
+            "Error: Permission denied for 'C:\\Windows\\System32'."
+        ],
+        "error": true,
+        "traceback": false
+    }
+}

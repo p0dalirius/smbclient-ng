@@ -1,0 +1,21 @@
+{
+    "title": "Command 'lrm': attempts to remove a non-existing local file",
+    "category": "commands",
+    "subcategory": "lrm",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "lrm 'C:\\Users\\John\\Documents\\non_existing_file.txt'"
+    ],
+    "expected_output": {
+        "messages": [
+            "Error: File 'C:\\Users\\John\\Documents\\non_existing_file.txt' not found."
+        ],
+        "error": true,
+        "traceback": false
+    }
+}

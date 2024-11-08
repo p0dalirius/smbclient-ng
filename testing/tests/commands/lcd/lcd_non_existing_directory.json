@@ -1,0 +1,21 @@
+{
+    "title": "Command 'lcd': attempts to change to a non-existing local directory",
+    "category": "commands",
+    "subcategory": "lcd",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "lcd 'C:\\Users\\John\\NonExistingDirectory'"
+    ],
+    "expected_output": {
+        "messages": [
+            "Error: Directory 'C:\\Users\\John\\NonExistingDirectory' not found."
+        ],
+        "error": true,
+        "traceback": false
+    }
+}

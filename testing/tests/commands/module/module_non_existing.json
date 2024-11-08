@@ -1,0 +1,21 @@
+{
+    "title": "Command 'module': attempts to load a non-existing module",
+    "category": "commands",
+    "subcategory": "module",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "module 'non_existing_module'"
+    ],
+    "expected_output": {
+        "messages": [
+            "Error: Module 'non_existing_module' not found."
+        ],
+        "error": true,
+        "traceback": false
+    }
+}

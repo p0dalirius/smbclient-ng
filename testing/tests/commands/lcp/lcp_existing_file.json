@@ -1,0 +1,21 @@
+{
+    "title": "Command 'lcp': copies an existing local file to a new location",
+    "category": "commands",
+    "subcategory": "lcp",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "lcp 'C:\\Users\\John\\Documents\\file.txt' 'C:\\Users\\John\\Documents\\copy_of_file.txt'"
+    ],
+    "expected_output": {
+        "messages": [
+            "File 'C:\\Users\\John\\Documents\\file.txt' copied to 'C:\\Users\\John\\Documents\\copy_of_file.txt' successfully."
+        ],
+        "error": false,
+        "traceback": false
+    }
+}

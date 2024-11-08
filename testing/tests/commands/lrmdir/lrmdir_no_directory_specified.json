@@ -1,0 +1,21 @@
+{
+    "title": "Command 'lrmdir': without specifying a directory name",
+    "category": "commands",
+    "subcategory": "lrmdir",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "lrmdir"
+    ],
+    "expected_output": {
+        "messages": [
+            "Error: No directory name specified."
+        ],
+        "error": true,
+        "traceback": false
+    }
+}

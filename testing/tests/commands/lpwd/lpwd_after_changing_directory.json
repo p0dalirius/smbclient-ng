@@ -1,0 +1,22 @@
+{
+    "title": "Command 'lpwd': shows the current local directory after changing the directory",
+    "category": "commands",
+    "subcategory": "lpwd",
+    "parameters": {
+        "-d": "{auth_domain}",
+        "-u": "{auth_username}",
+        "-p": "{auth_password}",
+        "--host": "{target_host}"
+    },
+    "smbclientng_commands": [
+        "lcd 'C:\\Users\\John\\Documents'",
+        "lpwd"
+    ],
+    "expected_output": {
+        "messages": [
+            "Current local directory: C:\\Users\\John\\Documents"
+        ],
+        "error": false,
+        "traceback": false
+    }
+}
