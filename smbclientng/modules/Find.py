@@ -43,8 +43,8 @@ class Find(Module):
         parser.add_argument("-q", "--quiet", action="store_true", default=False, help="Suppress normal output.")
 
         # Adding options for filtering
-        parser.add_argument("-name", type=str, help="Base of file name (the path with the leading directories removed).")
-        parser.add_argument("-iname", type=str, help="Like -name, but the match is case insensitive.")
+        parser.add_argument("-name", action='append', help="Base of file name (the path with the leading directories removed).")
+        parser.add_argument("-iname", action='append', help="Like -name, but the match is case insensitive.")
         parser.add_argument("-type", type=str, default=None, help="File type (e.g., f for regular file, d for directory).")
         parser.add_argument("-size", type=str, help="File uses n units of space.")
         parser.add_argument('--exclude-dir', action='append', default=[], metavar='DIRNAME[:DEPTH[:CASE]]',
@@ -65,16 +65,23 @@ class Find(Module):
         parser.add_argument("-maxdepth", type=int, help="Descend at most levels (a non-negative integer) levels of directories below the command line arguments.")
         parser.add_argument("-mindepth", type=int, help="Do not apply any tests or actions at levels less than levels (a non-negative integer).")
 
-        if len(arguments.strip()) == 0:
+        if not arguments.strip():
             parser.print_help()
             return None
         else:
-            self.options = self.processArguments(parser, arguments)
+            # Parse the arguments safely
+            try:
+                args = parser.parse_args(arguments.split())
+            except SystemExit:
+                # argparse uses sys.exit(), which raises SystemExit
+                return None
 
-        if self.options is not None:
-            if len(self.options.paths) == 0:
+            # Check if paths are provided; if not, print help and exit
+            if not args.paths:
                 parser.print_help()
-                self.options = None
+                return None
+
+            self.options = args
 
         return self.options
     
