@@ -287,6 +287,7 @@ class SMBSession(object):
             )
 
             entry_count = 0
+            fullpath = None
             for entry, fullpath, depth, is_last_entry in generator:
                 entry_count += 1
                 try:

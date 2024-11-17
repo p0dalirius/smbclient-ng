@@ -516,16 +516,21 @@ def smb_entry_iterator(smb_client, smb_share, start_paths, exclusion_rules=[], m
         if 'type' in filters and filters['type'] != entry_type:
             return False
 
-        # Filter by name
-        entry_name = entry.get_longname()
+        # Filter by name (case-sensitive)
         if 'name' in filters:
-            pattern = filters['name']
-            if not fnmatch.fnmatchcase(entry_name, pattern):
+            name_patterns = filters['name']
+            if isinstance(name_patterns, str):
+                name_patterns = [name_patterns]
+            if not any(fnmatch.fnmatchcase(entry_name, pattern) for pattern in name_patterns):
                 return False
 
+        # Filter by name (case-insensitive)
         if 'iname' in filters:
-            pattern = filters['iname'].lower()
-            if not fnmatch.fnmatch(entry_name.lower(), pattern):
+            iname_patterns = filters['iname']
+            if isinstance(iname_patterns, str):
+                iname_patterns = [iname_patterns]
+            entry_name_lower = entry_name.lower()
+            if not any(fnmatch.fnmatch(entry_name_lower, pattern.lower()) for pattern in iname_patterns):
                 return False
 
         # Filter by size
@@ -575,6 +580,7 @@ def smb_entry_iterator(smb_client, smb_share, start_paths, exclusion_rules=[], m
                 shareName=smb_share,
                 path=ntpath.join(base_path, '*')
             )
+
             entries = [e for e in entries if e.get_longname() not in ['.', '..']]
             entries.sort(key=lambda e: (not e.is_directory(), e.get_longname().lower()))
 
@@ -605,15 +611,28 @@ def smb_entry_iterator(smb_client, smb_share, start_paths, exclusion_rules=[], m
                 if (max_depth is not None and current_depth > max_depth) or current_depth < min_depth:
                     continue
 
-                # Apply entry filters
-                if filters:
-                    if not entry_matches_filters(entry, filters):
-                        continue
-
-                yield entry, fullpath, current_depth, is_last_entry
-
                 # Recursion for directories
                 if entry.is_directory():
+                    yield_dir = True
+                    if filters:
+                        # Check if 'type' filter is specified
+                        if 'type' in filters:
+                            if filters['type'] == 'd':
+                                yield_dir = True
+                            else:
+                                yield_dir = False
+                        else:
+                            # Filters are applied, but 'type' is not specified
+                            # Assume filters are for files, prevent directory from being yielded
+                            yield_dir = False
+                    else:
+                        # No filters, yield directories
+                        yield_dir = True
+
+                    # Yield the directory if it matches the criteria
+                    if yield_dir:
+                        yield entry, fullpath, current_depth, is_last_entry
+
                     if max_depth is None or current_depth < max_depth:
                         yield from smb_entry_iterator(
                             smb_client=smb_client,
@@ -625,6 +644,14 @@ def smb_entry_iterator(smb_client, smb_share, start_paths, exclusion_rules=[], m
                             current_depth=current_depth + 1,
                             filters=filters
                         )
+                else:
+                    # Apply filters
+                    if filters:
+                        if not entry_matches_filters(entry, filters):
+                            continue
+
+                    # Yield the file
+                    yield entry, fullpath, current_depth, is_last_entry
 
         except impacket.smbconnection.SessionError as err:
             message = f"{err}. Base path: {base_path}"
