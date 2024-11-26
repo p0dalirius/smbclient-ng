@@ -213,6 +213,14 @@ class CommandCompleter(object):
             "subcommands": [],
             "autocomplete": ["remote_directory"]
         },
+        "acls": {
+            "description": [
+                "List ACLs of files and folders in cwd.", 
+                "Syntax: 'acls'"
+            ], 
+            "subcommands": [],
+            "autocomplete": ["remote_directory"]
+        },
         "ltree": {
             "description": [
                 "Displays a tree view of the local directories.",

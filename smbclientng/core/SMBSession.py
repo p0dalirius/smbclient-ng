@@ -7,6 +7,11 @@
 
 import io
 import impacket.smbconnection
+from typing import Optional
+from impacket.smbconnection import SMBConnection, SessionError
+from impacket.dcerpc.v5 import transport, rpcrt, srvs
+from impacket.ldap import ldaptypes
+from impacket.nt_errors import STATUS_OBJECT_NAME_COLLISION
 import ntpath
 import os
 import random
@@ -15,6 +20,8 @@ import sys
 import traceback
 from smbclientng.core.LocalFileIO import LocalFileIO
 from smbclientng.core.utils import b_filesize, STYPE_MASK, is_port_open, smb_entry_iterator
+from smbclientng.core.SIDResolver import SIDResolver
+from typing import TYPE_CHECKING
 
 
 class SMBSession(object):
@@ -53,6 +60,8 @@ class SMBSession(object):
         test_rights(sharename): Tests read and write access rights on a share.
     """
 
+    dce_srvsvc: Optional[rpcrt.DCERPC_v5] = None
+    sid_resolver: SIDResolver
     def __init__(self, host, port, timeout, credentials, advertisedName=None, config=None, logger=None):
         super(SMBSession, self).__init__()
         # Objects
@@ -210,6 +219,20 @@ class SMBSession(object):
                 self.logger.print("[+] Successfully authenticated to '%s' as '%s\\%s'!" % (self.host, self.credentials.domain, self.credentials.username))
             else:
                 self.logger.error("Failed to authenticate to '%s' as '%s\\%s'!" % (self.host, self.credentials.domain, self.credentials.username))
+
+        if self.connected:
+            try:
+                self.sid_resolver = SIDResolver(self.smbClient)
+            except Exception as err:
+                self.logger.error(f"SIDResolver could not be initialized: {err}")
+            try:
+                rpctransport = transport.SMBTransport(self.smbClient.getRemoteName(), self.smbClient.getRemoteHost(), filename=r'\srvsvc',
+                                                    smb_connection=self.smbClient)
+                self.dce_srvsvc = rpctransport.get_dce_rpc()
+                self.dce_srvsvc.connect()
+                self.dce_srvsvc.bind(srvs.MSRPC_UUID_SRVS)
+            except Exception as err:
+                self.logger.error(f"Could not initialize connection to srvsvc: {err}")
 
         return self.connected
 
@@ -594,6 +617,85 @@ class SMBSession(object):
             contents[entry.get_longname()] = entry
 
         return contents
+    
+    def printSecurityDescriptorTable(self, security_descriptor: str, subject: str, prefix: str = " "*13, table_colors: bool = False):
+        self.logger.print(self.securityDescriptorTable(security_descriptor, subject, prefix, table_colors))
+
+    def securityDescriptorTable(self, security_descriptor: str, subject: str, prefix: str = " "*13, table_colors: bool = False) -> str:
+        if security_descriptor is not None and len(security_descriptor) == 0:
+            return ""
+        out_sd = ""
+        sd = ldaptypes.SR_SECURITY_DESCRIPTOR()
+        sd.fromString(security_descriptor)
+        try:
+            self.sid_resolver.resolve_sids(set(
+                ([sd['OwnerSid'].formatCanonical()] if len(sd['OwnerSid']) != 0 else []) 
+                + ([sd['GroupSid'].formatCanonical()] if len(sd['GroupSid']) != 0 else []) 
+                + [acl['Ace']['Sid'].formatCanonical() for acl in sd['Dacl']['Data'] if len(acl['Ace']['Sid']) != 0]))
+        except Exception as err:
+            self.logger.debug(f"Could not resolve SID for {subject}: {str(err)}")
+            traceback.print_exc()
+        max_resolved_sid_length = max([len(i) for i in self.sid_resolver.cache.values()] + [0])
+
+        if len(sd['OwnerSid']) != 0:
+            resolved_owner_sid = self.sid_resolver.get_sid(sd['OwnerSid'].formatCanonical())
+            resolved_group_sid = self.sid_resolver.get_sid(sd['GroupSid'].formatCanonical())
+
+            if self.config.no_colors:
+                out_sd += f"{prefix}Owner:   {resolved_owner_sid}\n"
+                out_sd += f"{prefix}Group:   {resolved_group_sid}"
+            else:
+                if table_colors:
+                    out_sd += f"{prefix}Owner:   [bold yellow]{resolved_owner_sid}[/bold yellow]\n"
+                    out_sd += f"{prefix}Group:   [bold yellow]{resolved_group_sid}[/bold yellow]"
+                else:
+                    out_sd += f"{prefix}Owner:   \x1b[1m{resolved_owner_sid}\x1b[0m\n"
+                    out_sd += f"{prefix}Group:   \x1b[1m{resolved_group_sid}\x1b[0m"
+        
+        for i, acl in enumerate(sd['Dacl']['Data']):
+            resolved_sid = acl['Ace']['Sid'].formatCanonical() if len(acl['Ace']['Sid']) != 0 else ""
+            if resolved_sid in ["S-1-5-32-544", "S-1-5-18"]:
+                continue
+            
+            flags = []
+            for flag in ["GENERIC_READ", "GENERIC_WRITE", "GENERIC_EXECUTE", "GENERIC_ALL", "MAXIMUM_ALLOWED", "ACCESS_SYSTEM_SECURITY", "WRITE_OWNER", "WRITE_DACL", "DELETE", "READ_CONTROL", "SYNCHRONIZE"]:
+                if len(acl['Ace']['Mask']) != 0 and acl['Ace']['Mask'].hasPriv(getattr(ldaptypes.ACCESS_MASK, flag)):
+                    flags.append(flag)
+            if len(flags) == 0:
+                continue
+            try:
+                resolved_sid = self.sid_resolver.get_sid(resolved_sid) if resolved_sid else ""
+            except Exception as err:
+                self.logger.debug(f"Could not resolve SID {resolved_sid} for {subject}: {str(err)}")
+
+            acl_string = prefix
+            inbetween = ""
+            if len(resolved_sid) < max_resolved_sid_length+1:
+                inbetween = " "*(max_resolved_sid_length+1-len(resolved_sid))
+            
+            if self.config.no_colors:
+                acl_string += f"{resolved_sid}" + ' | '.join(flags)
+            else:
+                acl_string += "Allowed: " if acl['TypeName'] == "ACCESS_ALLOWED_ACE" else "Denied:  "
+                if table_colors:
+                    acl_string += f"[bold yellow]{resolved_sid}[/bold yellow]"
+                else:
+                    acl_string += f"\x1b[1m{resolved_sid}\x1b[0m"
+                acl_string += inbetween
+                acl_string += ' | '.join(flags)
+            out_sd += "\n" + acl_string
+        return out_sd.lstrip("\n")
+
+    def listSharesDetailed(self) -> dict:
+        """
+        get a list of available shares at the connected target
+
+        :return: a list containing dict entries for each share
+        :raise SessionError: if error
+        """
+        # Get the shares through RPC
+        resp = srvs.hNetrShareEnum(self.dce_srvsvc, 502, serverName="\\\\" + self.smbClient.getRemoteHost())
+        return resp['InfoStruct']['ShareInfo']['Level502']['Buffer']
 
     def list_shares(self):
         """
@@ -611,21 +713,41 @@ class SMBSession(object):
 
         if self.connected:
             if self.smbClient is not None:
-                resp = self.smbClient.listShares()
+                try:
+                    resp = self.listSharesDetailed()
+                    for share in resp:
+                        # SHARE_INFO_502 structure (lmshare.h)
+                        # https://learn.microsoft.com/en-us/windows/win32/api/lmshare/ns-lmshare-share_info_502
+                        sharename = share["shi502_netname"][:-1]
+                        sharecomment = share["shi502_remark"][:-1]
+                        sharetype = share["shi502_type"]
+                        sharesd = share["shi502_security_descriptor"]
 
-                for share in resp:
-                    # SHARE_INFO_1 structure (lmshare.h)
-                    # https://learn.microsoft.com/en-us/windows/win32/api/lmshare/ns-lmshare-share_info_1
-                    sharename = share["shi1_netname"][:-1]
-                    sharecomment = share["shi1_remark"][:-1]
-                    sharetype = share["shi1_type"]
+                        self.available_shares[sharename.lower()] = {
+                            "name": sharename,
+                            "type": STYPE_MASK(sharetype),
+                            "rawtype": sharetype,
+                            "comment": sharecomment,
+                            "security_descriptor": sharesd
+                        }
+                except Exception as err:
+                    self.logger.debug(f"Could not get detailed share info: {str(err)}")
+                    resp = self.smbClient.listShares()
 
-                    self.available_shares[sharename.lower()] = {
-                        "name": sharename, 
-                        "type": STYPE_MASK(sharetype), 
-                        "rawtype": sharetype, 
-                        "comment": sharecomment
-                    }
+                    for share in resp:
+                        # SHARE_INFO_1 structure (lmshare.h)
+                        # https://learn.microsoft.com/en-us/windows/win32/api/lmshare/ns-lmshare-share_info_1
+                        sharename = share["shi1_netname"][:-1]
+                        sharecomment = share["shi1_remark"][:-1]
+                        sharetype = share["shi1_type"]
+
+                        self.available_shares[sharename.lower()] = {
+                            "name": sharename,
+                            "type": STYPE_MASK(sharetype),
+                            "rawtype": sharetype,
+                            "comment": sharecomment
+                        }
+
             else:
                 self.logger.error("Error: SMBSession.smbClient is None.")
 
