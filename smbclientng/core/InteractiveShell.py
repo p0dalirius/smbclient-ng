@@ -11,6 +11,8 @@ from impacket.smb3structs import *
 from impacket.smbconnection import SessionError as SMBConnectionSessionError
 from impacket.smb3 import SessionError as SMB3SessionError
 from importlib import import_module
+import impacket.smbconnection
+from impacket.smb3structs import *
 import ntpath
 import os
 import readline
@@ -215,6 +217,10 @@ class InteractiveShell(object):
             # List directory contents in a share
             elif command in ["ls", "dir"]:
                 self.command_ls(arguments, command)
+
+            # List directory contents in a share
+            elif command in ["acls"]:
+                self.command_acls(arguments, command)
 
             # Shows the content of a local file
             elif command == "lcat":
@@ -505,7 +511,7 @@ class InteractiveShell(object):
         # SMB share needed             : No
 
         # Parse wildcards
-        files_and_directories = resolve_remote_files(self.sessionsManager.current_session, arguments)
+        files_and_directories = resolve_local_files(arguments)
 
         for path_to_file in files_and_directories:
             # Read the file
@@ -543,7 +549,7 @@ class InteractiveShell(object):
         # SMB share needed             : No
 
         # Parse wildcards
-        files_and_directories = resolve_remote_files(self.sessionsManager.current_session, arguments)
+        files_and_directories = resolve_local_files(arguments)
 
         for path_to_file in files_and_directories:
             # Read the file 
@@ -769,7 +775,41 @@ class InteractiveShell(object):
 
             if len(arguments) > 1:
                 self.logger.print()
-            
+
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def command_acls(self, arguments: list[str], command: str):
+        # Command arguments required   : No
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
+
+        if len(arguments) == 0:
+            arguments = ['.']
+        
+        smbClient = self.sessionsManager.current_session.smbClient
+        sharename = self.sessionsManager.current_session.smb_share
+        foldername = self.sessionsManager.current_session.smb_cwd
+        tree_id = smbClient.connectTree(sharename)
+
+        for entry in smbClient.listPath(sharename, ntpath.join(foldername, '*')):
+            self.logger.print(windows_ls_entry(entry, self.config))
+            filename = entry.get_longname()
+
+            if filename in [".",".."]:
+                continue
+            filename = ntpath.join(foldername, filename)
+            try:
+                file_id = smbClient.getSMBServer().create(tree_id, filename, READ_CONTROL | FILE_READ_ATTRIBUTES, 0, FILE_DIRECTORY_FILE if entry.is_directory() else FILE_NON_DIRECTORY_FILE, FILE_OPEN, 0)
+            except Exception as err:
+                self.logger.debug(f"Could not get attributes for file {filename}: {str(err)}")
+                continue
+
+            file_info = smbClient.getSMBServer().queryInfo(tree_id, file_id, infoType=SMB2_0_INFO_SECURITY, fileInfoClass=SMB2_SEC_INFO_00, additionalInformation=OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION, flags=0)
+
+            self.sessionsManager.current_session.printSecurityDescriptorTable(file_info, filename)
+
+            self.logger.print()
+
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
@@ -1009,17 +1049,18 @@ class InteractiveShell(object):
                 do_check_rights = True
                 test_write = False
 
-        self.logger.print("WARNING: Checking WRITE access to shares in offensive tools implies creating a folder and trying to delete it.")
-        self.logger.print("| If you have CREATE_CHILD rights but no DELETE_CHILD rights, the folder cannot be deleted and will remain on the target.")
-        self.logger.print("| Do you want to continue? [N/y] ", end='')
-        user_response = input()
-        self.logger.write_to_logfile(user_response)
-        while user_response.lower().strip() not in ['y', 'n']:
-            self.logger.print("| Invalid response, Do you want to continue? [N/y] ", end='')
+        if do_check_rights:
+            self.logger.print("WARNING: Checking WRITE access to shares in offensive tools implies creating a folder and trying to delete it.")
+            self.logger.print("| If you have CREATE_CHILD rights but no DELETE_CHILD rights, the folder cannot be deleted and will remain on the target.")
+            self.logger.print("| Do you want to continue? [N/y] ", end='')
             user_response = input()
             self.logger.write_to_logfile(user_response)
-        if user_response.lower().strip() == 'y':
-            test_write = True
+            while user_response.lower().strip() not in ['y', 'n']:
+                self.logger.print("| Invalid response, Do you want to continue? [N/y] ", end='')
+                user_response = input()
+                self.logger.write_to_logfile(user_response)
+            if user_response.lower().strip() == 'y':
+                test_write = True
 
         shares = self.sessionsManager.current_session.list_shares()
         if len(shares.keys()) != 0:
@@ -1030,6 +1071,10 @@ class InteractiveShell(object):
             table.add_column("Description", justify="left")
             if do_check_rights:
                 table.add_column("Rights")
+
+            security_descriptor = list(shares.values())[0].get("security_descriptor")
+            if security_descriptor is not None:
+                table.add_column("Security Descriptor")
 
             for sharename in sorted(shares.keys()):
                 types = ', '.join([s.replace("STYPE_","") for s in shares[sharename]["type"]])
@@ -1047,22 +1092,34 @@ class InteractiveShell(object):
                     str_comment = "[bold bright_yellow]" + shares[sharename]["comment"] + "[/bold bright_yellow]"
 
                 if do_check_rights:
-                    access_rights = self.sessionsManager.current_session.test_rights(sharename=shares[sharename]["name"], test_write=test_write)
-                    str_access_rights = "[bold yellow]NO ACCESS[/bold yellow]"
-                    if access_rights["readable"] and access_rights["writable"]:
-                        str_access_rights = "[bold green]READ[/bold green], [bold red]WRITE[/bold red]"
-                    elif access_rights["readable"]:
-                        str_access_rights = "[bold green]READ[/bold green]"
-                    elif access_rights["writable"]:
-                        # Without READ?? This should not happen IMHO
-                        str_access_rights = "[bold red]WRITE[/bold red]"
-                    else:
+                    try:
+                        access_rights = self.sessionsManager.current_session.test_rights(sharename=shares[sharename]["name"], test_write=test_write)
                         str_access_rights = "[bold yellow]NO ACCESS[/bold yellow]"
+                        if access_rights["readable"] and access_rights["writable"]:
+                            str_access_rights = "[bold green]READ[/bold green], [bold red]WRITE[/bold red]"
+                        elif access_rights["readable"]:
+                            str_access_rights = "[bold green]READ[/bold green]"
+                        elif access_rights["writable"]:
+                            # Without READ?? This should not happen IMHO
+                            str_access_rights = "[bold red]WRITE[/bold red]"
+                        else:
+                            str_access_rights = "[bold yellow]NO ACCESS[/bold yellow]"
+                    except:
+                        str_access_rights = ""
+
+                if security_descriptor is not None:
+                    sd_table = self.sessionsManager.current_session.securityDescriptorTable(b''.join(shares[sharename].get("security_descriptor")), "sharename", prefix="", table_colors=True)
 
                 if do_check_rights:
-                    table.add_row(str_sharename, str_hidden, str_types, str_comment, str_access_rights)
+                    if security_descriptor is not None:
+                        table.add_row(str_sharename, str_hidden, str_types, str_comment, str_access_rights, sd_table)
+                    else:
+                        table.add_row(str_sharename, str_hidden, str_types, str_comment, str_access_rights)
                 else:
-                    table.add_row(str_sharename, str_hidden, str_types, str_comment)
+                    if security_descriptor is not None:
+                        table.add_row(str_sharename, str_hidden, str_types, str_comment, sd_table)
+                    else:
+                        table.add_row(str_sharename, str_hidden, str_types, str_comment)
 
             Console().print(table)
         else:
