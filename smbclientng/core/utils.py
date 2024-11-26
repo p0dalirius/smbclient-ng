@@ -457,7 +457,7 @@ def resolve_remote_files(smbSession: SMBSession, arguments: list[str]) -> list[s
     return resolved_pathFromRoot_files
 
 
-def is_port_open(target: str, port: int, timeout: float) -> Tuple[bool, Optional[str]]:
+def is_port_open(target: str, port: int, timeout: float) -> tuple[bool, Optional[str]]:
     """
     Check if a specific port on a target host is open.
 
