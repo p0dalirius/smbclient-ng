@@ -4,10 +4,15 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 24 June 2024
 
-
+from __future__ import annotations
 import os
 import re
 from enum import Enum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Optional
+    from smbclientng.core.Config import Config
 
 
 class LogLevel(Enum):
@@ -35,8 +40,10 @@ class Logger(object):
         debug(message): Logs a message at the DEBUG level if debugging is enabled.
         error(message): Logs a message at the ERROR level.
     """
+    config: Config
+    logfile: Optional[str]
 
-    def __init__(self, config, logfile=None):
+    def __init__(self, config: Config, logfile: Optional[str] = None):
         super(Logger, self).__init__()
         self.config = config
         self.logfile = logfile
@@ -50,7 +57,7 @@ class Logger(object):
             open(self.logfile, "w").close()
             self.debug("Writting logs to logfile: '%s'" % self.logfile)
 
-    def print(self, message="", end='\n'):
+    def print(self, message: str = "", end: str = '\n'):
         """
         Prints a message to stdout and logs it to a file if logging is enabled.
 
@@ -67,7 +74,7 @@ class Logger(object):
             print(message, end=end)
         self.write_to_logfile(nocolor_message, end=end)
 
-    def info(self, message):
+    def info(self, message: str):
         """
         Logs a message at the INFO level.
 
@@ -84,7 +91,7 @@ class Logger(object):
             print("[\x1b[1;92minfo\x1b[0m] %s" % message)
         self.write_to_logfile("[info] %s" % nocolor_message)
 
-    def debug(self, message):
+    def debug(self, message: str):
         """
         Logs a message at the DEBUG level if debugging is enabled.
 
@@ -102,7 +109,7 @@ class Logger(object):
                 print("[debug] %s" % message)
             self.write_to_logfile("[debug] %s" % nocolor_message)
 
-    def error(self, message):
+    def error(self, message: str):
         """
         Logs an error message to the console and the log file.
 
@@ -119,7 +126,7 @@ class Logger(object):
             print("[\x1b[1;91merror\x1b[0m] %s" % message)
         self.write_to_logfile("[error] %s" % nocolor_message)
 
-    def write_to_logfile(self, message, end='\n'):
+    def write_to_logfile(self, message: str, end: str = '\n'):
         """
         Writes the provided message to the log file specified during Logger instance initialization.
 

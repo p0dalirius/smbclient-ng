@@ -4,11 +4,14 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 22 June 2024
 
-
+from __future__ import annotations
 from smbclientng.core.utils import parse_lm_nt_hashes
 import re
 import binascii
- 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Optional
 
 class Credentials(object):
     """
@@ -16,37 +19,35 @@ class Credentials(object):
     """
 
     # Identity
-    domain = None
-    username = None
-    password = None
+    domain: Optional[str]
+    username: Optional[str]
+    password: Optional[str]
     # Hashes
-    nt_hex = ""
-    nt_raw = ""
-    lm_hex = ""
-    lm_raw = ""
+    nt_hex: str
+    nt_raw: bytes
+    lm_hex: str
+    lm_raw: bytes
     # Kerberos
-    use_kerberos = False
-    aesKey = None
-    kdcHost = None
+    use_kerberos: bool = False
+    aesKey: Optional[str]
+    kdcHost: Optional[str]
 
-    def __init__(self, domain, username, password, hashes=None, use_kerberos=False, aesKey=None, kdcHost=None):
+    def __init__(self, domain: str, username: str, password: str, hashes: Optional[str] = None, use_kerberos: bool = False, aesKey: Optional[str] = None, kdcHost: Optional[str] = None):
         super(Credentials, self).__init__()
         # Identity
         self.domain = domain
         self.username = username
         self.password = password
+
         # Hashes
-        self.nt_hex = ""
-        self.nt_raw = ""
-        self.lm_hex = ""
-        self.lm_raw = ""
         self.set_hashes(hashes=hashes)
+        
         # Kerberos
         self.use_kerberos = use_kerberos
         self.kdcHost = kdcHost
         self.aesKey = aesKey
 
-    def set_hashes(self, hashes):
+    def set_hashes(self, hashes: Optional[str]):
         """
         Sets the LM and NT hashes for the credentials.
 
@@ -60,9 +61,9 @@ class Credentials(object):
         """
 
         self.nt_hex = ""
-        self.nt_raw = ""
+        self.nt_raw = b""
         self.lm_hex = ""
-        self.lm_raw = ""
+        self.lm_raw = b""
 
         lmhash, nthash = None, None
         if hashes is not None:

@@ -4,10 +4,12 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 23 may 2024
 
-
+from __future__ import annotations
 import charset_normalizer
 import datetime
-import impacket
+from impacket.smb3structs import *
+from impacket.smbconnection import SessionError as SMBConnectionSessionError
+from impacket.smb3 import SessionError as SMB3SessionError
 from importlib import import_module
 import impacket.smbconnection
 from impacket.smb3structs import *
@@ -23,7 +25,12 @@ from rich.table import Table
 from rich.syntax import Syntax
 from smbclientng.core.CommandCompleter import CommandCompleter
 from smbclientng.core.utils import b_filesize, unix_permissions, windows_ls_entry, local_tree, resolve_local_files, resolve_remote_files, smb_entry_iterator
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from smbclientng.core.SessionsManager import SessionsManager
+    from smbclientng.core.Config import Config
+    from smbclientng.core.Logger import Logger
 
 ## Decorators
 
@@ -40,7 +47,11 @@ def command_arguments_required(func):
 def active_smb_connection_needed(func):
     def wrapper(*args, **kwargs):
         self, arguments,command  = args[0], args[1], args[2]
-        #
+        
+        if self.sessionsManager.current_session is None:
+            self.logger.error("SMB Session is disconnected.")
+            return None
+
         self.sessionsManager.current_session.ping_smb_session()
         if self.sessionsManager.current_session.connected:
             return func(*args, **kwargs)
@@ -82,8 +93,12 @@ class InteractiveShell(object):
 
     running = True
     modules = {}
+    sessionsManager: SessionsManager
+    config: Config
+    logger: Logger
+    commandCompleterObject: CommandCompleter
     
-    def __init__(self, sessionsManager, config, logger):
+    def __init__(self, sessionsManager: SessionsManager, config: Config, logger: Logger):
         # Objects
         self.sessionsManager = sessionsManager
         self.config = config
@@ -140,7 +155,7 @@ class InteractiveShell(object):
                         traceback.print_exc()
                     self.logger.error(str(err))
 
-    def process_line(self, commandLine):
+    def process_line(self, commandLine: str):
         # Split and parse the commandLine
         tokens = shlex.split(commandLine)
         if len(tokens) == 0:
@@ -309,17 +324,18 @@ class InteractiveShell(object):
 
     # Commands ================================================================
 
-    def command_debug(self, arguments, command):
+    def command_debug(self, arguments: list[str], command: str):
         try:
             self.logger.print("[debug] command    = '%s'" % command)
             self.logger.print("[debug] arguments  = %s" % arguments)
         except Exception as e:
             traceback.print_exc()
 
+
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
-    def command_bat(self, arguments, command):
+    def command_bat(self, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
@@ -349,26 +365,26 @@ class InteractiveShell(object):
                             Console().print(syntax)
                         else:
                             self.logger.error("[!] Could not detect charset of '%s'." % path_to_file)
-                except impacket.smbconnection.SessionError as e:
+                except SMBConnectionSessionError as e:
                     self.logger.error("[!] SMB Error: %s" % e)
 
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
-    def command_cd(self, arguments, command):
+    def command_cd(self, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
         try:
             self.sessionsManager.current_session.set_cwd(path=arguments[0])
-        except impacket.smbconnection.SessionError as e:
+        except SMBConnectionSessionError as e:
             self.logger.error("[!] SMB Error: %s" % e)
 
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
-    def command_cat(self, arguments, command):
+    def command_cat(self, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
@@ -390,10 +406,10 @@ class InteractiveShell(object):
                             self.logger.print(filecontent)
                         else:
                             self.logger.error("[!] Could not detect charset of '%s'." % path_to_file)
-                except impacket.smbconnection.SessionError as e:
+                except SMBConnectionSessionError as e:
                     self.logger.error("[!] SMB Error: %s" % e)
 
-    def command_close(self, arguments, command):
+    def command_close(self, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : No
         # SMB share needed             : No
@@ -402,7 +418,7 @@ class InteractiveShell(object):
         if self.sessionsManager.current_session.connected:
             self.sessionsManager.current_session.close_smb_session()
 
-    def command_find(self, arguments, command):
+    def command_find(self, arguments: list[str], command: str):
         module_name = "find"
 
         if module_name in self.modules.keys():
@@ -415,7 +431,7 @@ class InteractiveShell(object):
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
-    def command_get(self, arguments, command):
+    def command_get(self, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
@@ -447,12 +463,12 @@ class InteractiveShell(object):
                     keepRemotePath=keep_remote_path,
                     is_recursive=is_recursive
                 )
-            except impacket.smbconnection.SessionError as e:
+            except SMBConnectionSessionError as e:
                 if self.config.debug:
                     traceback.print_exc()
                 self.logger.error("[!] SMB Error: %s" % e)
 
-    def command_help(self, arguments, command):
+    def command_help(self, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : No
         # SMB share needed             : No
@@ -463,7 +479,7 @@ class InteractiveShell(object):
             self.commandCompleterObject.print_help(command=None)
 
     @active_smb_connection_needed
-    def command_info(self, arguments, command):
+    def command_info(self, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : Yes
         # SMB share needed             : No
@@ -485,11 +501,11 @@ class InteractiveShell(object):
                 share=print_share_info,
                 server=print_server_info
             )
-        except impacket.smbconnection.SessionError as e:
+        except SMBConnectionSessionError as e:
             self.logger.error("SMB Error: %s" % e)
 
     @command_arguments_required
-    def command_lbat(self, arguments, command):
+    def command_lbat(self, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : No
         # SMB share needed             : No
@@ -523,11 +539,11 @@ class InteractiveShell(object):
                             self.logger.error("[!] Could not detect charset of '%s'." % path_to_file)
                 else:
                     self.logger.error("[!] Local file '%s' does not exist." % path_to_file)
-            except impacket.smbconnection.SessionError as e:
+            except SMBConnectionSessionError as e:
                 self.logger.error("[!] SMB Error: %s" % e)
 
     @command_arguments_required
-    def command_lcat(self, arguments, command):
+    def command_lcat(self, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : No
         # SMB share needed             : No
@@ -553,11 +569,11 @@ class InteractiveShell(object):
                             self.logger.error("[!] Could not detect charset of '%s'." % path_to_file)
                 else:
                     self.logger.error("[!] Local file '%s' does not exist." % path_to_file)
-            except impacket.smbconnection.SessionError as e:
+            except SMBConnectionSessionError as e:
                 self.logger.error("[!] SMB Error: %s" % e)
 
     @command_arguments_required
-    def command_lcd(self, arguments, command):
+    def command_lcd(self, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : No
         # SMB share needed             : No
@@ -573,7 +589,7 @@ class InteractiveShell(object):
             self.logger.error("Directory '%s' does not exists." % path)
 
     @command_arguments_required
-    def command_lcp(self, arguments, command):
+    def command_lcp(self, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : No
         # SMB share needed             : No
@@ -591,7 +607,7 @@ class InteractiveShell(object):
         else:
             self.commandCompleterObject.print_help(command=command)
 
-    def command_lls(self, arguments, command):
+    def command_lls(self, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : No
         # SMB share needed             : No
@@ -637,7 +653,7 @@ class InteractiveShell(object):
                 self.logger.print()
 
     @command_arguments_required
-    def command_lmkdir(self, arguments, command):
+    def command_lmkdir(self,arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : No
         # SMB share needed             : No
@@ -654,7 +670,7 @@ class InteractiveShell(object):
                 if not os.path.exists(tmp_path):
                     os.mkdir(path=tmp_path)
 
-    def command_lpwd(self, arguments, command):
+    def command_lpwd(self, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : No
         # SMB share needed             : No
@@ -662,7 +678,7 @@ class InteractiveShell(object):
         self.logger.print(os.getcwd())
 
     @command_arguments_required
-    def command_lrename(self, arguments, command):
+    def command_lrename(self, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : No
         # SMB share needed             : No
@@ -673,7 +689,7 @@ class InteractiveShell(object):
             self.commandCompleterObject.print_help(command=command)
 
     @command_arguments_required
-    def command_lrm(self, arguments, command):
+    def command_lrm(self, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : No
         # SMB share needed             : No
@@ -692,7 +708,7 @@ class InteractiveShell(object):
             self.logger.error("Path '%s' does not exist." % path)
 
     @command_arguments_required
-    def command_lrmdir(self, arguments, command):
+    def command_lrmdir(self, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : No
         # SMB share needed             : No
@@ -713,7 +729,7 @@ class InteractiveShell(object):
         else:
             self.logger.error("Path '%s' does not exist." % path)
 
-    def command_ltree(self, arguments, command):
+    def command_ltree(self, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : No
         # SMB share needed             : No
@@ -730,7 +746,7 @@ class InteractiveShell(object):
 
     @active_smb_connection_needed
     @smb_share_is_set
-    def command_ls(self, arguments, command):
+    def command_ls(self, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
@@ -797,7 +813,7 @@ class InteractiveShell(object):
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
-    def command_mkdir(self, arguments, command):
+    def command_mkdir(self, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
@@ -805,7 +821,7 @@ class InteractiveShell(object):
         self.sessionsManager.current_session.mkdir(path=arguments[0])
 
     @command_arguments_required
-    def command_module(self, arguments, command):
+    def command_module(self, arguments: list[str], command: str):
         module_name = arguments[0]
 
         if module_name in self.modules.keys():
@@ -818,7 +834,7 @@ class InteractiveShell(object):
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
-    def command_mount(self, arguments, command):
+    def command_mount(self, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
@@ -834,7 +850,7 @@ class InteractiveShell(object):
 
             try:
                 self.sessionsManager.current_session.mount(local_mount_point, remote_path)
-            except (impacket.smbconnection.SessionError, impacket.smb3.SessionError) as e:
+            except (SMBConnectionSessionError, SMB3SessionError) as e:
                 self.sessionsManager.current_session.umount(local_mount_point)
         else:
             self.commandCompleterObject.print_help(command=command)
@@ -842,7 +858,7 @@ class InteractiveShell(object):
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
-    def command_put(self, arguments, command):
+    def command_put(self, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
@@ -869,10 +885,10 @@ class InteractiveShell(object):
                 else:
                     # Put this single file
                     self.sessionsManager.current_session.put_file(localpath=localpath)
-            except impacket.smbconnection.SessionError as e:
+            except SMBConnectionSessionError as e:
                 self.logger.error("[!] SMB Error: %s" % e)
 
-    def command_reconnect(self, arguments, command):
+    def command_reconnect(self, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : No
         # SMB share needed             : No
@@ -884,7 +900,7 @@ class InteractiveShell(object):
         else:
             self.sessionsManager.current_session.init_smb_session()
 
-    def command_reset(self, arguments, command):
+    def command_reset(self, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : No
         # SMB share needed             : No
@@ -896,7 +912,7 @@ class InteractiveShell(object):
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
-    def command_rm(self, arguments, command):
+    def command_rm(self, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
@@ -928,7 +944,7 @@ class InteractiveShell(object):
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
-    def command_rmdir(self, arguments, command):
+    def command_rmdir(self, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
@@ -947,7 +963,7 @@ class InteractiveShell(object):
 
     @active_smb_connection_needed
     @smb_share_is_set
-    def command_sizeof(self, arguments, command):
+    def command_sizeof(self, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
@@ -992,6 +1008,7 @@ class InteractiveShell(object):
                 else:
                     path_display = f"\x1b[1;96m{path}\x1b[0m"
 
+                size_str = ""
                 for entry, fullpath, depth, is_last_entry in generator:
                     if not entry.is_directory():
                         path_size += entry.get_filesize()
@@ -1006,7 +1023,7 @@ class InteractiveShell(object):
                 print(f"{size_str}\t{path_display}")
                 total_size += path_size
 
-            except impacket.smbconnection.SessionError as e:
+            except SMBConnectionSessionError as e:
                 self.logger.error(f"Failed to access '{path}': {e}")
             except (BrokenPipeError, KeyboardInterrupt):
                 self.logger.error("Interrupted.")
@@ -1020,7 +1037,7 @@ class InteractiveShell(object):
             self.logger.print(f"Total size: {b_filesize(total_size)}")
 
     @active_smb_connection_needed
-    def command_shares(self, arguments, command):
+    def command_shares(self, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : Yes
         # SMB share needed             : No
@@ -1110,7 +1127,7 @@ class InteractiveShell(object):
 
     @active_smb_connection_needed
     @smb_share_is_set
-    def command_tree(self, arguments, command):
+    def command_tree(self, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
@@ -1123,7 +1140,7 @@ class InteractiveShell(object):
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
-    def command_umount(self, arguments, command):
+    def command_umount(self, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
@@ -1136,7 +1153,7 @@ class InteractiveShell(object):
         
     @command_arguments_required
     @active_smb_connection_needed
-    def command_use(self, arguments, command):
+    def command_use(self, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : No

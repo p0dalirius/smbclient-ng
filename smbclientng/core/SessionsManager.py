@@ -4,12 +4,18 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 20 may 2024
 
+from __future__ import annotations
 import datetime
-from smbclientng.core.Credentials import Credentials
-from smbclientng.core.ModuleArgumentParser import ModuleArgumentParser
-from smbclientng.core.SMBSession import SMBSession
 import time
+from smbclientng.core.Credentials import Credentials
+from smbclientng.core.ModuleArgumentParser import ModuleArgumentParser, ModuleArgumentParserError
+from smbclientng.core.SMBSession import SMBSession
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from typing import Optional
+    from smbclientng.core.Logger import Logger
+    from smbclientng.core.Config import Config
 
 class SessionsManager(object):
     """
@@ -24,21 +30,20 @@ class SessionsManager(object):
         sessions (dict): A dictionary of all active sessions, keyed by their session ID.
     """
 
-    next_session_id = 1
-    current_session = None
-    current_session_id = None
     sessions = {}
+    next_session_id: int = 1
+    current_session: Optional[SMBSession]
+    current_session_id: Optional[int]
 
-    def __init__(self, config, logger):
-        self.sessions = {}
-        self.next_session_id = 1
-        self.current_session = None
-        self.current_session_id = None
+    config: Config
+    logger: Logger
+
+    def __init__(self, config: Config, logger: Logger):
 
         self.config = config
         self.logger = logger
 
-    def create_new_session(self, credentials, host, timeout, port=445, advertisedName=None):
+    def create_new_session(self, credentials: Credentials, host: str, timeout: int, port: int = 445, advertisedName: Optional[str] = None):
         """
         Creates a new session with the given session information.
 
@@ -68,7 +73,7 @@ class SessionsManager(object):
         self.switch_session(self.next_session_id)
         self.next_session_id += 1
 
-    def switch_session(self, session_id):
+    def switch_session(self, session_id: int) -> bool:
         """
         Switches the current session to the session with the specified ID.
 
@@ -86,7 +91,7 @@ class SessionsManager(object):
         else:
             return False
 
-    def delete_session(self, session_id):
+    def delete_session(self, session_id: int) -> bool:
         """
         Deletes a session with the given session ID.
 
@@ -106,7 +111,7 @@ class SessionsManager(object):
             return True
         return False
 
-    def process_command_line(self, arguments):
+    def process_command_line(self, arguments: list[str]):
         """
         Processes command line arguments to manage SMB sessions.
 
@@ -132,7 +137,7 @@ class SessionsManager(object):
         group_target = mode_create.add_argument_group("Target")
         group_target.add_argument("--host", action="store", metavar="HOST", required=True, type=str, help="IP address or hostname of the SMB Server to connect to.")  
         group_target.add_argument("--port", action="store", metavar="PORT", type=int, default=445, help="Port of the SMB Server to connect to. (default: 445)")
-        group_target.add_argument( "--timeout", dest="timeout", metavar="TIMEOUT", required=False, type=float, default=3, help="Timeout in seconds for SMB connections (default: 3)")
+        group_target.add_argument( "--timeout", dest="timeout", metavar="TIMEOUT", required=False, type=int, default=3, help="Timeout in seconds for SMB connections (default: 3)")
         authconn = mode_create.add_argument_group("Authentication & connection")
         authconn.add_argument("--kdcHost", dest="kdcHost", action="store", metavar="FQDN KDC", help="FQDN of KDC for Kerberos.")
         authconn.add_argument("-d", "--domain", dest="auth_domain", metavar="DOMAIN", action="store", default='.', help="(FQDN) domain to authenticate to.")
@@ -152,11 +157,11 @@ class SessionsManager(object):
         group_sessions.add_argument("-a", "--all", default=False, action="store_true", help="Delete all sessions.")
 
         # Execute
-        mode_execute = ModuleArgumentParser(add_help=False, description="Send a smbclient-ng command line in one or more sessions.")
-        group_sessions = mode_execute.add_mutually_exclusive_group(required=True)
-        group_sessions.add_argument("-i", "--session-id", type=int, default=[], action="append", help="One or more ID of sessions to target.")
-        group_sessions.add_argument("-a", "--all", default=False, action="store_true", help="Execute command in all sessions.")
-        mode_execute.add_argument("-c", "--command", type=str, required=True, help="Command to execute in the target sessions.")
+        #mode_execute = ModuleArgumentParser(add_help=False, description="Send a smbclient-ng command line in one or more sessions.")
+        #group_sessions = mode_execute.add_mutually_exclusive_group(required=True)
+        #group_sessions.add_argument("-i", "--session-id", type=int, default=[], action="append", help="One or more ID of sessions to target.")
+        #group_sessions.add_argument("-a", "--all", default=False, action="store_true", help="Execute command in all sessions.")
+        #mode_execute.add_argument("-c", "--command", type=str, required=True, help="Command to execute in the target sessions.")
 
         # List
         mode_list = ModuleArgumentParser(add_help=False, description="List the registered sessions.")
@@ -166,12 +171,12 @@ class SessionsManager(object):
         subparsers.add_parser("interact", parents=[mode_interact], help=mode_interact.description)
         subparsers.add_parser("create", parents=[mode_create], help=mode_create.description)
         subparsers.add_parser("delete", parents=[mode_delete], help=mode_delete.description)
-        subparsers.add_parser("execute", parents=[mode_execute], help=mode_execute.description)
+        #subparsers.add_parser("execute", parents=[mode_execute], help=mode_execute.description)
         subparsers.add_parser("list", parents=[mode_list], help=mode_list.description)
 
         try:
             options = parser.parse_args(arguments)
-        except SystemExit as e:
+        except (SystemExit, ModuleArgumentParserError) as e:
             return
         
         # Process actions
@@ -218,19 +223,19 @@ class SessionsManager(object):
                     print("[+] Closing and deleting session #%d" % session_id)
                     self.delete_session(session_id=session_id)
 
-        # 
-        elif options.action == "execute":
-            if options.command is not None:
-                if len(options.session_id) != 0:
-                    for session_id in session_id:
-                        if session_id in self.sessions.keys():
-                            self.logger.info("Executing '%s to session #%d" % (options.command, options.session_id))
-                        else:
-                            self.logger.error("No session with id #%d" % options.session_id)
-                elif options.all == True:
-                    all_session_ids = list(self.sessions.keys())
-                    for session_id in all_session_ids:
-                        pass
+        #  FIXME: Not implemented
+        #elif options.action == "execute":
+        #    if options.command is not None:
+        #        if len(options.session_id) != 0:
+        #            for session_id in session_id:
+        #                if session_id in self.sessions.keys():
+        #                    self.logger.info("Executing '%s to session #%d" % (options.command, options.session_id))
+        #                else:
+        #                    self.logger.error("No session with id #%d" % options.session_id)
+        #        elif options.all == True:
+        #            all_session_ids = list(self.sessions.keys())
+        #            for session_id in all_session_ids:
+        #                pass
         
         # 
         elif options.action == "list":
