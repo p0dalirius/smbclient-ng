@@ -4,11 +4,15 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 23 may 2024
 
-
+from __future__ import annotations
 import os
 import ntpath
 from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn, TimeRemainingColumn, TransferSpeedColumn
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from smbclientng.core.Logger import Logger
+    from typing import Optional
 
 class LocalFileIO(object):
     """
@@ -27,7 +31,7 @@ class LocalFileIO(object):
         read(self, size): Reads data from the file up to the specified size and updates the progress bar if expected size is provided.
     """
 
-    def __init__(self, mode, path=None, expected_size=None, keepRemotePath=False, logger=None):
+    def __init__(self, mode: str, path: str, logger: Logger, expected_size: Optional[int] = None, keepRemotePath: bool = False):
         super(LocalFileIO, self).__init__()
         self.logger = logger
         self.mode = mode
@@ -94,7 +98,7 @@ class LocalFileIO(object):
                 visible=True
             )
 
-    def write(self, data):
+    def write(self, data: bytes):
         """
         Writes data to the file.
 
@@ -114,7 +118,7 @@ class LocalFileIO(object):
         else:
             return 0
     
-    def read(self, size):
+    def read(self, size: int):
         """
         Reads a specified amount of data from the file.
 
@@ -135,7 +139,7 @@ class LocalFileIO(object):
         else:
             return b""
 
-    def close(self, remove=False):
+    def close(self, remove: bool = False):
         """
         Closes the file descriptor and optionally removes the file.
 
@@ -152,7 +156,7 @@ class LocalFileIO(object):
         if remove:
             try:
                 os.remove(path=self.path)
-            except (PermissionError, FileNotFoundError) as err:
+            except (PermissionError, FileNotFoundError):
                 pass
 
         if self.expected_size is not None:
@@ -160,7 +164,7 @@ class LocalFileIO(object):
         
         del self
 
-    def set_error(self, message):
+    def set_error(self, message: str):
         """
         Sets an error message in the progress bar's description and modifies the progress bar to show only essential columns.
 
@@ -173,10 +177,10 @@ class LocalFileIO(object):
         """
 
         self.__progress.tasks[0].description = message
-        self.__progress.columns = [
+        self.__progress.columns = (
             TextColumn("[bold blue]{task.description}", justify="right"),
             BarColumn(bar_width=None),
             "•",
             DownloadColumn(),
-        ]
+        )
         self.__progress.update(self.__task, advance=0)

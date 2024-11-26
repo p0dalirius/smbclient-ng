@@ -4,18 +4,24 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 23 may 2024
 
-
+from __future__ import annotations
 import datetime
 import fnmatch
-import impacket
 import ntpath
 import os
 import re
 import socket
 import stat
+from impacket.smbconnection import SessionError
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from typing import Optional
+    from impacket.smb import SharedFile
+    from smbclientng.core.Config import Config
+    from smbclientng.core.SMBSession import SMBSession
 
-def parse_lm_nt_hashes(lm_nt_hashes_string):
+def parse_lm_nt_hashes(lm_nt_hashes_string: str) -> tuple[str, str]:
     """
     Parse the input string containing LM and NT hash values and return them separately.
 
@@ -51,7 +57,7 @@ def parse_lm_nt_hashes(lm_nt_hashes_string):
     return lm_hash_value, nt_hash_value
 
 
-def b_filesize(l):
+def b_filesize(l: int) -> str:
     """
     Convert a file size from bytes to a more readable format using the largest appropriate unit.
 
@@ -73,7 +79,7 @@ def b_filesize(l):
     return "%4.2f %s" % (round(l/(1024**(k)),2), units[k])
 
 
-def unix_permissions(entryname):
+def unix_permissions(entryname: str) -> str:
     """
     Generate a string representing the Unix-style permissions for a given file or directory.
 
@@ -110,7 +116,7 @@ def unix_permissions(entryname):
     return ''.join(permissions)
 
 
-def STYPE_MASK(stype_value):
+def STYPE_MASK(stype_value: int) -> list[str]:
     """
     Extracts the share type flags from a given share type value.
 
@@ -146,7 +152,7 @@ def STYPE_MASK(stype_value):
         # A temporary share.
         "STYPE_TEMPORARY": 0x40000000
     }
-    flags = []
+    flags : list[str] = []
     if (stype_value & 0b11) == known_flags["STYPE_DISKTREE"]:
         flags.append("STYPE_DISKTREE")
     elif (stype_value & 0b11) == known_flags["STYPE_PRINTQ"]:
@@ -162,7 +168,7 @@ def STYPE_MASK(stype_value):
     return flags
 
 
-def windows_ls_entry(entry, config, pathToPrint=None):
+def windows_ls_entry(entry: SharedFile, config: Config, pathToPrint: Optional[str] =None):
     """
     This function generates a metadata string based on the attributes of the provided entry object.
     
@@ -207,7 +213,7 @@ def windows_ls_entry(entry, config, pathToPrint=None):
     return output_str
 
 
-def local_tree(path, config):
+def local_tree(path: str, config: Config):
     """
     This function recursively lists the contents of a directory in a tree-like format.
 
@@ -329,7 +335,7 @@ def local_tree(path, config):
         print("[!] Interrupted.")
 
 
-def resolve_local_files(arguments):
+def resolve_local_files(arguments: list[str]) -> list[str]:
     """
     Resolves local file paths based on the provided arguments.
 
@@ -344,7 +350,7 @@ def resolve_local_files(arguments):
         list: A list of resolved file paths that match the provided arguments.
     """
 
-    resolved_files = []
+    resolved_files: list[str] = []
     for arg in arguments:
         if '*' in arg:
             try:
@@ -361,7 +367,7 @@ def resolve_local_files(arguments):
     return resolved_files
 
 
-def resolve_remote_files(smbSession, arguments):
+def resolve_remote_files(smbSession: SMBSession, arguments: list[str]) -> list[str]:
     """
     Resolves remote file paths based on the provided arguments using an SMB session.
 
@@ -451,7 +457,7 @@ def resolve_remote_files(smbSession, arguments):
     return resolved_pathFromRoot_files
 
 
-def is_port_open(target, port, timeout):
+def is_port_open(target: str, port: int, timeout: float) -> Tuple[bool, Optional[str]]:
     """
     Check if a specific port on a target host is open.
 
@@ -477,7 +483,7 @@ def is_port_open(target, port, timeout):
         return False, str(e)
 
     
-def smb_entry_iterator(smb_client, smb_share, start_paths, exclusion_rules=[], max_depth=None, min_depth=0, current_depth=0, filters=None):
+def smb_entry_iterator(smb_client, smb_share: str, start_paths: list[str], exclusion_rules=[], max_depth: Optional[int] = None, min_depth: int = 0, current_depth: int = 0, filters: Optional[dict] = None):
     """
     Iterates over SMB entries by traversing directories in a depth-first manner.
 
@@ -500,7 +506,7 @@ def smb_entry_iterator(smb_client, smb_share, start_paths, exclusion_rules=[], m
             - depth (int): The current depth level of the entry within the traversal.
             - is_last_entry (bool): True if the entry is the last within its directory, False otherwise.
     """
-    def entry_matches_filters(entry, filters):
+    def entry_matches_filters(entry, filters) -> bool:
         """
         Checks if an entry matches the provided filters.
 
@@ -542,7 +548,7 @@ def smb_entry_iterator(smb_client, smb_share, start_paths, exclusion_rules=[], m
 
         return True
 
-    def size_matches_filter(size, size_filter):
+    def size_matches_filter(size: int, size_filter: str) -> bool:
         """
         Checks if a size matches the size filter.
 
@@ -653,7 +659,7 @@ def smb_entry_iterator(smb_client, smb_share, start_paths, exclusion_rules=[], m
                     # Yield the file
                     yield entry, fullpath, current_depth, is_last_entry
 
-        except impacket.smbconnection.SessionError as err:
+        except SessionError as err:
             message = f"{err}. Base path: {base_path}"
             print("[\x1b[1;91merror\x1b[0m] %s" % message)
             continue

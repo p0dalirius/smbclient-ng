@@ -4,9 +4,15 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 23 may 2024
 
-
+from __future__ import annotations
+import argparse
 import shlex
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from smbclientng.core.SMBSession import SMBSession
+    from smbclientng.core.Logger import Logger
+    from smbclientng.core.Config import Config
 
 class Module(object):
     """
@@ -15,12 +21,12 @@ class Module(object):
     This class provides common attributes and methods that are shared among different modules.
     """
 
-    name = ""
-    description = ""
-    smbSession = None
-    options = None
+    name: str = ""
+    description: str = ""
+    smbSession: SMBSession
+    options: argparse.Namespace
 
-    def __init__(self, smbSession, config, logger):
+    def __init__(self, smbSession: SMBSession, config: Config, logger: Logger):
         self.smbSession = smbSession
         self.config = config
         self.logger = logger
@@ -36,7 +42,7 @@ class Module(object):
         """
         raise NotImplementedError("Subclasses must implement this method")
 
-    def processArguments(self, parser, arguments):
+    def processArguments(self, parser: argparse.ArgumentParser, arguments) -> argparse.Namespace:
         if type(arguments) == list:
             arguments = ' '.join(arguments)
         
