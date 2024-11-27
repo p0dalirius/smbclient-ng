@@ -34,6 +34,14 @@ class CommandCompleter(object):
     """
 
     commands = {
+        "acls": {
+            "description": [
+                "List ACLs of files and folders in cwd.", 
+                "Syntax: 'acls'"
+            ], 
+            "subcommands": [],
+            "autocomplete": ["remote_directory"]
+        },
         "bat": {
             "description": [
                 "Pretty prints the contents of a remote file.", 
@@ -216,14 +224,6 @@ class CommandCompleter(object):
             "description": [
                 "List the contents of the current remote working directory.", 
                 "Syntax: 'ls'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["remote_directory"]
-        },
-        "acls": {
-            "description": [
-                "List ACLs of files and folders in cwd.", 
-                "Syntax: 'acls'"
             ], 
             "subcommands": [],
             "autocomplete": ["remote_directory"]
