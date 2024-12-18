@@ -53,17 +53,26 @@
 
 ## Install
 
-To install `smbclient-ng`, you can use pip. Run the following command in your terminal:
+To install `smbclient-ng`, you can use `pip`, `pip3` or `pipx`. You can run any of the following command in your terminal to install [smbclient-ng](https://github.com/p0dalirius/smbclient-ng) :
 
-```
-python3 -m pip install smbclientng
-pipx install smbclientng
-```
++ With `pip`:
+    ```
+    python3 -m pip install smbclientng
+    ```
+
++ With `pip3`:
+    ```
+    pip3 install smbclientng
+    ```
+    
++ With `pipx`:
+    ```
+    pipx install smbclientng
+    ```
 
 ## Demonstration
 
 ![](./.github/example.png)
-
 
 ## Usage
 
@@ -114,14 +123,13 @@ Authentication & connection:
   --aes-key hex key     AES key to use for Kerberos Authentication (128 or 256 bits).
   -k, --kerberos        Use Kerberos authentication. Grabs credentials from .ccache file (KRB5CCNAME) based on target parameters. If
                         valid credentials cannot be found, it will use the ones specified in the command line.
-
 ```
 
-## Quick win commands
+## Quick start commands
 
  + Connect to a remote SMB server:
     ```
-    ./smbclient-ng.py -d "LAB" -u "Administrator" -p 'Admin123!' --host "10.0.0.201"
+    smbclient-ng -d "LAB" -u "Administrator" -p 'Admin123!' --host "10.0.0.201"
     ```
 
 ## Contributing
