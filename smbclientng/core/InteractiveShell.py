@@ -314,6 +314,10 @@ class InteractiveShell(object):
             elif command == "tree":
                 self.command_tree(arguments, command)
             
+            # Removes a local mount point
+            elif command == "umount":
+                self.command_umount(arguments, command)
+
             # Use a share
             elif command == "use":
                 self.command_use(arguments, command)
