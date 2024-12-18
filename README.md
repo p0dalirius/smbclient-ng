@@ -57,6 +57,7 @@ To install `smbclient-ng`, you can use pip. Run the following command in your te
 
 ```
 python3 -m pip install smbclientng
+pipx install smbclientng
 ```
 
 ## Demonstration
