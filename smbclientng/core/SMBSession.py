@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 import io
-import impacket.smbconnection
 from typing import Optional
 from impacket.smbconnection import SMBConnection, SessionError
 from impacket.dcerpc.v5 import transport, rpcrt, srvs
@@ -18,6 +17,7 @@ import random
 import re
 import sys
 import traceback
+import subprocess
 from smbclientng.core.LocalFileIO import LocalFileIO
 from smbclientng.core.utils import b_filesize, STYPE_MASK, is_port_open, smb_entry_iterator
 from smbclientng.core.SIDResolver import SIDResolver
@@ -830,29 +830,63 @@ class SMBSession(object):
             None
         """
 
+        executable = None
+        args = None
+
         if not os.path.exists(local_mount_point):
             pass
 
-        if sys.platform.startswith('win'):
-            remote_path = remote_path.replace('/',ntpath.sep)
-            command = f"net use {local_mount_point} \\\\{self.host}\\{self.smb_share}\\{remote_path}"
+        if sys.platform.startswith("win"):
+            remote_path = remote_path.replace('/', ntpath.sep)
+
+            executable = "net"
+            args = [
+                "use",
+                f"{local_mount_point}", 
+                f"\\\\{self.host}\\{self.smb_share}\\{remote_path}",
+            ]   
         
-        elif sys.platform.startswith('linux'):
-            remote_path = remote_path.replace(ntpath.sep,'/')
-            command = f"mount -t cifs //{self.host}/{self.smb_share}/{remote_path} {local_mount_point} -o username={self.credentials.username},password={self.credentials.password}"
+        elif sys.platform.startswith("linux"):
+            remote_path = remote_path.replace(ntpath.sep, '/')
+            password = self.credentials.password.replace('"', '\\"')
+
+            executable = "mount"
+            args = [
+                "-t",
+                "cifs",
+                f"//{self.host}/{self.smb_share}/{remote_path}",
+                f"{local_mount_point}",
+                "-o",
+                f"username={self.credentials.username},password={password}"
+            ]
         
-        elif sys.platform.startswith('darwin'):
-            remote_path = remote_path.replace(ntpath.sep,'/')
-            command = f"mount_smbfs //{self.credentials.username}:{self.credentials.password}@{self.host}/{self.smb_share}/{remote_path} {local_mount_point}"
+        elif sys.platform.startswith("darwin"):
+            remote_path = remote_path.replace(ntpath.sep, '/')
+            password = self.credentials.password.replace('"', '\\"')
+            
+            executable = "mount_smbfs"
+            args = [
+                f"//{self.credentials.username}:{self.credentials.password}@{self.host}/{self.smb_share}/{remote_path}",
+                f"{local_mount_point}",
+            ]
         
         else:
-            command = None
+            executable = None
+            args = None
             self.logger.error("Unsupported platform for mounting SMB share.")
         
-        if command is not None:
+        if executable is not None:
             if self.config.debug:
-                self.logger.debug("Executing: %s" % command)
-            os.system(command)
+                self.logger.debug("Executing '%s' with arguments: %s" % (executable, args))
+            process = subprocess.Popen(executable=executable, args=args, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = process.communicate()
+            if process.returncode != 0:
+                self.logger.error("Command failed with error: %s" % stderr.decode())
+            else:
+                output = stdout.decode()
+                if len(output) != 0:
+                    self.logger.debug("Command output: %s" % stdout.decode())
+                self.logger.info(f"Successfully mounted '\\\\{self.host}\\{self.smb_share}\\{remote_path}' to local '{local_mount_point}'.")
 
     def path_exists(self, path: Optional[str] = None):
         """
@@ -1324,18 +1358,34 @@ class SMBSession(object):
 
         if os.path.exists(local_mount_point):
             if sys.platform.startswith('win'):
-                command = f"net use {local_mount_point} /delete"
+                executable = "net"
+                args = [
+                    "use",
+                    f"{local_mount_point}",
+                    "/delete"
+                ]
 
             elif sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
-                command = f"umount {local_mount_point}"
+                executable = "umount"
+                args = [f"{local_mount_point}"]
 
             else:
-                command = None
+                executable = None
+                args = None
                 self.logger.error("Unsupported platform for unmounting SMB share.")
         
-            if command is not None:
-                self.logger.debug("Executing: %s" % command)
-                os.system(command)
+            if executable is not None:
+                if self.config.debug:
+                    self.logger.debug("Executing '%s' with arguments: %s" % (executable, args))
+                process = subprocess.Popen(executable=executable, args=args, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                stdout, stderr = process.communicate()
+                if process.returncode != 0:
+                    self.logger.error("Command failed with error: %s" % stderr.decode())
+                else:
+                    output = stdout.decode()
+                    if len(output) != 0:
+                        self.logger.debug("Command output: %s" % stdout.decode())
+                    self.logger.info(f"Successfully unmounted local path '{local_mount_point}'.")
         else:
             self.logger.error("Cannot unmount a non existing path.")        
 
