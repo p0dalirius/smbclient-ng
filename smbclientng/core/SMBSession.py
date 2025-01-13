@@ -1405,7 +1405,13 @@ class SMBSession(object):
 
         # Restore the current share
         current_share = self.smb_share
-        self.set_share(shareName=sharename)
+        current_cwd = self.smb_cwd
+        try:
+            self.set_share(shareName=sharename)
+        except:
+            self.set_share(shareName=current_share)
+            self.smb_cwd = current_cwd
+            return {"readable": False, "writable": False}
 
         access_rights = {"readable": False, "writable": False}
 
@@ -1429,6 +1435,7 @@ class SMBSession(object):
 
         # Restore the current share
         self.set_share(shareName=current_share)
+        self.smb_cwd = current_cwd
 
         return access_rights
 
@@ -1460,9 +1467,9 @@ class SMBSession(object):
                 except SessionError as err:
                     self.smb_share = None
                     self.smb_cwd = ""
-                    self.logger.error("Could not access share '%s': %s" % (shareName, err))
+                    raise Exception("Could not access share '%s': %s" % (shareName, err))
             else:
-                self.logger.error("Could not set share '%s', it does not exist remotely." % shareName)
+                raise Exception("Could not set share '%s', it does not exist remotely." % shareName)
         else:
             self.smb_share = None
             
