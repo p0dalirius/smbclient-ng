@@ -21,7 +21,7 @@ smbclientng = "smbclientng.console:run"
 smbng = "smbclientng.console:run"
 
 [project.optional-dependencies]
-dev = []
+dev = ["flake8"]
 
 [build-system]
 requires = ["poetry-core>=1.7.0"]
