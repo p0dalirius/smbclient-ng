@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a single version of Python
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
-name: Python pip build
+# This workflow installs Python dependencies, runs tests, and lints with a single version of Python
+name: Python Poetry Build
 
 on:
   push:
@@ -18,25 +18,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python 3.7
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.11
       uses: actions/setup-python@v3
       with:
         python-version: "3.11"
+
+    - name: Install Poetry
+      run: |
+        python -m pip install poetry
+
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install flake8 wheel
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        python -m poetry install --no-root
+
     - name: Lint with flake8
       run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=25 --max-line-length=512 --statistics
-    - name: Pip build
-      run: |
-        python3 setup.py sdist bdist_wheel
-    - name: Pip install
-      run: |
-        python3 setup.py install
+        # Stop the build if there are syntax errors or undefined names
+        python -m poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings
+        python -m poetry run flake8 . --count --exit-zero --max-complexity=25 --max-line-length=512 --statistics
+
+    - name: Build package using Poetry
+      run: python -m poetry build
+
+    - name: Install package using Poetry
+      run: python -m poetry install

@@ -7,22 +7,19 @@ clean:
 	@rm -rf ./build/ ./dist/ ./smbclientng.egg-info/
 
 docs:
-	@python3 -m pip install pdoc --break-system-packages
+	@python3 -m pip install pdoc
 	@echo "[$(shell date)] Generating docs ..."
 	@PDOC_ALLOW_EXEC=1 python3 -m pdoc -d markdown -o ./documentation/ ./smbclientng/
 	@echo "[$(shell date)] Done!"
 
 install: build
-	pip install . --break-system-packages
+	poetry install --no-root
 
 build:
-	python3 -m pip uninstall smbclientng --yes --break-system-packages
-	python3 -m pip install .[build] --break-system-packages
+	poetry build
 
-dist:
-	python3 setup.py bdist
-	python3 setup.py bdist_wheel
+dist: clean build
+	poetry build
 
 upload: dist
-	python3 -m pip install .[twine] --break-system-packages
-	python3 -m twine upload dist/*.whl
+	poetry publish --build
