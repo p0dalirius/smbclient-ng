@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# File name          : lcp.py
+# Author             : Podalirius (@podalirius_)
+# Date created       : 18 mar 2025
+
+from smbclientng.utils.decorator import command_arguments_required
+import os
+import shutil
+
+
+HELP = {
+    "description": [
+        "Create a copy of a local file.",
+        "Syntax: 'lcp <srcfile> <dstfile>'"
+    ], 
+    "subcommands": [],
+    "autocomplete": ["remote_file"]
+}
+
+
+@command_arguments_required
+def command_lcp(self, arguments: list[str], command: str):
+    # Command arguments required   : Yes
+    # Active SMB connection needed : No
+    # SMB share needed             : No
+
+    if len(arguments) == 2:
+        src_path = arguments[0]
+        dst_path = arguments[1]
+        if os.path.exists(path=src_path):
+            try:
+                shutil.copyfile(src=src_path, dst=dst_path)
+            except shutil.SameFileError as err:
+                self.logger.error("[!] Error: %s" % err)
+        else:
+            self.logger.error("[!] File '%s' does not exists." % src_path)
+    else:
+        self.commandCompleterObject.print_help(command=command)

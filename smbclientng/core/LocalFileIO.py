@@ -2,17 +2,17 @@
 # -*- coding: utf-8 -*-
 # File name          : LocalFileIO.py
 # Author             : Podalirius (@podalirius_)
-# Date created       : 23 may 2024
+# Date created       : 17 mar 2025
 
 from __future__ import annotations
 import os
 import ntpath
 from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn, TimeRemainingColumn, TransferSpeedColumn
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from smbclientng.core.Logger import Logger
     from typing import Optional
+
 
 class LocalFileIO(object):
     """

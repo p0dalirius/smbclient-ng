@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 # File name          : ModuleArgumentParser.py
 # Author             : Podalirius (@podalirius_)
-# Date created       : 23 may 2024
+# Date created       : 17 mar 2025
 
 
 import argparse
 import sys
+
 
 class ModuleArgumentParserError(Exception):
     def __init__(self,  message):
@@ -14,6 +15,8 @@ class ModuleArgumentParserError(Exception):
 
     def __str__(self):
         return self.message
+
+
 class ModuleArgumentParser(argparse.ArgumentParser):
     """
     A custom argument parser for handling module-specific command-line arguments in the smbclientng application.

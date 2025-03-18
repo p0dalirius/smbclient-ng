@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # File name          : Config.py
 # Author             : Podalirius (@podalirius_)
-# Date created       : 31 may 2024
+# Date created       : 17 mar 2025
 
 import platform
 

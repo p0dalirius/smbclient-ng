@@ -14,7 +14,7 @@ import io
 import ntpath
 from smbclientng.core.Module import Module
 from smbclientng.core.ModuleArgumentParser import ModuleArgumentParser
-from smbclientng.core.utils import windows_ls_entry
+from smbclientng.utils.utils import windows_ls_entry
 import xml
 from xml.dom import minidom
 

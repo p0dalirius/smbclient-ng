@@ -11,11 +11,11 @@ from smbclientng.core.Credentials import Credentials
 from smbclientng.core.ModuleArgumentParser import ModuleArgumentParser, ModuleArgumentParserError
 from smbclientng.core.SMBSession import SMBSession
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from typing import Optional
     from smbclientng.core.Logger import Logger
     from smbclientng.core.Config import Config
+
 
 class SessionsManager(object):
     """

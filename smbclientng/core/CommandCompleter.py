@@ -1,15 +1,14 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # File name          : CommandCompleter.py
 # Author             : Podalirius (@podalirius_)
-# Date created       : 20 may 2024
+# Date created       : 17 mar 2025
 
 from __future__ import annotations
 import ntpath
 import os
 import shlex
+from smbclientng.core.commands import *
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from typing import Optional
     from smbclientng.core.SMBSession import SMBSession
@@ -34,320 +33,45 @@ class CommandCompleter(object):
     """
 
     commands = {
-        "acls": {
-            "description": [
-                "List ACLs of files and folders in cwd.", 
-                "Syntax: 'acls'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["remote_directory"]
-        },
-        "bat": {
-            "description": [
-                "Pretty prints the contents of a remote file.", 
-                "Syntax: 'bat <file>'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["remote_file"]
-        },
-        "cat": {
-            "description": [
-                "Get the contents of a remote file.", 
-                "Syntax: 'cat <file>'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["remote_file"]
-        },
-        "cd": {
-            "description": [
-                "Change the current working directory.", 
-                "Syntax: 'cd <directory>'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["remote_directory"]
-        },
-        "close": {
-            "description": [
-                "Closes the SMB connection to the remote machine.", 
-                "Syntax: 'close'"
-            ], 
-            "subcommands": [],
-            "autocomplete": []
-        },
-        "connect": {
-            "description": [
-                "Connect to the remote machine (useful if connection timed out).", 
-                "Syntax: 'connect'"
-            ], 
-            "subcommands": [],
-            "autocomplete": []
-        },
-        "debug": {
-            "description": [
-                "Command for dev debugging.",
-                "Syntax: 'debug'"
-            ], 
-            "subcommands": [],
-            "autocomplete": []
-        },
-        "dir": {
-            "description": [
-                "List the contents of the current working directory.",
-                "Syntax: 'dir'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["remote_directory"]
-        },
-        "exit": {
-            "description": [
-                "Exits the smbclient-ng script.",
-                "Syntax: 'exit'"
-            ], 
-            "subcommands": [],
-            "autocomplete": []
-        },
-        "find": {
-            "description": [
-                "Search for files in a directory hierarchy",
-                "Syntax: find [-h] [-name NAME] [-iname INAME] [-type TYPE] [-size SIZE] [-ls]",
-                "             [-download] [-maxdepth MAXDEPTH] [-mindepth MINDEPTH]",
-                "             [--exclude-dir DIRNAME[:DEPTH[:CASE]]] [PATH ...]"
-            ],
-            "subcommands": [],
-            "autocomplete": []
-        },
-        "get": {
-            "description": [
-                "Get a remote file.",
-                "Syntax: 'get [-r] [-k] <directory or file>'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["remote_file"]
-        },
-        "help": {
-            "description": [
-                "Displays this help message.",
-                "Syntax: 'help'"
-            ], 
-            "subcommands": ["format"],
-            "autocomplete": []
-        },
-        "info": {
-            "description": [
-                "Get information about the server and or the share.",
-                "Syntax: 'info [server|share]'"
-            ], 
-            "subcommands": ["server", "share"],
-            "autocomplete": []
-        },
-        "lbat": {
-            "description": [
-                "Pretty prints the contents of a local file.", 
-                "Syntax: 'lbat <file>'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["local_file"]
-        },
-        "lcat": {
-            "description": [
-                "Print the contents of a local file.", 
-                "Syntax: 'lcat <file>'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["local_file"]
-        },
-        "lcd": {
-            "description": [
-                "Changes the current local directory.",
-                "Syntax: 'lcd <directory>'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["local_directory"]
-        },
-        "lcp": {
-            "description": [
-                "Create a copy of a local file.",
-                "Syntax: 'lcp <srcfile> <dstfile>'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["remote_file"]
-        },
-        "lls": {
-            "description": [
-                "Lists the contents of the current local directory.", 
-                "Syntax: 'lls'"
-            ],
-            "subcommands": [],
-            "autocomplete": ["local_directory"]
-        },
-        "lmkdir": {
-            "description": [
-                "Creates a new local directory.", 
-                "Syntax: 'lmkdir <directory>'"
-            ],
-            "subcommands": [],
-            "autocomplete": ["local_directory"]
-        },
-        "lpwd": {
-            "description": [
-                "Shows the current local directory.", 
-                "Syntax: 'lpwd'"
-            ],
-            "subcommands": [],
-            "autocomplete": []
-        },
-        "lrename": {
-            "description": [
-                "Renames a local file.", 
-                "Syntax: 'lrename <oldfilename> <newfilename>'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["local_file"]
-        },
-        "lrm": {
-            "description": [
-                "Removes a local file.", 
-                "Syntax: 'lrm <file>'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["local_file"]
-        },
-        "lrmdir": {
-            "description": [
-                "Removes a local directory.", 
-                "Syntax: 'lrmdir <directory>'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["local_directory"]
-        },
-        "ls": {
-            "description": [
-                "List the contents of the current remote working directory.", 
-                "Syntax: 'ls'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["remote_directory"]
-        },
-        "ltree": {
-            "description": [
-                "Displays a tree view of the local directories.",
-                "Syntax: 'ltree [directory]'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["local_directory"]
-        },
-        "mkdir": {
-            "description": [
-                "Creates a new remote directory.", 
-                "Syntax: 'mkdir <directory>'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["remote_directory"]
-        },
-        "module": {
-            "description": [
-                "Loads a specific module for additional functionalities.",
-                "Syntax: 'module <name>'"
-            ], 
-            "subcommands": [],
-            "autocomplete": []
-        },
-        "mount": {
-            "description": [
-                "Creates a mount point of the remote share on the local machine.",
-                "Syntax: 'mount <remote_path> <local_mountpoint>'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["remote_directory"]
-        },
-        "put": {
-            "description": [
-                "Put a local file or directory in a remote directory.", 
-                "Syntax: 'put [-r] <directory or file>'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["local_file"]
-        },
-        "reconnect": {
-            "description": [
-                "Reconnect to the remote machine (useful if connection timed out).", 
-                "Syntax: 'reconnect'"
-            ], 
-            "subcommands": [],
-            "autocomplete": []
-        },
-        "reset": {
-            "description": [
-                "Reset the TTY output, useful if it was broken after printing a binary file on stdout.",
-                "Syntax: 'reset'"
-            ], 
-            "subcommands": [],
-            "autocomplete": []
-        },
-        "rmdir": {
-            "description": [
-                "Removes a remote directory.", 
-                "Syntax: 'rmdir <directory>'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["remote_directory"]
-        },
-        "rm": {
-            "description": [
-                "Removes a remote file.", 
-                "Syntax: 'rm <file>'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["remote_file"]
-        },
-        "sizeof": {
-            "description": [
-                "Recursively compute the size of a folder.", 
-                "Syntax: 'sizeof [directory|file]'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["remote_directory"]
-        },
-        "sessions": {
-            "description": [
-                "Manage the SMB sessions.", 
-                "Syntax: 'sessions [access|create|delete|execute|list]'"
-            ], 
-            "subcommands": ["create", "delete", "execute", "interact", "list"],
-            "autocomplete": []
-        },
-        "shares": {
-            "description": [
-                "Lists the SMB shares served by the remote machine.", 
-                "Syntax: 'shares'"
-            ], 
-            "subcommands": ["rights"],
-            "autocomplete": []
-        },
-        "tree": {
-            "description": [
-                "Displays a tree view of the remote directories.",
-                "Syntax: 'tree [directory]'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["remote_directory"]
-        },
-        "umount": {
-            "description": [
-                "Removes a mount point of the remote share on the local machine.",
-                "Syntax: 'umount <local_mount_point>'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["remote_directory"]
-        },
-        "use": {
-            "description": [
-                "Use a SMB share.", 
-                "Syntax: 'use <sharename>'"
-            ], 
-            "subcommands": [],
-            "autocomplete": ["share"]
-        },
+        "acls": HELP_ACLS,
+        "bat": HELP_BAT,
+        "cat": HELP_CAT,
+        "cd": HELP_CD,
+        "close": HELP_CLOSE,
+        "debug": HELP_DEBUG,
+        "exit": HELP_EXIT,
+        "find": HELP_FIND,
+        "get": HELP_GET,
+        "help": HELP_HELP,
+        "info": HELP_INFO,
+        "lbat": HELP_LBAT,
+        "lcat": HELP_LCAT,
+        "lcd": HELP_LCD,
+        "lcp": HELP_LCP,
+        "lls": HELP_LLS,
+        "lmkdir": HELP_LMKDIR,
+        "lpwd": HELP_LPWD,
+        "lrename": HELP_LRENAME,
+        "lrmdir": HELP_LRMDIR,
+        "lrm": HELP_LRM,
+        "ls": HELP_LS,
+        "ltree": HELP_LTREE,
+        "mkdir": HELP_MKDIR,
+        "module": HELP_MODULE,
+        "mount": HELP_MOUNT,
+        "put": HELP_PUT,
+        "quit": HELP_QUIT,
+        "reconnect": HELP_RECONNECT,
+        "reset": HELP_RESET,
+        "rmdir": HELP_RMDIR,
+        "rm": HELP_RM,
+        "sessions": HELP_SESSIONS,
+        "shares": HELP_SHARES,
+        "sizeof": HELP_SIZEOF,
+        "tail": HELP_TAIL,
+        "tree": HELP_TREE,
+        "umount": HELP_UMOUNT,
+        "use": HELP_USE,
     }
     
     smbSession: SMBSession

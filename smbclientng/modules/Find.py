@@ -10,7 +10,7 @@ import ntpath
 import re
 from smbclientng.core.Module import Module
 from smbclientng.core.ModuleArgumentParser import ModuleArgumentParser
-from smbclientng.core.utils import windows_ls_entry, smb_entry_iterator
+from smbclientng.utils.utils import windows_ls_entry, smb_entry_iterator
 
 
 class Find(Module):
