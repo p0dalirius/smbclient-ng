@@ -32,14 +32,13 @@ class SessionsManager(object):
 
     sessions = {}
     next_session_id: int = 1
-    current_session: Optional[SMBSession]
+    current_session: Optional[SMBSession] = None
     current_session_id: Optional[int]
 
     config: Config
     logger: Logger
 
     def __init__(self, config: Config, logger: Logger):
-
         self.config = config
         self.logger = logger
 

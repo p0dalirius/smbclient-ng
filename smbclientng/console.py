@@ -109,7 +109,10 @@ def parse_args():
 
 
 def run():
-    """Run the SMBClient-NG CLI."""
+    """
+    Run the SMBClient-NG CLI.
+    """
+    
     options = parse_args()
 
     config = Config()
@@ -139,9 +142,14 @@ def run():
             advertisedName=options.advertised_name,
         )
 
-    shell = InteractiveShell(
-        sessionsManager=sessions_manager, config=config, logger=logger
-    )
-    shell.run()
-
-    logger.debug("Exiting the console.")
+    if sessions_manager is None:
+        print("[!] No session found. Please authenticate first.")
+        sys.exit(1)
+    else:
+        shell = InteractiveShell(
+            sessionsManager=sessions_manager,
+            config=config,
+            logger=logger
+        )
+        shell.run()
+        logger.debug("Exiting the console.")
