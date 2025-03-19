@@ -53,17 +53,21 @@ def command_acls(self, arguments: list[str], command: str):
                 0
             )
         except Exception as err:
-            self.logger.debug(f"Could not get attributes for file {filename}: {str(err)}")
+            self.logger.error(f"Could not get attributes for file {filename}: {str(err)}")
             continue
 
-        file_info = smbClient.getSMBServer().queryInfo(
-            tree_id,
-            file_id,
-            infoType=SMB2_0_INFO_SECURITY,
-            fileInfoClass=SMB2_SEC_INFO_00,
-            additionalInformation=OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
-            flags=0
-        )
+        try:
+            file_info = smbClient.getSMBServer().queryInfo(
+                tree_id,
+                file_id,
+                infoType=SMB2_0_INFO_SECURITY,
+                fileInfoClass=SMB2_SEC_INFO_00,
+                additionalInformation=OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
+                flags=0
+            )
+        except Exception as err:
+            self.logger.error(f"Could not get attributes for file {filename}: {str(err)}")
+            continue
 
         self.sessionsManager.current_session.printSecurityDescriptorTable(file_info, filename)
 
