@@ -1,26 +1,23 @@
-[project]
+[tool.poetry]
 name = "smbclientng"
-version = "2.1.7"
+version = "2.1.8"
 description = "smbclient-ng, a fast and user-friendly way to interact with SMB shares."
 readme = "README.md"
-requires-python = ">=3.7,<3.14"
-license = { text = "MIT" }
-authors = [
-    { name = "p0dalirius" }
-]
+authors = ["p0dalirius"]
+license = "MIT"
 
-dependencies = [
-    "impacket>=0.10.0",
-    "rich>=13.0.0",
-    "charset-normalizer>=3.3.2",
-    "pefile==2023.2.7"
-]
+[tool.poetry.dependencies]
+python = ">=3.7,<3.14"
+impacket = "0.10.0"
+rich = "13.0.0"
+charset-normalizer = "3.3.2"
+pefile = "2023.2.7"
 
-[project.scripts]
+[tool.poetry.scripts]
 smbclientng = "smbclientng.console:run"
 smbng = "smbclientng.console:run"
 
-[project.optional-dependencies]
+[tool.poetry.extras]
 dev = ["flake8"]
 
 [build-system]

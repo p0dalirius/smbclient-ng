@@ -13,6 +13,7 @@ from impacket.smb3 import SessionError as SMB3SessionError
 import charset_normalizer
 import ntpath
 
+
 HELP = {
     "description": [
         "Pretty prints the contents of a remote file.", 
@@ -21,6 +22,7 @@ HELP = {
     "subcommands": [],
     "autocomplete": ["remote_file"]
 }
+
 
 @command_arguments_required
 @active_smb_connection_needed

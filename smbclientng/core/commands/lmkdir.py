@@ -18,7 +18,6 @@ HELP = {
 }
 
 
-
 @command_arguments_required
 def command_lmkdir(self,arguments: list[str], command: str):
     # Command arguments required   : Yes

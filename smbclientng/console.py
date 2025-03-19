@@ -9,7 +9,8 @@ from smbclientng.core.InteractiveShell import InteractiveShell
 from smbclientng.core.Logger import Logger
 from smbclientng.core.SessionsManager import SessionsManager
 
-VERSION = "2.1.7"
+
+VERSION = "2.1.8"
 
 
 def parse_args():
