@@ -4,7 +4,7 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.core.commands.ls import command_ls
+from smbclientng.commands.ls import command_ls
 
     
 HELP = {
