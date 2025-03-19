@@ -54,6 +54,7 @@ class InteractiveShell(object):
         "cat": commands.command_cat,
         "cd": commands.command_cd,
         "close": commands.command_close,
+        "dir": commands.command_dir,
         "debug": commands.command_debug,
         "exit": commands.command_exit,
         "find": commands.command_find,

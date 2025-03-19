@@ -9,6 +9,7 @@ from smbclientng.commands.bat import command_bat, HELP as HELP_BAT
 from smbclientng.commands.cat import command_cat, HELP as HELP_CAT
 from smbclientng.commands.cd import command_cd, HELP as HELP_CD
 from smbclientng.commands.close import command_close, HELP as HELP_CLOSE
+from smbclientng.commands.dir import command_dir, HELP as HELP_DIR
 from smbclientng.commands.debug import command_debug, HELP as HELP_DEBUG
 from smbclientng.commands.exit import command_exit, HELP as HELP_EXIT
 from smbclientng.commands.find import command_find, HELP as HELP_FIND
@@ -55,6 +56,7 @@ __all__ = [
     "command_cd", "HELP_CD",
     "command_close", "HELP_CLOSE",
     "command_debug", "HELP_DEBUG",
+    "command_dir", "HELP_DIR",
     "command_exit", "HELP_EXIT",
     "command_find", "HELP_FIND",
     "command_get", "HELP_GET",
