@@ -18,7 +18,6 @@ HELP = {
 }
 
 
-@command_arguments_required
 def command_ltree(self, arguments: list[str], command: str):
     # Command arguments required   : No
     # Active SMB connection needed : No

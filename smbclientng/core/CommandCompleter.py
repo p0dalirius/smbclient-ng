@@ -58,6 +58,7 @@ class CommandCompleter(object):
         "lrm": HELP_LRM,
         "ls": HELP_LS,
         "ltree": HELP_LTREE,
+        "metadata": HELP_METADATA,
         "mkdir": HELP_MKDIR,
         "module": HELP_MODULE,
         "mount": HELP_MOUNT,

@@ -29,6 +29,7 @@ from smbclientng.commands.lrmdir import command_lrmdir, HELP as HELP_LRMDIR
 from smbclientng.commands.lrm import command_lrm, HELP as HELP_LRM
 from smbclientng.commands.ls import command_ls, HELP as HELP_LS
 from smbclientng.commands.ltree import command_ltree, HELP as HELP_LTREE       
+from smbclientng.commands.metadata import command_metadata, HELP as HELP_METADATA
 from smbclientng.commands.mkdir import command_mkdir, HELP as HELP_MKDIR
 from smbclientng.commands.module import command_module, HELP as HELP_MODULE
 from smbclientng.commands.mount import command_mount, HELP as HELP_MOUNT
@@ -73,6 +74,7 @@ __all__ = [
     "command_lrm", "HELP_LRM",
     "command_ls", "HELP_LS",
     "command_ltree", "HELP_LTREE",
+    "command_metadata", "HELP_METADATA",
     "command_mkdir", "HELP_MKDIR",
     "command_module", "HELP_MODULE",
     "command_mount", "HELP_MOUNT",

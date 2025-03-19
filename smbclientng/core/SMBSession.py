@@ -8,6 +8,8 @@ from __future__ import annotations
 import io
 from typing import Optional
 from impacket.smbconnection import SMBConnection, SessionError
+from impacket.smb3structs import SMB2_0_INFO_FILE, SMB2_FILE_STREAM_INFO, OWNER_SECURITY_INFORMATION, DACL_SECURITY_INFORMATION, GROUP_SECURITY_INFORMATION, READ_CONTROL, FILE_READ_ATTRIBUTES, FILE_DIRECTORY_FILE, FILE_NON_DIRECTORY_FILE, FILE_OPEN
+from impacket.smb import SMBFileStreamInformation
 from impacket.dcerpc.v5 import transport, rpcrt, srvs
 from impacket.ldap import ldaptypes
 from impacket.nt_errors import STATUS_OBJECT_NAME_COLLISION
@@ -385,7 +387,6 @@ class SMBSession(object):
             except Exception as e:
                 self.logger.error(f"Failed to download '{path}': {e}")
 
-
     def download_file(self, full_path: str, outputfile: str, keepRemotePath: bool):
         """Downloads a single file."""
         try:
@@ -413,7 +414,6 @@ class SMBSession(object):
                     f.close()
         except Exception as e:
             self.logger.error(f"Failed to download '{full_path}': {e}")
-
 
     def get_file_recursively(self, path: Optional[str] = None, localDownloadDir: str = "./"):
         """
@@ -527,6 +527,98 @@ class SMBSession(object):
                 return None
         else:
             return None 
+
+    def get_alternate_data_streams(self, path: str):
+        """
+        Retrieves alternate data streams (ADS) for a file at the specified path.
+
+        This method is used to retrieve the alternate data streams (ADS) for a file at the specified path.  
+        It returns a list of dictionaries, each containing the name and size of the alternate data stream.
+
+        Args:
+            path (str): The path to the file for which to retrieve alternate data streams.
+
+        Returns:
+            list: A list of dictionaries, each containing the name and size of the alternate data stream.
+        """
+        ads_found = []
+
+        entry = self.get_entry(path)
+        if entry is None:
+            self.logger.debug(f"File {path} not found")
+            return []
+        
+        tree_id = self.smbClient.connectTree(self.smb_share)
+
+        # Create a file handle
+        try:
+            file_id = self.smbClient.getSMBServer().create(
+                tree_id,
+                path,
+                READ_CONTROL | FILE_READ_ATTRIBUTES,
+                0,
+                FILE_DIRECTORY_FILE if entry.is_directory() else FILE_NON_DIRECTORY_FILE,
+                FILE_OPEN,
+                0
+            )
+        except Exception as err:
+            self.logger.debug(f"Could not open handle for file {path}: {str(err)}")
+            return []
+
+        # Get file attributes   
+        try:
+            raw_file_stream_info = self.smbClient.getSMBServer().queryInfo(
+                tree_id,
+                file_id,
+                infoType=SMB2_0_INFO_FILE,
+                fileInfoClass=SMB2_FILE_STREAM_INFO,
+                additionalInformation=OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
+                flags=0
+            )
+
+            try:
+                running = True
+                if len(raw_file_stream_info) == 0:
+                    running = False
+
+                # Parse the file stream information
+                while running:
+                    try:
+                        parsed_file_stream_info = SMBFileStreamInformation(raw_file_stream_info)
+                        NextEntryOffset = parsed_file_stream_info.fields["NextEntryOffset"]
+                        StreamNameLength = parsed_file_stream_info.fields["StreamNameLength"]
+                        StreamName = parsed_file_stream_info.fields["StreamName"][:StreamNameLength].decode('utf-16-le')
+
+                        if StreamName.startswith(":") and StreamName.endswith(":$DATA"):
+                            StreamName = StreamName[1:-6]
+                            
+                        if len(StreamName) > 0:
+                            # The base stream ::$DATA is not included in the list
+                            ads_found.append({
+                                "Name": StreamName,
+                                "Size": parsed_file_stream_info.fields["StreamSize"]
+                            })
+
+                        if NextEntryOffset == 0:
+                            running = False
+                        else:
+                            raw_file_stream_info = raw_file_stream_info[NextEntryOffset:]
+
+                    except Exception as err:
+                        self.logger.debug(f"Error parsing alternateDataStreams as impacket.smb.SMBFileStreamInformation for file {path}")
+                        self.logger.debug(f"Error: {str(err)}")
+                        running = False
+                    
+                return ads_found
+            
+            except Exception as err:
+                self.logger.debug(f"Error parsing alternateDataStreams as impacket.smb.SMBFileStreamInformation for file {path}")
+                self.logger.debug(f"Error: {str(err)}")
+
+        except Exception as err:
+            self.logger.debug(f"Could not get attributes for file {path}: {str(err)}")
+
+        return ads_found
 
     def info(self, share: bool = True, server: bool = True):
         """
@@ -906,10 +998,16 @@ class SMBSession(object):
         if path is not None:
             path = path.replace('*','')
             path = path.replace('/', ntpath.sep)
+
+            if path.startswith(ntpath.sep):
+                full_path = ntpath.normpath(path)
+            else:
+                full_path = ntpath.normpath(self.smb_cwd + ntpath.sep + path + ntpath.sep)
+
             try:
                 contents = self.smbClient.listPath(
                     shareName=self.smb_share,
-                    path=ntpath.normpath(self.smb_cwd + ntpath.sep + path + ntpath.sep)
+                    path=full_path
                 )
                 return (len(contents) != 0)
             except Exception as e:

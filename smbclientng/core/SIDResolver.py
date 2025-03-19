@@ -62,11 +62,13 @@ class SIDResolver(object):
         Raises:
             DCERPCSessionError: If there is an error during the LSARPC communication.
         """
+        
         unresolved_sids = list(sids.difference(self.cache.keys()))
         if len(unresolved_sids) == 0:
             return
         resp = lsad.hLsarOpenPolicy2(self.__dce, MAXIMUM_ALLOWED | lsat.POLICY_LOOKUP_NAMES)
         policyHandle = resp['PolicyHandle']
+
         try:
             resp = lsat.hLsarLookupSids(self.__dce, policyHandle, unresolved_sids, lsat.LSAP_LOOKUP_LEVEL.LsapLookupWksta)
         except DCERPCSessionError as err:

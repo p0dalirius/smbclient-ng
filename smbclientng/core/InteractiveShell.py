@@ -74,6 +74,7 @@ class InteractiveShell(object):
         "lrm": commands.command_lrm,
         "ls": commands.command_ls,
         "ltree": commands.command_ltree,
+        "metadata": commands.command_metadata,
         "mkdir": commands.command_mkdir,
         "module": commands.command_module,
         "mount": commands.command_mount,
