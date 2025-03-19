@@ -62,15 +62,17 @@ class SessionsManager(object):
             config=self.config,
             logger=self.logger
         )
-        smbSession.init_smb_session()
-        
-        self.sessions[self.next_session_id] = {
-            "id": self.next_session_id,
-            "smbSession": smbSession,
-            "created_at": int(time.time()),
-        }
-        self.switch_session(self.next_session_id)
-        self.next_session_id += 1
+        if smbSession.init_smb_session():
+            self.sessions[self.next_session_id] = {
+                "id": self.next_session_id,
+                "smbSession": smbSession,
+                "created_at": int(time.time()),
+            }
+            self.switch_session(self.next_session_id)
+            self.next_session_id += 1
+        else:
+            self.logger.error("Failed to initialize SMB session, not creating session.")
+            return False
 
     def switch_session(self, session_id: int) -> bool:
         """

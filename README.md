@@ -22,6 +22,7 @@
 - [x] `exit`: Exits the smbclient-ng script. Syntax: `exit`
 - [x] `get`: Get a remote file. Syntax: `get [-r] <directory or file>`
 - [x] `help`: Displays this help message. Syntax: `help`
+- [x] `history`: Displays the command history. Syntax: `history`
 - [x] `info`: Get information about the server and or the share. Syntax: `info [server|share]`
 - [x] `lbat`: Pretty prints the contents of a local file. Syntax: `lbat <file>`
 - [x] `lcat`: Print the contents of a local file. Syntax: `lcat <file>`
