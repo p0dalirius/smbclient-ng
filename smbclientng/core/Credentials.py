@@ -2,10 +2,9 @@
 # -*- coding: utf-8 -*-
 # File name          : Credentials.py
 # Author             : Podalirius (@podalirius_)
-# Date created       : 22 June 2024
+# Date created       : 17 mar 2025
 
 from __future__ import annotations
-from smbclientng.core.utils import parse_lm_nt_hashes
 import re
 import binascii
 from typing import TYPE_CHECKING
@@ -15,7 +14,19 @@ if TYPE_CHECKING:
 
 class Credentials(object):
     """
-    Documentation for class Credentials
+    A class representing credentials for SMB connections.
+
+    Attributes:
+        domain (str): The domain of the user.
+        username (str): The username of the user.
+        password (str): The password of the user.
+        nt_hex (str): The NT hash of the user.
+        nt_raw (bytes): The raw NT hash of the user.
+        lm_hex (str): The LM hash of the user.
+        lm_raw (bytes): The raw LM hash of the user.
+        use_kerberos (bool): Whether to use Kerberos for authentication.
+        aesKey (str): The AES key for Kerberos authentication.
+        kdcHost (str): The KDC host for Kerberos authentication.
     """
 
     # Identity

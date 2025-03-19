@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# File name          : LocalFileIO.py
+# File name          : Logger.py
 # Author             : Podalirius (@podalirius_)
-# Date created       : 24 June 2024
+# Date created       : 17 mar 2025
 
 from __future__ import annotations
 import os
 import re
 from enum import Enum
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from typing import Optional
     from smbclientng.core.Config import Config

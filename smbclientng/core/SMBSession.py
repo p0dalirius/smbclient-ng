@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# File name          : smbclient-ng.py
+# File name          : SMBSession.py
 # Author             : Podalirius (@podalirius_)
-# Date created       : 20 may 2024
+# Date created       : 17 mar 2025
 
 from __future__ import annotations
 import io
@@ -19,15 +19,15 @@ import sys
 import traceback
 import subprocess
 from smbclientng.core.LocalFileIO import LocalFileIO
-from smbclientng.core.utils import b_filesize, STYPE_MASK, is_port_open, smb_entry_iterator
+from smbclientng.utils.utils import b_filesize, STYPE_MASK, is_port_open, smb_entry_iterator
 from smbclientng.core.SIDResolver import SIDResolver
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from smbclientng.core.Logger import Logger
     from smbclientng.core.Config import Config
     from smbclientng.core.Credentials import Credentials
     from impacket.smb import SharedFile
+
 
 class SMBSession(object):
     """
@@ -64,6 +64,7 @@ class SMBSession(object):
         read_file(path): Reads a file from the SMB share.
         test_rights(sharename): Tests read and write access rights on a share.
     """
+    
     config: Config
     logger: Logger
     host: str

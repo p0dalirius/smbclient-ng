@@ -1,14 +1,23 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# File name          : SIDResolver.py
+# Author             : Podalirius (@podalirius_)
+# Date created       : 17 mar 2025
+
 from __future__ import annotations
 from impacket.dcerpc.v5 import transport, lsat, lsad, rpcrt
 from impacket.dcerpc.v5.dtypes import MAXIMUM_ALLOWED
 from impacket.dcerpc.v5.lsat import DCERPCSessionError
 from impacket.nt_errors import STATUS_SOME_NOT_MAPPED, STATUS_NONE_MAPPED
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from impacket.smbconnection import SMBConnection
 
-class SIDResolver:
+
+class SIDResolver(object):
+    """
+    A class to resolve SIDs to usernames.
+    """
     def __init__(self, smbConnection: SMBConnection):
         self.__smbConnection = smbConnection
         self.__dce = self.__get_lsarpc_binding()

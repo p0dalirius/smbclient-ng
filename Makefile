@@ -13,7 +13,7 @@ docs:
 	@echo "[$(shell date)] Done!"
 
 install: build
-	poetry install --no-root
+	poetry install
 
 build:
 	poetry build

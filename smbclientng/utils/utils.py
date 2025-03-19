@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # File name          : utils.py
 # Author             : Podalirius (@podalirius_)
-# Date created       : 23 may 2024
+# Date created       : 17 mar 2025
 
 from __future__ import annotations
 import datetime
@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from impacket.smb import SharedFile
     from smbclientng.core.Config import Config
     from smbclientng.core.SMBSession import SMBSession
+
 
 def parse_lm_nt_hashes(lm_nt_hashes_string: str) -> tuple[str, str]:
     """
