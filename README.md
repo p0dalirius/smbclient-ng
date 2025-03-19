@@ -22,6 +22,7 @@
 - [x] `exit`: Exits the smbclient-ng script. Syntax: `exit`
 - [x] `get`: Get a remote file. Syntax: `get [-r] <directory or file>`
 - [x] `help`: Displays this help message. Syntax: `help`
+- [x] `head`: Get the first n lines of a remote file. Syntax: `head <file>`
 - [x] `history`: Displays the command history. Syntax: `history`
 - [x] `info`: Get information about the server and or the share. Syntax: `info [server|share]`
 - [x] `lbat`: Pretty prints the contents of a local file. Syntax: `lbat <file>`
@@ -36,6 +37,7 @@
 - [x] `lrmdir`: Removes a local directory. Syntax: `lrmdir <directory>`
 - [x] `ls`: List the contents of the current remote working directory. Syntax: `ls`
 - [x] `ltree`: Displays a tree view of the local directories. Syntax: `ltree [directory]`
+- [x] `metadata`: Get metadata about a file or directory. Syntax: `metadata <file|directory>`
 - [x] `mkdir`: Creates a new remote directory. Syntax: `mkdir <directory>`
 - [x] `module`: Loads a specific module for additional functionalities. Syntax: `module <name>`
 - [x] `mount`: Creates a mount point of the remote share on the local machine. Syntax: `mount <remote_path> <local_mountpoint>`
@@ -47,6 +49,7 @@
 - [x] `sessions`: Manage the SMB sessions. Syntax: `sessions [interact|create|delete|execute|list]`
 - [x] `shares`: Lists the SMB shares served by the remote machine. Syntax: `shares`
 - [x] `sizeof`: Recursively compute the size of a folder. Syntax: `sizeof [directory|file]`
+- [x] `tail`: Get the last n lines of a remote file. Syntax: `tail <file>`
 - [x] `tree`: Displays a tree view of the remote directories. Syntax: `tree [directory]`
 - [x] `umount`: Removes a mount point of the remote share on the local machine. Syntax: `umount <local_mount_point>`
 - [x] `use`: Use a SMB share. Syntax: `use <sharename>`
