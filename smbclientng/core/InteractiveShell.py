@@ -51,6 +51,7 @@ class InteractiveShell(object):
     commands = {
         "acls": commands.command_acls,
         "bat": commands.command_bat,
+        "bhead": commands.command_bhead,
         "cat": commands.command_cat,
         "cd": commands.command_cd,
         "close": commands.command_close,

@@ -35,10 +35,12 @@ class CommandCompleter(object):
     commands: dict = {
         "acls": HELP_ACLS,
         "bat": HELP_BAT,
+        "bhead": HELP_BHEAD,
         "cat": HELP_CAT,
         "cd": HELP_CD,
         "close": HELP_CLOSE,
         "debug": HELP_DEBUG,
+        "dir": HELP_DIR,
         "exit": HELP_EXIT,
         "find": HELP_FIND,
         "get": HELP_GET,
