@@ -14,6 +14,8 @@
 
 - [x] `acls`: List ACLs of files and folders in cwd. Syntax: `acls`
 - [x] `bat`: Pretty prints the contents of a file. Syntax: `bat <file>`
+- [x] `bhead`: Pretty prints the first n lines of a file. Syntax: `bhead <file>`
+- [x] `btail`: Pretty prints the last n lines of a file. Syntax: `btail <file>`
 - [x] `cat`: Get the contents of a file. Syntax: `cat <file>`
 - [x] `cd`: Change the current working directory. Syntax: `cd <directory>`
 - [x] `close`: Closes the SMB connection to the remote machine. Syntax: `close`
@@ -82,51 +84,57 @@ To install `smbclient-ng`, you can use `pip`, `pip3` or `pipx`. You can run any 
 
 ```
 $ ./smbclient-ng.py 
-               _          _ _            _                    
- ___ _ __ ___ | |__   ___| (_) ___ _ __ | |_      _ __   __ _ 
+               _          _ _            _
+ ___ _ __ ___ | |__   ___| (_) ___ _ __ | |_      _ __   __ _
 / __| '_ ` _ \| '_ \ / __| | |/ _ \ '_ \| __|____| '_ \ / _` |
 \__ \ | | | | | |_) | (__| | |  __/ | | | ||_____| | | | (_| |
 |___/_| |_| |_|_.__/ \___|_|_|\___|_| |_|\__|    |_| |_|\__, |
-    by @podalirius_                             v2.1.6  |___/  
+    by @podalirius_                             v2.1.8  |___/
     
-usage: smbclient-ng.py [-h] [--debug] [--no-colors] [-S startup_script] [-N] [-L LOGFILE] [--timeout TIMEOUT]
-                       [--advertised-name ADVERTISED_NAME] --host HOST [--port PORT] [--kdcHost FQDN KDC] [-d DOMAIN] [-u USER]
-                       [--no-pass | -p [PASSWORD] | -H [LMHASH:]NTHASH | --aes-key hex key] [-k]
+usage: smbclientng [-h] [--debug] [--no-colors] [-l LOGFILE] [-T TIMEOUT] [-a ADVERTISED_NAME] [-C COMMAND] [-S STARTUP_SCRIPT] [-N] -H HOST [-P PORT] [-d DOMAIN] [-u USER]
+                   [-p [PASSWORD] | --no-pass | --hashes [LMHASH:]NTHASH | --aes-key HEXKEY | -k | --kdcHost KDCHOST]
 
-smbclient-ng, a fast and user friendly way to interact with SMB shares.
+smbclient-ng, a fast and user-friendly way to interact with SMB shares.
 
 options:
   -h, --help            show this help message and exit
-  --debug               Debug mode.
-  --no-colors           No colors mode.
-  -S startup_script, --startup-script startup_script
-                        File containing the list of commands to be typed at start of the console.
+
+Config:
+  --debug               Enable debug mode.
+  --no-colors           Disable colored output.
+  -l LOGFILE, --logfile LOGFILE
+                        Log file path.
+  -T TIMEOUT, --timeout TIMEOUT
+                        Timeout for SMB connections (default: 3s)
+  -a ADVERTISED_NAME, --advertised-name ADVERTISED_NAME
+                        Advertised machine name.
+
+Commands:
+  -C COMMAND, --command COMMAND
+                        smbclient-ng commands to execute.
+  -S STARTUP_SCRIPT, --startup-script STARTUP_SCRIPT
+                        Startup script with commands.
   -N, --not-interactive
-                        Non interactive mode.
-  -L LOGFILE, --logfile LOGFILE
-                        File to write logs to.
-  --timeout TIMEOUT     Timeout in seconds for SMB connections (default: 3)
-  --advertised-name ADVERTISED_NAME
-                        Advertised name of your machine to the SMB client.
+                        Non-interactive mode.
 
 Target:
-  --host HOST           IP address or hostname of the SMB Server to connect to.
-  --port PORT           Port of the SMB Server to connect to. (default: 445)
+  -H HOST, --host HOST  Target SMB Server IP or hostname.
+  -P PORT, --port PORT  Target SMB Server port (default: 445).
 
-Authentication & connection:
-  --kdcHost FQDN KDC    FQDN of KDC for Kerberos.
+Authentication & Connection:
   -d DOMAIN, --domain DOMAIN
-                        (FQDN) domain to authenticate to.
-  -u USER, --user USER  User to authenticate with.
+                        Authentication domain.
+  -u USER, --user USER  Username for authentication.
 
-  --no-pass             Don't ask for password (useful for -k).
+Secrets:
   -p [PASSWORD], --password [PASSWORD]
-                        Password to authenticate with.
-  -H [LMHASH:]NTHASH, --hashes [LMHASH:]NTHASH
-                        NT/LM hashes, format is LMhash:NThash.
-  --aes-key hex key     AES key to use for Kerberos Authentication (128 or 256 bits).
-  -k, --kerberos        Use Kerberos authentication. Grabs credentials from .ccache file (KRB5CCNAME) based on target parameters. If
-                        valid credentials cannot be found, it will use the ones specified in the command line.
+                        Password.
+  --no-pass             Do not prompt for a password.
+  --hashes [LMHASH:]NTHASH
+                        NT/LM hashes.
+  --aes-key HEXKEY      AES key for Kerberos authentication.
+  -k, --kerberos        Use Kerberos authentication.
+  --kdcHost KDCHOST     Fully qualified domain name (FQDN) of key distribution center (KDC) for Kerberos.
 ```
 
 ## Quick start commands
