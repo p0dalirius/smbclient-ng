@@ -57,6 +57,7 @@ __all__ = [
     "command_find", "HELP_FIND",
     "command_get", "HELP_GET",
     "command_help", "HELP_HELP",
+    "command_head", "HELP_HEAD",
     "command_history", "HELP_HISTORY",
     "command_info", "HELP_INFO",
     "command_lbat", "HELP_LBAT",

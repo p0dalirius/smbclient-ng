@@ -59,6 +59,7 @@ class InteractiveShell(object):
         "find": commands.command_find,
         "get": commands.command_get,
         "help": commands.command_help,
+        "head": commands.command_head,
         "history": commands.command_history,
         "info": commands.command_info,
         "lbat": commands.command_lbat,
