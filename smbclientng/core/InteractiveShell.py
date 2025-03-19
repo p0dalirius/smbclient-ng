@@ -122,8 +122,6 @@ class InteractiveShell(object):
         if len(self.config.commands) > 0:
             pre_interaction_commands += self.config.commands
 
-        print(pre_interaction_commands)
-
         # Execute pre-interaction commands
         if len(pre_interaction_commands) > 0:
             for line in pre_interaction_commands:
