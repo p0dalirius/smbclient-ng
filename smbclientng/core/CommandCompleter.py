@@ -43,6 +43,7 @@ class CommandCompleter(object):
         "find": HELP_FIND,
         "get": HELP_GET,
         "help": HELP_HELP,
+        "head": HELP_HEAD,
         "history": HELP_HISTORY,
         "info": HELP_INFO,
         "lbat": HELP_LBAT,

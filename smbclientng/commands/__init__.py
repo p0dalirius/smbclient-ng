@@ -14,6 +14,7 @@ from smbclientng.commands.exit import command_exit, HELP as HELP_EXIT
 from smbclientng.commands.find import command_find, HELP as HELP_FIND
 from smbclientng.commands.get import command_get, HELP as HELP_GET
 from smbclientng.commands.help import command_help, HELP as HELP_HELP
+from smbclientng.commands.head import command_head, HELP as HELP_HEAD
 from smbclientng.commands.history import command_history, HELP as HELP_HISTORY
 from smbclientng.commands.info import command_info, HELP as HELP_INFO
 from smbclientng.commands.lbat import command_lbat, HELP as HELP_LBAT
