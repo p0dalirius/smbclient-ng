@@ -26,22 +26,23 @@ jobs:
       with:
         python-version: "3.11"
 
-    - name: Install Poetry
-      run: |
-        python -m pip install poetry
-
-    - name: Install dependencies
-      run: |
-        python -m poetry install --no-root
-        pip install flake8 poetry
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
     - name: Lint with flake8
       run: |
+        python3 -m pip install flake8 
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=25 --max-line-length=512 --statistics
+
+    - name: Install Poetry
+      run: |
+        python3 -m pip install poetry
+
+    - name: Install dependencies
+      run: |
+        python3 -m pip install poetry
+        python3 -m poetry install --no-root
+        if [ -f requirements.txt ]; then python3 -m pip install -r requirements.txt; fi
 
     - name: Poetry build
       run: |
