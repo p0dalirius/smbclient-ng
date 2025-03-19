@@ -13,8 +13,14 @@ from smbclientng.core.SessionsManager import SessionsManager
 VERSION = "2.1.8"
 
 
-def parse_args():
-    """Parse command-line arguments."""
+def parseArgs():
+    """
+    Parse command-line arguments.
+
+    This function sets up the argument parser and defines the command-line options for the SMB client console.
+    It handles configuration, authentication, and session options, and validates the provided arguments.
+    """
+
     print(
         r"""               _          _ _            _
  ___ _ __ ___ | |__   ___| (_) ___ _ __ | |_      _ __   __ _
@@ -26,66 +32,44 @@ def parse_args():
         % ("v" + VERSION)
     )
 
-    parser = argparse.ArgumentParser(
-        description="smbclient-ng, a fast and user-friendly way to interact with SMB shares."
-    )
-    parser.add_argument("--debug", action="store_true", help="Enable debug mode.")
-    parser.add_argument(
-        "--no-colors", action="store_true", help="Disable colored output."
-    )
-    parser.add_argument(
-        "-S", "--startup-script", type=str, help="Startup script with commands."
-    )
-    parser.add_argument(
-        "-N", "--not-interactive", action="store_true", help="Non-interactive mode."
-    )
-    parser.add_argument("-L", "--logfile", type=str, help="Log file path.")
-    parser.add_argument(
-        "--timeout",
-        type=float,
-        default=3,
-        help="Timeout for SMB connections (default: 3s)",
-    )
-    parser.add_argument("--advertised-name", type=str, help="Advertised machine name.")
+    parser = argparse.ArgumentParser(description="smbclient-ng, a fast and user-friendly way to interact with SMB shares.")
+    
+    group_config = parser.add_argument_group("Config")
+    group_config.add_argument("--debug", action="store_true", help="Enable debug mode.")
+    group_config.add_argument("--no-colors", action="store_true", help="Disable colored output.")
+    group_config.add_argument("-l", "--logfile", type=str, help="Log file path.")
+    group_config.add_argument("-T", "--timeout", type=float, default=3, help="Timeout for SMB connections (default: 3s)")
+    group_config.add_argument("-a", "--advertised-name", type=str, help="Advertised machine name.")
+
+    group_commands = parser.add_argument_group("Commands")
+    group_commands.add_argument("-C", "--command", default=[], action="append", help="smbclient-ng commands to execute.")
+    group_commands.add_argument("-S", "--startup-script", type=str, help="Startup script with commands.")
+    group_commands.add_argument("-N", "--not-interactive", action="store_true", help="Non-interactive mode.")
 
     # Target arguments
-    target = parser.add_argument_group("Target")
-    target.add_argument(
-        "--host", required=True, type=str, help="SMB Server IP or hostname."
-    )
-    target.add_argument(
-        "--port", type=int, default=445, help="SMB Server port (default: 445)."
-    )
+    group_target = parser.add_argument_group("Target")
+    group_target.add_argument("-H", "--host", required=True, type=str, help="Target SMB Server IP or hostname.")
+    group_target.add_argument("-P", "--port", type=int, default=445, help="Target SMB Server port (default: 445).")
 
     # Authentication arguments
-    auth = parser.add_argument_group("Authentication & Connection")
-    auth.add_argument("--kdcHost", type=str, help="FQDN of KDC for Kerberos.")
-    auth.add_argument(
-        "-d", "--domain", default=".", type=str, help="Authentication domain."
-    )
-    auth.add_argument("-u", "--user", type=str, help="Username for authentication.")
+    group_auth = parser.add_argument_group("Authentication & Connection")
+    group_auth.add_argument("-d", "--domain", default=".", type=str, help="Authentication domain.")
+    group_auth.add_argument("-u", "--user", type=str, help="Username for authentication.")
 
     # Password & Hashes
-    secret = parser.add_argument_group("Secrets")
-    creds = secret.add_mutually_exclusive_group()
-    creds.add_argument(
-        "--no-pass", action="store_true", help="Do not prompt for a password."
-    )
-    creds.add_argument("-p", "--password", type=str, nargs="?", help="Password.")
-    creds.add_argument(
-        "-H", "--hashes", type=str, metavar="[LMHASH:]NTHASH", help="NT/LM hashes."
-    )
-    creds.add_argument(
-        "--aes-key", type=str, metavar="HEXKEY", help="AES key for Kerberos auth."
-    )
-    secret.add_argument(
-        "-k", "--kerberos", action="store_true", help="Use Kerberos authentication."
-    )
+    group_secrets = parser.add_argument_group("Secrets")
+    group_creds = group_secrets.add_mutually_exclusive_group()
+    group_creds.add_argument("-p", "--password", type=str, nargs="?", help="Password.")       
+    group_creds.add_argument("--no-pass", action="store_true", help="Do not prompt for a password.")
+    group_creds.add_argument("--hashes", type=str, metavar="[LMHASH:]NTHASH", help="NT/LM hashes.")
+    group_creds.add_argument("--aes-key", type=str, metavar="HEXKEY", help="AES key for Kerberos authentication.")
+    group_creds.add_argument("-k", "--kerberos", action="store_true", help="Use Kerberos authentication.")
+    group_creds.add_argument("--kdcHost", type=str, help="Fully qualified domain name (FQDN) of key distribution center (KDC) for Kerberos.")
 
     options = parser.parse_args()
 
-    if options.not_interactive and options.startup_script is None:
-        print("[+] Option --not-interactive requires --startup-script.")
+    if options.not_interactive and (options.startup_script is None and len(options.command) == 0):
+        print("[+] Option --not-interactive requires --startup-script or --command.")
         sys.exit(1)
 
     if options.user and not (options.password or options.no_pass or options.hashes):
@@ -110,16 +94,31 @@ def parse_args():
 
 def run():
     """
-    Run the SMBClient-NG CLI.
+    Main function to run the SMB client console.
+
+    This function parses command-line arguments, initializes the configuration, logger, and session manager,
+    and starts the interactive shell for the SMB client. It handles authentication and session creation based
+    on the provided options.
+
+    Steps:
+    1. Parse command-line arguments.
+    2. Validate and handle specific options (e.g., non-interactive mode, Kerberos authentication).
+    3. Initialize configuration and logger.
+    4. Create a new SMB session if authentication details are provided.
+    5. Start the interactive shell if a session is successfully created.
+
+    Returns:
+        None
     """
     
-    options = parse_args()
+    options = parseArgs()
 
     config = Config()
     config.debug = options.debug
     config.no_colors = options.no_colors
     config.not_interactive = options.not_interactive
     config.startup_script = options.startup_script
+    config.commands = options.command
 
     logger = Logger(config=config, logfile=options.logfile)
     sessions_manager = SessionsManager(config=config, logger=logger)
