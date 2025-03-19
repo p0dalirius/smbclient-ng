@@ -14,7 +14,6 @@ import socket
 import stat
 from impacket.smbconnection import SessionError
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from typing import Optional
     from impacket.smb import SharedFile

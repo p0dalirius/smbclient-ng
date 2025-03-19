@@ -7,6 +7,9 @@
 ## Decorators
 
 def command_arguments_required(func):
+    """
+    Decorator to check if the command has arguments.
+    """
     def wrapper(*args, **kwargs):
         self, arguments,command  = args[0], args[1], args[2]
         if len(arguments) != 0:
@@ -17,6 +20,9 @@ def command_arguments_required(func):
     return wrapper
 
 def active_smb_connection_needed(func):
+    """
+    Decorator to check if the SMB connection is active.
+    """
     def wrapper(*args, **kwargs):
         self, arguments,command  = args[0], args[1], args[2]
         
@@ -33,6 +39,9 @@ def active_smb_connection_needed(func):
     return wrapper
 
 def smb_share_is_set(func):
+    """
+    Decorator to check if the SMB share is set.
+    """
     def wrapper(*args, **kwargs):
         self, arguments,command  = args[0], args[1], args[2]
         if self.sessionsManager.current_session.smb_share is not None:

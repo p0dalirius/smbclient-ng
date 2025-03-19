@@ -4,7 +4,7 @@ all: install clean
 
 clean:
 	@rm -rf `find ./ -type d -name "*__pycache__"`
-	@rm -rf ./build/ ./dist/ ./smbclientng.egg-info/
+	@rm -rf ./build/ ./dist/ ./smbclientng.egg-info/ ./.venv/
 
 docs:
 	@python3 -m pip install pdoc
