@@ -7,7 +7,7 @@
 from smbclientng.utils.decorator import active_smb_connection_needed, smb_share_is_set
 from impacket.smbconnection import SessionError as SMBConnectionSessionError
 from impacket.smb3 import SessionError as SMB3SessionError
-from smbclientng.utils import b_filesize
+from smbclientng.utils import b_filesize, smb_entry_iterator
 import ntpath
 
 
