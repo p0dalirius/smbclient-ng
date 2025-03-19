@@ -36,6 +36,7 @@ class CommandCompleter(object):
         "acls": HELP_ACLS,
         "bat": HELP_BAT,
         "bhead": HELP_BHEAD,
+        "btail": HELP_BTAIL,
         "cat": HELP_CAT,
         "cd": HELP_CD,
         "close": HELP_CLOSE,

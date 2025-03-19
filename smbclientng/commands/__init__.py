@@ -7,6 +7,7 @@
 from smbclientng.commands.acls import command_acls, HELP as HELP_ACLS
 from smbclientng.commands.bat import command_bat, HELP as HELP_BAT 
 from smbclientng.commands.bhead import command_bhead, HELP as HELP_BHEAD
+from smbclientng.commands.btail import command_btail, HELP as HELP_BTAIL
 from smbclientng.commands.cat import command_cat, HELP as HELP_CAT
 from smbclientng.commands.cd import command_cd, HELP as HELP_CD
 from smbclientng.commands.close import command_close, HELP as HELP_CLOSE
@@ -54,6 +55,7 @@ __all__ = [
     "command_acls", "HELP_ACLS",
     "command_bat", "HELP_BAT",
     "command_bhead", "HELP_BHEAD",
+    "command_btail", "HELP_BTAIL",
     "command_cat", "HELP_CAT",
     "command_cd", "HELP_CD",
     "command_close", "HELP_CLOSE",
