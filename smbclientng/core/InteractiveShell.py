@@ -111,10 +111,22 @@ class InteractiveShell(object):
         self.__load_modules()
 
     def run(self):
+        pre_interaction_commands = []
+
         # Read commands from script file first
         if self.config.startup_script:
-            f = open(self.config.startup_script, 'r')
-            for line in f.readlines():
+            with open(self.config.startup_script, 'r') as f:
+                pre_interaction_commands = f.readlines()
+        
+        # Add commands specified from command line
+        if len(self.config.commands) > 0:
+            pre_interaction_commands += self.config.commands
+
+        print(pre_interaction_commands)
+
+        # Execute pre-interaction commands
+        if len(pre_interaction_commands) > 0:
+            for line in pre_interaction_commands:
                 try:
                     self.logger.print("%s%s" % (self.__prompt(), line.strip()))
                     readline.add_history(line.strip())
