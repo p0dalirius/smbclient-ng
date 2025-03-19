@@ -40,22 +40,52 @@ class Config(object):
                 self._no_colors = True
 
     @property
-    def debug(self):
+    def debug(self) -> bool:
+        """
+        Get the debug mode.
+
+        Returns:
+            bool: The current debug mode value.
+        """
         return self._debug
 
     @debug.setter
-    def debug(self, value):
+    def debug(self, value: bool):
+        """
+        Set the debug mode.
+
+        Args:
+            value (bool): The new debug mode value.
+
+        Raises:
+            ValueError: If the provided value is not a boolean.
+        """
         if isinstance(value, bool):
             self._debug = value
         else:
             raise ValueError("Debug must be a boolean value")
 
     @property
-    def no_colors(self):
+    def no_colors(self) -> bool:
+        """
+        Get the colored output preference.
+
+        Returns:
+            bool: The current colored output preference value.
+        """
         return self._no_colors
 
     @no_colors.setter
-    def no_colors(self, value):
+    def no_colors(self, value: bool):
+        """
+        Set the colored output preference.
+
+        Args:
+            value (bool): The new colored output preference value.
+
+        Raises:
+            ValueError: If the provided value is not a boolean.
+        """
         if isinstance(value, bool):
             self._no_colors = value
         else:

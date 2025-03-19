@@ -10,6 +10,10 @@ import sys
 
 
 class ModuleArgumentParserError(Exception):
+    """
+    A custom exception class for handling errors specific to the ModuleArgumentParser class.
+    """
+
     def __init__(self,  message):
         self.message = message
 

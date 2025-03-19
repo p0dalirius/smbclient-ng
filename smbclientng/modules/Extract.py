@@ -66,6 +66,10 @@ class Extract(Module):
         return self.options
 
     def saveSpooler(self):
+        """
+        Extracts interesting files from the spooler service.
+        """
+
         files = [
             r".\spoolss.dll", 
             r".\spoolsv.exe", 
@@ -109,6 +113,10 @@ class Extract(Module):
     #=[Run]====================================================================
 
     def run(self, arguments):
+        """
+        Runs the module.
+        """
+
         self.options = self.parseArgs(arguments=arguments)
 
         if self.options is not None:

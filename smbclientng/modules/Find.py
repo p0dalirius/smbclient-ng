@@ -7,7 +7,6 @@
 
 import os
 import ntpath
-import re
 from smbclientng.core.Module import Module
 from smbclientng.core.ModuleArgumentParser import ModuleArgumentParser
 from smbclientng.utils.utils import windows_ls_entry, smb_entry_iterator
@@ -127,6 +126,10 @@ class Find(Module):
         return exclusion_rules
 
     def run(self, arguments):
+        """
+        Runs the module.
+        """
+
         self.options = self.parseArgs(arguments=arguments)
 
         if self.options is not None:

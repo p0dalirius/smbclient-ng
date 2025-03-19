@@ -7,7 +7,7 @@ from __future__ import annotations
 import ntpath
 import os
 import shlex
-from smbclientng.core.commands import *
+from smbclientng.commands import *
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Optional
@@ -32,7 +32,7 @@ class CommandCompleter(object):
         __init__(self, smbSession): Initializes the CommandCompleter with an SMBSession.
     """
 
-    commands = {
+    commands: dict = {
         "acls": HELP_ACLS,
         "bat": HELP_BAT,
         "cat": HELP_CAT,
@@ -43,6 +43,7 @@ class CommandCompleter(object):
         "find": HELP_FIND,
         "get": HELP_GET,
         "help": HELP_HELP,
+        "history": HELP_HISTORY,
         "info": HELP_INFO,
         "lbat": HELP_LBAT,
         "lcat": HELP_LCAT,

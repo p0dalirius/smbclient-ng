@@ -13,8 +13,7 @@ import shlex
 import sys
 import traceback
 from smbclientng.core.CommandCompleter import CommandCompleter
-import smbclientng.core.commands as commands
-
+import smbclientng.commands as commands
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from smbclientng.core.SessionsManager import SessionsManager
@@ -60,6 +59,7 @@ class InteractiveShell(object):
         "find": commands.command_find,
         "get": commands.command_get,
         "help": commands.command_help,
+        "history": commands.command_history,
         "info": commands.command_info,
         "lbat": commands.command_lbat,
         "lcat": commands.command_lcat,

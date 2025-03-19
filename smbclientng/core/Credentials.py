@@ -5,12 +5,12 @@
 # Date created       : 17 mar 2025
 
 from __future__ import annotations
-import re
+from smbclientng.utils.utils import parse_lm_nt_hashes
 import binascii
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from typing import Optional
+
 
 class Credentials(object):
     """
@@ -78,18 +78,11 @@ class Credentials(object):
 
         lmhash, nthash = None, None
         if hashes is not None:
-            matched = re.search("([0-9a-f]{32})?:([0-9a-f]{32})?", hashes.lower(), re.IGNORECASE)
-            if matched is not None:
-                lmhash = matched.groups()[0]
-                nthash = matched.groups()[1]
-                if lmhash is None:
-                    lmhash = "aad3b435b51404eeaad3b435b51404ee"
-                if nthash is None:
-                    nthash = "31d6cfe0d16ae931b73c59d7e0c089c0"
-                self.lm_hex = lmhash
-                self.lm_raw = binascii.unhexlify(lmhash)
-                self.nt_hex = nthash
-                self.nt_raw = binascii.unhexlify(nthash)
+            self.lm_hex, self.nt_hex = parse_lm_nt_hashes(hashes)
+            if len(self.lm_hex) != 0:
+                self.lm_raw = binascii.unhexlify(self.lm_hex)
+            if len(self.nt_hex) != 0:
+                self.nt_raw = binascii.unhexlify(self.nt_hex)
 
     def is_anonymous(self):
         """
