@@ -4,20 +4,34 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-
-HELP = {
-    "description": [
-        "Connect to the remote machine (useful if connection timed out).", 
-        "Syntax: 'connect'"
-    ], 
-    "subcommands": [],
-    "autocomplete": []
-}
+from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
-def command_connect(self, arguments: list[str], command: str):
-    # Command arguments required   : No
-    # Active SMB connection needed : No
-    # SMB share needed             : No
+class Command_connect(Command):
+    name = "connect"
+    description = "Connect to the remote machine (useful if connection timed out)."
 
-    self.sessionsManager.current_session.ping_smb_session()
+    HELP = {
+        "description": [
+            description, 
+            "Syntax: 'connect'"
+        ], 
+        "subcommands": [],
+        "autocomplete": []
+    }
+    
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        return parser
+
+    def run(self, interactive_shell, arguments: list[str], command: str):
+        # Command arguments required   : No
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
+
+        interactive_shell.sessionsManager.current_session.ping_smb_session()

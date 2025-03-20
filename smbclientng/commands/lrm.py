@@ -4,35 +4,46 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.utils.decorator import command_arguments_required
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 import os
+from smbclientng.types.Command import Command
 
 
-HELP = {
-    "description": [
-        "Removes a local file.", 
-        "Syntax: 'lrm <file>'"
-    ], 
-    "subcommands": [],
-    "autocomplete": ["local_file"]
-}
+class Command_lrm(Command):
+    name = "lrm"
+    description = "Removes a local file."
 
+    HELP = {
+        "description": [
+            description, 
+            "Syntax: 'lrm <file>'"
+        ], 
+        "subcommands": [],
+        "autocomplete": ["local_file"]
+    }
 
-@command_arguments_required
-def command_lrm(self, arguments: list[str], command: str):
-    # Command arguments required   : Yes
-    # Active SMB connection needed : No
-    # SMB share needed             : No
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('path', type=str, nargs='+', help='List of local files to remove')
+        return parser
 
-    path = arguments[0]
+    def run(self, interactive_shell, arguments: list[str], command: str):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : No
+        # SMB share needed             : No
 
-    if os.path.exists(path):
-        if not os.path.isdir(s=path):
-            try:
-                os.remove(path=path)
-            except Exception as e:
-                self.logger.error("Error removing file '%s' : %s" % path)
-        else:
-            self.logger.error("Cannot delete '%s'. It is a directory, use 'lrmdir <directory>' instead." % path)
-    else:
-        self.logger.error("Path '%s' does not exist." % path)
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
+
+        for path in self.options.path:
+            if os.path.exists(path):
+                if not os.path.isdir(s=path):
+                    try:
+                        os.remove(path=path)
+                    except Exception as e:
+                        interactive_shell.logger.error("Error removing file '%s' : %s" % path)
+                else:
+                    interactive_shell.logger.error("Cannot delete '%s'. It is a directory, use 'lrmdir <directory>' instead." % path)
+            else:
+                interactive_shell.logger.error("Path '%s' does not exist." % path)

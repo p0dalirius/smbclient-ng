@@ -4,36 +4,44 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.utils.decorator import command_arguments_required
+from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 import os
 import shutil
 
 
-HELP = {
-    "description": [
-        "Create a copy of a local file.",
-        "Syntax: 'lcp <srcfile> <dstfile>'"
-    ], 
-    "subcommands": [],
-    "autocomplete": ["remote_file"]
-}
+class Command_lcp(Command):
+    name = "lcp"
+    description = "Create a copy of a local file."
 
+    HELP = {
+        "description": [
+            description,
+            "Syntax: 'lcp <srcfile> <dstfile>'"
+        ], 
+        "subcommands": [],
+        "autocomplete": ["remote_file"]
+    }
+    
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('srcfile', type=str, help='The source file')
+        parser.add_argument('dstfile', type=str, help='The destination file')
+        return parser
 
-@command_arguments_required
-def command_lcp(self, arguments: list[str], command: str):
-    # Command arguments required   : Yes
-    # Active SMB connection needed : No
-    # SMB share needed             : No
+    def run(self, interactive_shell, arguments: list[str], command: str):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : No
+        # SMB share needed             : No
 
-    if len(arguments) == 2:
-        src_path = arguments[0]
-        dst_path = arguments[1]
-        if os.path.exists(path=src_path):
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
+
+        if os.path.exists(path=self.options.srcfile):
             try:
-                shutil.copyfile(src=src_path, dst=dst_path)
+                shutil.copyfile(src=self.options.srcfile, dst=self.options.dstfile)
             except shutil.SameFileError as err:
-                self.logger.error("[!] Error: %s" % err)
+                interactive_shell.logger.error("[!] Error: %s" % err)
         else:
-            self.logger.error("[!] File '%s' does not exists." % src_path)
-    else:
-        self.commandCompleterObject.print_help(command=command)
+            interactive_shell.logger.error("[!] File '%s' does not exists." % self.options.srcfile)

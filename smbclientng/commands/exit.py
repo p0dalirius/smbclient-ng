@@ -4,16 +4,26 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-
-HELP = {
-    "description": [
-        "Exits the interactive shell.",
-        "Syntax: 'exit'"
-    ], 
-    "subcommands": [],
-    "autocomplete": []
-}
+from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
-def command_exit(self, arguments: list[str], command: str):
-    self.running = False
+class Command_exit(Command):
+    name = "exit"
+    description = "Exits the interactive shell."
+
+    HELP = {
+        "description": [
+            description,
+            "Syntax: 'exit'"
+        ], 
+        "subcommands": [],
+        "autocomplete": []
+    }
+    
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        return parser
+
+    def run(self, interactive_shell, arguments: list[str], command: str):
+        interactive_shell.running = False

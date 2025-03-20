@@ -26,8 +26,8 @@ from smbclientng.core.SIDResolver import SIDResolver
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from smbclientng.core.Logger import Logger
-    from smbclientng.core.Config import Config
-    from smbclientng.core.Credentials import Credentials
+    from smbclientng.types.Config import Config
+    from smbclientng.types.Credentials import Credentials
     from impacket.smb import SharedFile
 
 

@@ -4,18 +4,23 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.commands.ls import command_ls
-
+from smbclientng.commands.ls import Command_ls
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
     
-HELP = {
-    "description": [
-        "List the contents of the current working directory.",
-        "Syntax: 'dir'"
-    ], 
-    "subcommands": [],
-    "autocomplete": ["remote_directory"]
-}
 
+class Command_dir(Command_ls):
+    name = "dir"
+    description = "List the contents of the current working directory."
 
-def command_dir(self, arguments: list[str], command: str):
-    command_ls(self, arguments, command)
+    HELP = {
+        "description": [
+            description,
+            "Syntax: 'dir'"
+        ], 
+        "subcommands": [],
+        "autocomplete": ["remote_directory"]
+    }
+
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        return parser

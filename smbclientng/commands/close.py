@@ -4,22 +4,36 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-
-HELP = {
-    "description": [
-        "Closes the SMB connection to the remote machine.", 
-        "Syntax: 'close'"
-    ], 
-    "subcommands": [],
-    "autocomplete": []
-}
+from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
-def command_close(self, arguments: list[str], command: str):
-    # Command arguments required   : No
-    # Active SMB connection needed : No
-    # SMB share needed             : No
+class Command_close(Command):
+    name = "close"
+    description = "Closes the SMB connection to the remote machine."
 
-    self.sessionsManager.current_session.ping_smb_session()
-    if self.sessionsManager.current_session.connected:
-        self.sessionsManager.current_session.close_smb_session()
+    HELP = {
+        "description": [
+            description, 
+            "Syntax: 'close'"
+        ], 
+        "subcommands": [],
+        "autocomplete": []
+    }
+
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        return parser
+
+    def run(self, interactive_shell, arguments: list[str], command: str):
+        # Command arguments required   : No
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
+
+        interactive_shell.sessionsManager.current_session.ping_smb_session()
+        if interactive_shell.sessionsManager.current_session.connected:
+            interactive_shell.sessionsManager.current_session.close_smb_session()

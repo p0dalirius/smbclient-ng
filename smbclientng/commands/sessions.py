@@ -4,16 +4,34 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-
-HELP = {
-    "description": [
-        "Manage the SMB sessions.", 
-        "Syntax: 'sessions [access|create|delete|execute|list]'"
-    ], 
-    "subcommands": ["create", "delete", "execute", "interact", "list"],
-    "autocomplete": []
-}
+from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
-def command_sessions(self, arguments: list[str], command: str):
-    self.sessionsManager.process_command_line(arguments)
+class Command_sessions(Command):
+    name = "sessions"
+    description = "Manage the SMB sessions."
+
+    HELP = {
+        "description": [
+            description, 
+            "Syntax: 'sessions [access|create|delete|execute|list]'"
+        ], 
+        "subcommands": ["create", "delete", "execute", "interact", "list"],
+        "autocomplete": []
+    }
+  
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        return parser
+
+    def run(self, interactive_shell, arguments: list[str], command: str):
+        # Command arguments required   : No
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
+
+        interactive_shell.sessionsManager.process_command_line(arguments)

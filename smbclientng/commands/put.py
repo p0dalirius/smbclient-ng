@@ -4,51 +4,59 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.utils.decorator import command_arguments_required, active_smb_connection_needed, smb_share_is_set
+from smbclientng.utils.decorator import active_smb_connection_needed, smb_share_is_set
 from impacket.smbconnection import SessionError as SMBConnectionSessionError
 from impacket.smb3 import SessionError as SMB3SessionError
 from smbclientng.utils import resolve_local_files
 import os
-
-HELP = {
-    "description": [
-        "Put a local file or directory in a remote directory.", 
-        "Syntax: 'put [-r] <directory or file>'"
-    ], 
-    "subcommands": [],
-    "autocomplete": ["local_file"]
-}
+from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
-@command_arguments_required
-@active_smb_connection_needed
-@smb_share_is_set
-def command_put(self, arguments: list[str], command: str):
-    # Command arguments required   : Yes
-    # Active SMB connection needed : Yes
-    # SMB share needed             : Yes
-    
-    is_recursive = False
-    while '-r' in arguments:
-        is_recursive = True
-        arguments.remove('-r')
+class Command_put(Command):
+    name = "put"
+    description = "Put a local file or directory in a remote directory."
 
-    # This is the usecase of 'put -r' with no other argument
-    if len(arguments) == 0:
-        arguments = ['*']
+    HELP = {
+        "description": [
+            description, 
+            "Syntax: 'put [-r] <directory or file>'"
+        ], 
+        "subcommands": [],
+        "autocomplete": ["local_file"]
+    }
 
-    # Parse wildcards
-    files_and_directories = resolve_local_files(arguments)
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('path', type=str, nargs='*', help='List of local files or directories to put')
+        parser.add_argument('-r', '--recursive', action='store_true', help='Put files from local path recursively')
+        return parser
 
-    # 
-    for localpath in files_and_directories:
-        try:
-            self.logger.print(localpath)
-            if is_recursive and os.path.isdir(s=localpath):
-                # Put files recursively
-                self.sessionsManager.current_session.put_file_recursively(localpath=localpath)
-            else:
-                # Put this single file
-                self.sessionsManager.current_session.put_file(localpath=localpath)
-        except (SMBConnectionSessionError, SMB3SessionError) as e:
-            self.logger.error("[!] SMB Error: %s" % e)
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def run(self, interactive_shell, arguments: list[str], command: str):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
+
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
+
+        if len(self.options.path) == 0:
+            self.options.path = ['*']
+
+        # Parse wildcards
+        files_and_directories = resolve_local_files(self.options.path)
+
+        for localpath in files_and_directories:
+            try:
+                interactive_shell.logger.print(localpath)
+                if self.options.recursive and os.path.isdir(s=localpath):
+                    # Put files recursively
+                    interactive_shell.sessionsManager.current_session.put_file_recursively(localpath=localpath)
+                else:
+                    # Put this single file
+                    interactive_shell.sessionsManager.current_session.put_file(localpath=localpath)
+            except (SMBConnectionSessionError, SMB3SessionError) as e:
+                interactive_shell.logger.error("[!] SMB Error: %s" % e)

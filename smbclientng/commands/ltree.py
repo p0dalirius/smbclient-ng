@@ -4,31 +4,40 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.utils.decorator import command_arguments_required
-from smbclientng.utils import local_tree
+from smbclientng.utils.utils import local_tree
+from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
-HELP = {
-    "description": [
-        "Displays a tree view of the local directories.",
-        "Syntax: 'ltree [directory]'"
-    ], 
-    "subcommands": [],
-    "autocomplete": ["local_directory"]
-}
+class Command_ltree(Command):
+    name = "ltree"
+    description = "Displays a tree view of the local directories."  
 
+    HELP = {
+        "description": [
+            description,
+            "Syntax: 'ltree [directory]'"
+        ], 
+        "subcommands": [],
+        "autocomplete": ["local_directory"]
+    }
+    
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('path', type=str, nargs='*', help='List of local directories to list')
+        return parser
 
-def command_ltree(self, arguments: list[str], command: str):
-    # Command arguments required   : No
-    # Active SMB connection needed : No
-    # SMB share needed             : No
+    def run(self, interactive_shell, arguments: list[str], command: str):
+        # Command arguments required   : No
+        # Active SMB connection needed : No
+        # SMB share needed             : No
 
-    if len(arguments) == 0:
-        path = '.'
-    else:
-        path = arguments[0]
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
 
-    if len(arguments) == 0:
-        local_tree(path='.', config=self.config)
-    else:
-        local_tree(path=path, config=self.config)
+        if len(self.options.path) == 0:
+            self.options.path = ['.']
+
+        for path in self.options.path:
+            local_tree(path=path, config=interactive_shell.config)

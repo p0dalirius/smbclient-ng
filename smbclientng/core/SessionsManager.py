@@ -7,14 +7,14 @@
 from __future__ import annotations
 import datetime
 import time
-from smbclientng.core.Credentials import Credentials
-from smbclientng.core.ModuleArgumentParser import ModuleArgumentParser, ModuleArgumentParserError
+from smbclientng.types.Credentials import Credentials
+from smbclientng.types.ModuleArgumentParser import ModuleArgumentParser, ModuleArgumentParserError
 from smbclientng.core.SMBSession import SMBSession
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Optional
     from smbclientng.core.Logger import Logger
-    from smbclientng.core.Config import Config
+    from smbclientng.types.Config import Config
 
 
 class SessionsManager(object):
