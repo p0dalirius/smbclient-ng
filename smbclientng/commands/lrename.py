@@ -4,10 +4,9 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.utils.decorator import command_arguments_required
 import os
 from smbclientng.types.Command import Command
-
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 class Command_lrename(Command):
     name = "lrename"
@@ -22,13 +21,19 @@ class Command_lrename(Command):
         "autocomplete": ["local_file"]
     }
 
-    @command_arguments_required
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('oldfile', type=str, help='The old local file')
+        parser.add_argument('newfile', type=str, help='The new local file')
+        return parser
+
     def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : No
         # SMB share needed             : No
 
-        if len(arguments) == 2:
-            os.rename(src=arguments[0], dst=arguments[1])
-        else:
-            interactive_shell.commandCompleterObject.print_help(command=command)
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
+
+        os.rename(src=self.options.oldfile, dst=self.options.newfile)

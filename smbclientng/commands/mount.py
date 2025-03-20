@@ -4,11 +4,13 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.utils.decorator import command_arguments_required, active_smb_connection_needed, smb_share_is_set
+from smbclientng.utils.decorator import active_smb_connection_needed, smb_share_is_set
 from impacket.smbconnection import SessionError as SMBConnectionSessionError
 from impacket.smb3 import SessionError as SMB3SessionError
 import ntpath
+import os
 from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
 class Command_mount(Command):
@@ -23,8 +25,13 @@ class Command_mount(Command):
         "subcommands": [],
         "autocomplete": ["remote_directory"]
     }
-    
-    @command_arguments_required
+
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('remote_path', type=str, help='Remote path to mount')
+        parser.add_argument('local_mountpoint', type=str, help='Local mountpoint')
+        return parser
+
     @active_smb_connection_needed
     @smb_share_is_set
     def run(self, interactive_shell, arguments: list[str], command: str):
@@ -32,18 +39,20 @@ class Command_mount(Command):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        if len(arguments) == 2:
-            remote_path = arguments[0]
-            if not remote_path.startswith(ntpath.sep):
-                remote_path = interactive_shell.sessionsManager.current_session.smb_cwd + ntpath.sep + remote_path
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
 
-            local_mount_point = arguments[1]
+        if not self.options.remote_path.startswith(ntpath.sep):
+            self.options.remote_path = interactive_shell.sessionsManager.current_session.smb_cwd + ntpath.sep + self.options.remote_path
 
-            interactive_shell.logger.debug("Trying to mount remote '%s' onto local '%s'" % (remote_path, local_mount_point))
+        if not os.path.exists(self.options.local_mountpoint):
+            interactive_shell.logger.debug("Local mountpoint '%s' does not exist, creating it." % self.options.local_mountpoint)
+            os.makedirs(self.options.local_mountpoint)
 
-            try:
-                interactive_shell.sessionsManager.current_session.mount(local_mount_point, remote_path)
-            except (SMBConnectionSessionError, SMB3SessionError) as e:
-                interactive_shell.sessionsManager.current_session.umount(local_mount_point)
-        else:
-            interactive_shell.commandCompleterObject.print_help(command=command)
+        interactive_shell.logger.debug("Trying to mount remote '%s' onto local '%s'" % (self.options.remote_path, self.options.local_mountpoint))
+
+        try:
+            interactive_shell.sessionsManager.current_session.mount(local_mount_point=self.options.local_mountpoint, remote_path=self.options.remote_path)
+        except (SMBConnectionSessionError, SMB3SessionError) as e:
+            interactive_shell.sessionsManager.current_session.umount(local_mount_point=self.options.local_mountpoint)

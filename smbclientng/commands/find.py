@@ -23,7 +23,6 @@ class Command_find(Command):
         "autocomplete": []
     }
 
-    @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
     def run(self, interactive_shell, arguments: list[str], command: str):

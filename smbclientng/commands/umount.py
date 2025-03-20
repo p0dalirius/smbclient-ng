@@ -4,8 +4,10 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.utils.decorator import command_arguments_required, active_smb_connection_needed, smb_share_is_set
+from smbclientng.utils.decorator import active_smb_connection_needed, smb_share_is_set
 from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
+import os
 
 
 class Command_umount(Command):
@@ -21,7 +23,11 @@ class Command_umount(Command):
         "autocomplete": ["remote_directory"]
     }
 
-    @command_arguments_required
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('local_mount_point', type=str, help='Local mount point to unmount')
+        return parser
+
     @active_smb_connection_needed
     @smb_share_is_set
     def run(self, interactive_shell, arguments: list[str], command: str):
@@ -29,8 +35,14 @@ class Command_umount(Command):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        local_mount_point = arguments[0]
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
 
-        interactive_shell.logger.debug("Trying to unmount local mount point '%s'" % (local_mount_point))
+        if not os.path.exists(self.options.local_mount_point):
+            interactive_shell.logger.error("Local mount point '%s' does not exist" % (self.options.local_mount_point))
+            return
+
+        interactive_shell.logger.debug("Trying to unmount local mount point '%s'" % (self.options.local_mount_point))
         
-        interactive_shell.sessionsManager.current_session.umount(local_mount_point)
+        interactive_shell.sessionsManager.current_session.umount(self.options.local_mount_point)

@@ -5,7 +5,7 @@
 # Date created       : 18 mar 2025
 
 from smbclientng.commands.exit import Command_exit
-
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 class Command_quit(Command_exit):
     name = "quit"
@@ -19,3 +19,7 @@ class Command_quit(Command_exit):
         "subcommands": [],
         "autocomplete": []
     }
+
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        return parser

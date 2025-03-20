@@ -57,7 +57,6 @@ class InteractiveShell(object):
         "cd": commands.Command_cd,
         "close": commands.Command_close,
         "dir": commands.Command_dir,
-        "debug": commands.Command_debug,
         "exit": commands.Command_exit,
         "find": commands.Command_find,
         "get": commands.Command_get,

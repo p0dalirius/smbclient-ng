@@ -10,6 +10,7 @@ from impacket.smb3 import SessionError as SMB3SessionError
 from smbclientng.utils import b_filesize, smb_entry_iterator
 import ntpath
 from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
 class Command_sizeof(Command):
@@ -25,6 +26,11 @@ class Command_sizeof(Command):
         "autocomplete": ["remote_directory"]
     }
 
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('path', type=str, nargs='*', help='List of remote directories or files to compute the size of')
+        return parser
+
     @active_smb_connection_needed
     @smb_share_is_set
     def run(self, interactive_shell, arguments: list[str], command: str):
@@ -32,14 +38,16 @@ class Command_sizeof(Command):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
+
         # Parse the arguments to get the path(s)
-        if len(arguments) == 0:
-            paths = [interactive_shell.sessionsManager.current_session.smb_cwd or '']
-        else:
-            paths = arguments  # Assuming arguments is a list of paths
+        if len(self.options.path) == 0:
+            self.options.path = ['.']
 
         total_size = 0
-        for path in paths:
+        for path in self.options.path:
             # Normalize and parse the path
             path = path.replace('/', ntpath.sep)
             path = ntpath.normpath(path)
@@ -96,6 +104,6 @@ class Command_sizeof(Command):
                 interactive_shell.logger.error(f"Error while processing '{path}': {e}")
 
         # If multiple paths, print the total size
-        if len(paths) > 1:
+        if len(self.options.path) > 1:
             interactive_shell.logger.print("──────────────────────")
             interactive_shell.logger.print(f"Total size: {b_filesize(total_size)}")

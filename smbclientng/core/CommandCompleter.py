@@ -40,7 +40,6 @@ class CommandCompleter(object):
         "cat": Command_cat.HELP,
         "cd": Command_cd.HELP,
         "close": Command_close.HELP,
-        "debug": Command_debug.HELP,
         "dir": Command_dir.HELP,
         "exit": Command_exit.HELP,
         "find": Command_find.HELP,

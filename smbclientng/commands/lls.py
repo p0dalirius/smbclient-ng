@@ -7,6 +7,7 @@
 from smbclientng.utils.utils import resolve_local_files
 from smbclientng.utils.utils import unix_permissions, b_filesize
 from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 import datetime
 import os
 
@@ -24,18 +25,28 @@ class Command_lls(Command):
         "autocomplete": ["local_directory"]
     }
     
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('files', nargs='*', help='Local files to list')
+        return parser
+
     def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : No
         # SMB share needed             : No
 
-        if len(arguments) == 0:
-            arguments = ['.']
-        else:
-            arguments = resolve_local_files(arguments)
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
+        
+        if len(self.options.files) == 0:
+            self.options.files = ['.']
 
-        for path in arguments:
-            if len(arguments) > 1:
+        # Parse wildcards
+        local_files = resolve_local_files(self.options.files)
+
+        for path in local_files:
+            if len(local_files) > 1:
                 interactive_shell.logger.print("%s:" % path)
             # lls <directory>
             if os.path.isdir(path):

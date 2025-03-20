@@ -4,7 +4,7 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.utils.decorator import command_arguments_required, active_smb_connection_needed, smb_share_is_set
+from smbclientng.utils.decorator import active_smb_connection_needed, smb_share_is_set
 from smbclientng.utils.utils import resolve_remote_files
 from smbclientng.types.Command import Command
 from rich.syntax import Syntax
@@ -13,6 +13,7 @@ from impacket.smbconnection import SessionError as SMBConnectionSessionError
 from impacket.smb3 import SessionError as SMB3SessionError
 import charset_normalizer
 import ntpath
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
 class Command_bat(Command):
@@ -28,7 +29,11 @@ class Command_bat(Command):
         "autocomplete": ["remote_file"]
     }
 
-    @command_arguments_required
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('files', nargs='*', help='Files or directories to get')
+        return parser
+
     @active_smb_connection_needed
     @smb_share_is_set
     def run(self, interactive_shell, arguments: list[str], command: str):
@@ -36,8 +41,15 @@ class Command_bat(Command):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
+        
+        if len(self.options.files) == 0:
+            self.options.files = ['*']
+
         # Parse wildcards
-        files_and_directories = resolve_remote_files(interactive_shell.sessionsManager.current_session, arguments)
+        files_and_directories = resolve_remote_files(interactive_shell.sessionsManager.current_session, self.options.files)
 
         for path_to_file in files_and_directories:
             if interactive_shell.sessionsManager.current_session.path_isfile(pathFromRoot=path_to_file):

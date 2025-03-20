@@ -4,10 +4,11 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.utils.decorator import command_arguments_required, active_smb_connection_needed, smb_share_is_set
+from smbclientng.utils.decorator import active_smb_connection_needed, smb_share_is_set
 from impacket.smbconnection import SessionError as SMBConnectionSessionError
 from impacket.smb3 import SessionError as SMB3SessionError
 from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
 class Command_info(Command):
@@ -23,7 +24,13 @@ class Command_info(Command):
         "autocomplete": []
     }
 
-    @command_arguments_required
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument('--server', dest="print_server_info", action='store_true', help='Display server information')
+        group.add_argument('--share', dest="print_share_info", action='store_true', help='Display share information')
+        return parser
+
     @active_smb_connection_needed
     @smb_share_is_set
     def run(self, interactive_shell, arguments: list[str], command: str):
@@ -31,22 +38,14 @@ class Command_info(Command):
         # Active SMB connection needed : Yes
         # SMB share needed             : No
 
-        print_server_info = False
-        print_share_info = False
-        if len(arguments) != 0:
-            if arguments[0].lower() not in ["server", "share"]:
-                interactive_shell.logger.error("'%s' is not a valid parameter. Use 'server' or 'share'." % arguments[0])
-                return None
-            print_server_info = (arguments[0].lower() == "server")
-            print_share_info = (arguments[0].lower() == "share")
-        else:
-            print_server_info = True
-            print_share_info = True
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return
 
         try:
             interactive_shell.sessionsManager.current_session.info(
-                share=print_share_info,
-                server=print_server_info
+                share=self.options.print_share_info,
+                server=self.options.print_server_info
             )
         except (SMBConnectionSessionError, SMB3SessionError) as e:
             interactive_shell.logger.error("SMB Error: %s" % e)

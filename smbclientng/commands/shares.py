@@ -8,6 +8,7 @@ from smbclientng.utils.decorator import active_smb_connection_needed
 from rich.console import Console
 from rich.table import Table
 from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
 class Command_shares(Command):
@@ -23,6 +24,10 @@ class Command_shares(Command):
         "autocomplete": []
     }
 
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('-R', '--rights', action='store_true', help='Check the rights of the shares')
+        return parser
     
     @active_smb_connection_needed
     def run(self, interactive_shell, arguments: list[str], command: str):
@@ -30,25 +35,9 @@ class Command_shares(Command):
         # Active SMB connection needed : Yes
         # SMB share needed             : No
 
-        test_write = False
-        do_check_rights = False
-        if len(arguments) != 0:
-            if arguments[0] == "rights":
-                do_check_rights = True
-                test_write = False
-
-        if do_check_rights:
-            interactive_shell.logger.print("WARNING: Checking WRITE access to shares in offensive tools implies creating a folder and trying to delete it.")
-            interactive_shell.logger.print("| If you have CREATE_CHILD rights but no DELETE_CHILD rights, the folder cannot be deleted and will remain on the target.")
-            interactive_shell.logger.print("| Do you want to continue? [N/y] ", end='')
-            user_response = input()
-            interactive_shell.logger.write_to_logfile(user_response)
-            while user_response.lower().strip() not in ['y', 'n']:
-                interactive_shell.logger.print("| Invalid response, Do you want to continue? [N/y] ", end='')
-                user_response = input()
-                interactive_shell.logger.write_to_logfile(user_response)
-            if user_response.lower().strip() == 'y':
-                test_write = True
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
 
         shares = interactive_shell.sessionsManager.current_session.list_shares()
         if len(shares.keys()) != 0:
@@ -57,9 +46,9 @@ class Command_shares(Command):
             table.add_column("Visibility")
             table.add_column("Type")
             table.add_column("Description", justify="left")
-            if do_check_rights:
+            if self.options.rights:
                 table.add_column("Rights")
-
+                
             security_descriptor = list(shares.values())[0].get("security_descriptor")
             if security_descriptor is not None:
                 table.add_column("Security Descriptor")
@@ -79,9 +68,9 @@ class Command_shares(Command):
                     str_types = "[bold bright_yellow]" + types + "[/bold bright_yellow]"
                     str_comment = "[bold bright_yellow]" + shares[sharename]["comment"] + "[/bold bright_yellow]"
 
-                if do_check_rights:
+                if self.options.rights:
                     try:
-                        access_rights = interactive_shell.sessionsManager.current_session.test_rights(sharename=shares[sharename]["name"], test_write=test_write)
+                        access_rights = interactive_shell.sessionsManager.current_session.test_rights(sharename=shares[sharename]["name"], test_write=False)
                         str_access_rights = "[bold yellow]NO ACCESS[/bold yellow]"
                         if access_rights["readable"] and access_rights["writable"]:
                             str_access_rights = "[bold green]READ[/bold green], [bold red]WRITE[/bold red]"
@@ -98,7 +87,7 @@ class Command_shares(Command):
                 if security_descriptor is not None:
                     sd_table = interactive_shell.sessionsManager.current_session.securityDescriptorTable(b''.join(shares[sharename].get("security_descriptor")), "sharename", prefix="", table_colors=True)
 
-                if do_check_rights:
+                if self.options.rights:
                     if security_descriptor is not None:
                         table.add_row(str_sharename, str_hidden, str_types, str_comment, str_access_rights, sd_table)
                     else:

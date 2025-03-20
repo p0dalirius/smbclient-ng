@@ -5,6 +5,7 @@
 # Date created       : 18 mar 2025
 
 from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
 class Command_exit(Command):
@@ -20,5 +21,9 @@ class Command_exit(Command):
         "autocomplete": []
     }
     
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        return parser
+
     def run(self, interactive_shell, arguments: list[str], command: str):
         interactive_shell.running = False

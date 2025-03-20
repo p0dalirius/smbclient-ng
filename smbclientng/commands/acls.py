@@ -4,11 +4,13 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
+import ntpath
 from smbclientng.types.Command import Command
 from smbclientng.utils.decorator import active_smb_connection_needed, smb_share_is_set
 from smbclientng.utils import windows_ls_entry
 from impacket.smb3structs import SMB2_0_INFO_SECURITY, SMB2_SEC_INFO_00, OWNER_SECURITY_INFORMATION, DACL_SECURITY_INFORMATION, GROUP_SECURITY_INFORMATION, READ_CONTROL, FILE_READ_ATTRIBUTES, FILE_DIRECTORY_FILE, FILE_NON_DIRECTORY_FILE, FILE_OPEN
-import ntpath
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
+from smbclientng.utils.utils import resolve_remote_files
 
 
 class Command_acls(Command):
@@ -24,6 +26,11 @@ class Command_acls(Command):
         "autocomplete": ["remote_directory"]
     }
 
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('files', nargs='*', help='Files or directories to retrieve ACLs for')
+        return parser
+
     @active_smb_connection_needed
     @smb_share_is_set
     def run(self, interactive_shell, arguments: list[str], command: str):
@@ -31,23 +38,30 @@ class Command_acls(Command):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        if len(arguments) == 0:
-            arguments = ['.']
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
         
-        smbClient = interactive_shell.sessionsManager.current_session.smbClient
-        sharename = interactive_shell.sessionsManager.current_session.smb_share
-        foldername = interactive_shell.sessionsManager.current_session.smb_cwd
-        tree_id = smbClient.connectTree(sharename)
+        if len(self.options.files) == 0:
+            self.options.files = ['*']
 
-        for entry in smbClient.listPath(sharename, ntpath.join(foldername, '*')):
+        # Parse wildcards
+        files_and_directories = resolve_remote_files(interactive_shell.sessionsManager.current_session, self.options.files)
+        
+        session = interactive_shell.sessionsManager.current_session
+        tree_id = session.smbClient.connectTree(session.smb_share)
+
+        for remotepath in files_and_directories:
+            entry = session.get_entry(remotepath)
+
             interactive_shell.logger.print(windows_ls_entry(entry, interactive_shell.config))
             filename = entry.get_longname()
 
             if filename in [".",".."]:
                 continue
-            filename = ntpath.join(foldername, filename)
+            filename = ntpath.join(session.smb_cwd, filename)
             try:
-                file_id = smbClient.getSMBServer().create(
+                file_id = session.smbClient.getSMBServer().create(
                     tree_id,
                     filename,
                     READ_CONTROL | FILE_READ_ATTRIBUTES,
@@ -61,7 +75,7 @@ class Command_acls(Command):
                 continue
 
             try:
-                file_info = smbClient.getSMBServer().queryInfo(
+                file_info = session.smbClient.getSMBServer().queryInfo(
                     tree_id,
                     file_id,
                     infoType=SMB2_0_INFO_SECURITY,
@@ -73,6 +87,6 @@ class Command_acls(Command):
                 interactive_shell.logger.error(f"Could not get attributes for file {filename}: {str(err)}")
                 continue
 
-            interactive_shell.sessionsManager.current_session.printSecurityDescriptorTable(file_info, filename)
+            session.printSecurityDescriptorTable(file_info, filename)
 
             interactive_shell.logger.print()

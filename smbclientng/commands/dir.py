@@ -5,7 +5,8 @@
 # Date created       : 18 mar 2025
 
 from smbclientng.commands.ls import Command_ls
-
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
+    
 
 class Command_dir(Command_ls):
     name = "dir"
@@ -19,3 +20,7 @@ class Command_dir(Command_ls):
         "subcommands": [],
         "autocomplete": ["remote_directory"]
     }
+
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        return parser

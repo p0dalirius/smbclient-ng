@@ -6,6 +6,7 @@
 
 from smbclientng.utils.decorator import active_smb_connection_needed, smb_share_is_set
 from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
 class Command_tree(Command):
@@ -21,14 +22,24 @@ class Command_tree(Command):
         "autocomplete": ["remote_directory"]
     }
 
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('path', type=str, nargs='*', help='List of remote directories to display')
+        return parser
+
     @active_smb_connection_needed
     @smb_share_is_set
     def run(self, interactive_shell, arguments: list[str], command: str):
-    # Command arguments required   : No
-    # Active SMB connection needed : Yes
-    # SMB share needed             : Yes
+        # Command arguments required   : No
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
 
-        if len(arguments) == 0:
-            interactive_shell.sessionsManager.current_session.tree(path='.')
-        else:
-            interactive_shell.sessionsManager.current_session.tree(path=arguments[0])
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
+
+        if len(self.options.path) == 0:
+            self.options.path = ['.']
+
+        for path in self.options.path:
+            interactive_shell.sessionsManager.current_session.tree(path=path)

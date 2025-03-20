@@ -5,6 +5,7 @@
 # Date created       : 18 mar 2025
 
 from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
 class Command_reconnect(Command):
@@ -19,6 +20,10 @@ class Command_reconnect(Command):
         "subcommands": [],
         "autocomplete": []
     }
+
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        return parser
 
     def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : No

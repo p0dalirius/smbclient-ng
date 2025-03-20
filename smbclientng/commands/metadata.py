@@ -5,9 +5,10 @@
 # Date created       : 18 mar 2025
 
 
-from smbclientng.utils.decorator import command_arguments_required, smb_share_is_set, active_smb_connection_needed
+from smbclientng.utils.decorator import smb_share_is_set, active_smb_connection_needed
 from smbclientng.utils.utils import resolve_remote_files, b_filesize
 from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 import datetime
 import ntpath
 import traceback
@@ -26,7 +27,11 @@ class Command_metadata(Command):
         "autocomplete": []
     }
     
-    @command_arguments_required
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('files', nargs='*', help='Files or directories to get')
+        return parser
+
     @smb_share_is_set
     @active_smb_connection_needed
     def run(self, interactive_shell, arguments: list[str], command: str):
@@ -34,12 +39,19 @@ class Command_metadata(Command):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        arguments = resolve_remote_files(interactive_shell.sessionsManager.current_session, arguments)
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
+        
+        if len(self.options.files) == 0:
+            self.options.files = ['*']
+
+        remote_files = resolve_remote_files(interactive_shell.sessionsManager.current_session, self.options.files)
 
         smbClient = interactive_shell.sessionsManager.current_session.smbClient
         sharename = interactive_shell.sessionsManager.current_session.smb_share
         
-        for path_to_file in arguments:
+        for path_to_file in remote_files:
             entry = interactive_shell.sessionsManager.current_session.get_entry(path_to_file)
 
             if entry is None:

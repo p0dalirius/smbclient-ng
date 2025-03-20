@@ -4,9 +4,9 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.utils.decorator import command_arguments_required
 import os
 from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
 class Command_lmkdir(Command):
@@ -21,14 +21,22 @@ class Command_lmkdir(Command):
         "subcommands": [],
         "autocomplete": ["local_directory"]
     }
-            
-    @command_arguments_required
+
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('path', type=str, nargs='+', help='List of local directories to create')
+        return parser
+
     def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : No
         # SMB share needed             : No
 
-        for path in arguments:
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
+
+        for path in self.options.path:
             if os.path.sep in path:
                 path = path.strip(os.path.sep).split(os.path.sep)
             else:

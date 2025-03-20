@@ -4,9 +4,10 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.utils.decorator import active_smb_connection_needed, smb_share_is_set
 from smbclientng.utils.utils import resolve_remote_files, windows_ls_entry
 from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
+from smbclientng.utils.decorator import smb_share_is_set
 
 
 class Command_ls(Command):
@@ -22,20 +23,26 @@ class Command_ls(Command):
         "autocomplete": ["remote_directory"]
     }
 
-    @active_smb_connection_needed
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('path', type=str, nargs='*', help='List of remote directories to list')
+        return parser
+
     @smb_share_is_set
     def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        if len(arguments) == 0:
-            arguments = ['.']
-        else:
-            arguments = resolve_remote_files(interactive_shell.sessionsManager.current_session, arguments)
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
 
-        for path in arguments:
-            if len(arguments) > 1:
+        if len(self.options.path) == 0:
+            self.options.path = ['.']
+
+        for path in self.options.path:
+            if len(self.options.path) > 1:
                 interactive_shell.logger.print("%s:" % path)
 
             if interactive_shell.sessionsManager.current_session.path_isdir(pathFromRoot=path):

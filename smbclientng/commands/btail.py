@@ -11,6 +11,7 @@ from rich.syntax import Syntax
 from rich.console import Console
 from impacket.smbconnection import SessionError as SMBConnectionSessionError
 from impacket.smb3 import SessionError as SMB3SessionError
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 import charset_normalizer
 import ntpath
 
@@ -28,7 +29,12 @@ class Command_btail(Command):
         "autocomplete": ["remote_file"]
     }
 
-    @command_arguments_required
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('-n', '--lines', type=int, default=10, help='Number of lines to display')
+        parser.add_argument('files', nargs='*', help='Files or directories to get')
+        return parser
+
     @active_smb_connection_needed
     @smb_share_is_set
     def run(self, interactive_shell, arguments: list[str], command: str):
@@ -36,7 +42,12 @@ class Command_btail(Command):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        n_lines = 10
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
+        
+        if len(self.options.files) == 0:
+            self.options.files = ['*']
 
         # Parse wildcards
         files_and_directories = resolve_remote_files(interactive_shell.sessionsManager.current_session, arguments)
@@ -59,8 +70,8 @@ class Command_btail(Command):
                                     lexer = "html"
 
                             lines = filecontent.split('\n')
-                            if len(lines) > n_lines:
-                                filecontent = '\n'.join(lines[-n_lines:])
+                            if len(lines) > self.options.lines:
+                                filecontent = '\n'.join(lines[-self.options.lines:])
 
                             syntax = Syntax(code=filecontent, line_numbers=True, lexer=lexer)
                             if len(files_and_directories) > 1:

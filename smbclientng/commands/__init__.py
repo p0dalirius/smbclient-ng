@@ -12,7 +12,6 @@ from smbclientng.commands.cat import Command_cat
 from smbclientng.commands.cd import Command_cd
 from smbclientng.commands.close import Command_close
 from smbclientng.commands.dir import Command_dir
-from smbclientng.commands.debug import Command_debug
 from smbclientng.commands.exit import Command_exit
 from smbclientng.commands.find import Command_find
 from smbclientng.commands.get import Command_get
@@ -59,7 +58,6 @@ __all__ = [
     "Command_cat",
     "Command_cd",
     "Command_close",
-    "Command_debug",
     "Command_dir",
     "Command_exit",
     "Command_find",

@@ -5,8 +5,9 @@
 # Date created       : 18 mar 2025
 
 import ntpath    
-from smbclientng.utils.decorator import command_arguments_required, active_smb_connection_needed, smb_share_is_set
+from smbclientng.utils.decorator import active_smb_connection_needed, smb_share_is_set
 from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
 class Command_rm(Command):
@@ -22,7 +23,11 @@ class Command_rm(Command):
         "autocomplete": ["remote_file"]
     }
 
-    @command_arguments_required
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('path', type=str, nargs='*', help='List of remote files to remove')
+        return parser
+
     @active_smb_connection_needed
     @smb_share_is_set
     def run(self, interactive_shell, arguments: list[str], command: str):
@@ -30,7 +35,11 @@ class Command_rm(Command):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        for path_to_file in arguments:
+        self.options = self.processArguments(arguments=arguments)   
+        if self.options is None:
+            return 
+
+        for path_to_file in self.options.path:
             # Check if the path is absolute
             # Fullpath is required to check if path is a file
             if ntpath.isabs(path_to_file):

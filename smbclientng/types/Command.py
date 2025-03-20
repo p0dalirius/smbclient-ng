@@ -7,11 +7,12 @@
 from __future__ import annotations
 import argparse
 import shlex
+from smbclientng.types.CommandArgumentParser import CommandArgumentParserError
 from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from smbclientng.core.SMBSession import SMBSession
     from smbclientng.core.Logger import Logger
-    from smbclientng.core.Config import Config
+    from smbclientng.types.Config import Config
 
 
 class Command(object):
@@ -66,8 +67,11 @@ class Command(object):
         try:
             self.parser = self.setupParser()
             self.options = self.parser.parse_args(__iterableArguments)
+
+        except CommandArgumentParserError as e:
+            return None
+        
         except SystemExit as e:
-            print("SystemExit")
             return self.options
 
         return self.options

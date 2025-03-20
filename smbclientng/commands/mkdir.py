@@ -4,8 +4,9 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.utils.decorator import command_arguments_required, active_smb_connection_needed, smb_share_is_set
+from smbclientng.utils.decorator import active_smb_connection_needed, smb_share_is_set
 from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
 class Command_mkdir(Command):
@@ -20,8 +21,12 @@ class Command_mkdir(Command):
         "subcommands": [],
         "autocomplete": ["remote_directory"]
     }
-    
-    @command_arguments_required
+
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('path', type=str, nargs='*', help='List of remote directories to create')
+        return parser
+
     @active_smb_connection_needed
     @smb_share_is_set
     def run(self, interactive_shell, arguments: list[str], command: str):
@@ -29,4 +34,12 @@ class Command_mkdir(Command):
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        interactive_shell.sessionsManager.current_session.mkdir(path=arguments[0])
+        self.options = self.processArguments(arguments=arguments)   
+        if self.options is None:
+            return 
+
+        for path in self.options.path:
+            try:
+                interactive_shell.sessionsManager.current_session.mkdir(path=path)
+            except Exception as err:
+                interactive_shell.logger.print("Error creating directory %s: %s" % (path, err))

@@ -6,6 +6,7 @@
 
 from smbclientng.utils.utils import local_tree
 from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
 class Command_ltree(Command):
@@ -21,17 +22,22 @@ class Command_ltree(Command):
         "autocomplete": ["local_directory"]
     }
     
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('path', type=str, nargs='*', help='List of local directories to list')
+        return parser
+
     def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : No
         # SMB share needed             : No
 
-        if len(arguments) == 0:
-            path = '.'
-        else:
-            path = arguments[0]
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
 
-        if len(arguments) == 0:
-            local_tree(path='.', config=interactive_shell.config)
-        else:
+        if len(self.options.path) == 0:
+            self.options.path = ['.']
+
+        for path in self.options.path:
             local_tree(path=path, config=interactive_shell.config)

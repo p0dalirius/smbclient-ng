@@ -4,7 +4,7 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.utils.decorator import command_arguments_required, active_smb_connection_needed, smb_share_is_set
+from smbclientng.utils.decorator import active_smb_connection_needed, smb_share_is_set
 from smbclientng.utils.utils import resolve_remote_files
 from rich.syntax import Syntax
 from rich.console import Console
@@ -13,6 +13,7 @@ from impacket.smb3 import SessionError as SMB3SessionError
 import charset_normalizer
 import ntpath
 from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
 class Command_bhead(Command):
@@ -28,15 +29,25 @@ class Command_bhead(Command):
         "autocomplete": ["remote_file"]
     }
 
-    @command_arguments_required
+    def setupParser(self) -> CommandArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        parser.add_argument('-n', '--lines', type=int, default=10, help='Number of lines to display')
+        parser.add_argument('files', nargs='*', help='Files or directories to get')
+        return parser
+
     @active_smb_connection_needed
     @smb_share_is_set
     def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
-
-        n_lines = 10
+        
+        self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return 
+        
+        if len(self.options.files) == 0:
+            self.options.files = ['*']
 
         # Parse wildcards
         files_and_directories = resolve_remote_files(interactive_shell.sessionsManager.current_session, arguments)
@@ -59,8 +70,8 @@ class Command_bhead(Command):
                                     lexer = "html"
 
                             lines = filecontent.split('\n')
-                            if len(lines) > n_lines:
-                                filecontent = '\n'.join(lines[:n_lines])
+                            if len(lines) > self.options.lines:
+                                filecontent = '\n'.join(lines[:self.options.lines])
 
                             syntax = Syntax(code=filecontent, line_numbers=True, lexer=lexer)
                             if len(files_and_directories) > 1:

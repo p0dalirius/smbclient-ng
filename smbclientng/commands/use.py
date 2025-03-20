@@ -26,8 +26,7 @@ class Command_use(Command):
         parser = CommandArgumentParser(description=self.description)
         parser.add_argument('sharename', help='The name of the share to use')
         return parser
-    
-    @command_arguments_required
+
     @active_smb_connection_needed
     def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : Yes
