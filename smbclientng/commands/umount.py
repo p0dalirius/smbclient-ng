@@ -5,28 +5,30 @@
 # Date created       : 18 mar 2025
 
 from smbclientng.utils.decorator import command_arguments_required, active_smb_connection_needed, smb_share_is_set
+from smbclientng.core.Command import Command
 
 
-HELP = {
-    "description": [
-        "Removes a mount point of the remote share on the local machine.",
-        "Syntax: 'umount <local_mount_point>'"
-    ], 
-    "subcommands": [],
-    "autocomplete": ["remote_directory"]
-}
+class Command_umount(Command):
+    HELP = {
+        "description": [
+            "Removes a mount point of the remote share on the local machine.",
+            "Syntax: 'umount <local_mount_point>'"
+        ], 
+        "subcommands": [],
+        "autocomplete": ["remote_directory"]
+    }
 
+    @classmethod
+    @command_arguments_required
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def run(cls, interactive_shell, arguments: list[str], command: str):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
 
-@command_arguments_required
-@active_smb_connection_needed
-@smb_share_is_set
-def command_umount(self, arguments: list[str], command: str):
-    # Command arguments required   : Yes
-    # Active SMB connection needed : Yes
-    # SMB share needed             : Yes
+        local_mount_point = arguments[0]
 
-    local_mount_point = arguments[0]
-
-    self.logger.debug("Trying to unmount local mount point '%s'" % (local_mount_point))
-    
-    self.sessionsManager.current_session.umount(local_mount_point)
+        interactive_shell.logger.debug("Trying to unmount local mount point '%s'" % (local_mount_point))
+        
+        interactive_shell.sessionsManager.current_session.umount(local_mount_point)

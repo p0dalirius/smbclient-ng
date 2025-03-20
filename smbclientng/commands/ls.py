@@ -6,46 +6,48 @@
 
 from smbclientng.utils.decorator import active_smb_connection_needed, smb_share_is_set
 from smbclientng.utils import resolve_remote_files, windows_ls_entry
+from smbclientng.core.Command import Command
 
 
-HELP = {
-    "description": [
-        "List the contents of the current remote working directory.", 
-        "Syntax: 'ls'"
-    ], 
-    "subcommands": [],
-    "autocomplete": ["remote_directory"]
-}
+class Command_ls(Command):
+    HELP = {
+        "description": [
+            "List the contents of the current remote working directory.", 
+            "Syntax: 'ls'"
+        ], 
+        "subcommands": [],
+        "autocomplete": ["remote_directory"]
+    }
 
 
-@active_smb_connection_needed
-@smb_share_is_set
-def command_ls(self, arguments: list[str], command: str):
-    # Command arguments required   : No
-    # Active SMB connection needed : Yes
-    # SMB share needed             : Yes
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def run(cls, interactive_shell, arguments: list[str], command: str):
+        # Command arguments required   : No
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
 
-    if len(arguments) == 0:
-        arguments = ['.']
-    else:
-        arguments = resolve_remote_files(self.sessionsManager.current_session, arguments)
-
-    for path in arguments:
-        if len(arguments) > 1:
-            self.logger.print("%s:" % path)
-
-        if self.sessionsManager.current_session.path_isdir(pathFromRoot=path):
-            # Read the files
-            directory_contents = self.sessionsManager.current_session.list_contents(path=path)
+        if len(arguments) == 0:
+            arguments = ['.']
         else:
-            entry = self.sessionsManager.current_session.get_entry(path=path)
-            if entry is not None:
-                directory_contents = {entry.get_longname(): entry}
+            arguments = resolve_remote_files(interactive_shell.sessionsManager.current_session, arguments)
+
+        for path in arguments:
+            if len(arguments) > 1:
+                interactive_shell.logger.print("%s:" % path)
+
+            if interactive_shell.sessionsManager.current_session.path_isdir(pathFromRoot=path):
+                # Read the files
+                directory_contents = interactive_shell.sessionsManager.current_session.list_contents(path=path)
             else:
-                directory_contents = {}
+                entry = interactive_shell.sessionsManager.current_session.get_entry(path=path)
+                if entry is not None:
+                    directory_contents = {entry.get_longname(): entry}
+                else:
+                    directory_contents = {}
 
-        for longname in sorted(directory_contents.keys(), key=lambda x:x.lower()):
-            self.logger.print(windows_ls_entry(directory_contents[longname], self.config))
+            for longname in sorted(directory_contents.keys(), key=lambda x:x.lower()):
+                interactive_shell.logger.print(windows_ls_entry(directory_contents[longname], interactive_shell.config))
 
-        if len(arguments) > 1:
-            self.logger.print()
+            if len(arguments) > 1:
+                interactive_shell.logger.print()

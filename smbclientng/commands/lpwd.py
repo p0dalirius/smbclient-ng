@@ -5,21 +5,22 @@
 # Date created       : 18 mar 2025
 
 import os
+from smbclientng.core.Command import Command
 
+class Command_lpwd(Command):
+    HELP = {
+        "description": [
+            "Shows the current local directory.", 
+            "Syntax: 'lpwd'"
+        ],
+        "subcommands": [],
+        "autocomplete": []
+    }
 
-HELP = {
-    "description": [
-        "Shows the current local directory.", 
-        "Syntax: 'lpwd'"
-    ],
-    "subcommands": [],
-    "autocomplete": []
-}
+    @classmethod
+    def run(cls, interactive_shell, arguments: list[str], command: str):
+        # Command arguments required   : No
+        # Active SMB connection needed : No
+        # SMB share needed             : No
 
-
-def command_lpwd(self, arguments: list[str], command: str):
-    # Command arguments required   : No
-    # Active SMB connection needed : No
-    # SMB share needed             : No
-
-    self.logger.print(os.getcwd())
+        interactive_shell.logger.print(os.getcwd())

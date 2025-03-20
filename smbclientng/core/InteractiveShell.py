@@ -49,51 +49,51 @@ class InteractiveShell(object):
     commandCompleterObject: CommandCompleter
     
     commands = {
-        "acls": commands.command_acls,
-        "bat": commands.command_bat,
-        "bhead": commands.command_bhead,
-        "btail": commands.command_btail,
-        "cat": commands.command_cat,
-        "cd": commands.command_cd,
-        "close": commands.command_close,
-        "dir": commands.command_dir,
-        "debug": commands.command_debug,
-        "exit": commands.command_exit,
-        "find": commands.command_find,
-        "get": commands.command_get,
-        "help": commands.command_help,
-        "head": commands.command_head,
-        "history": commands.command_history,
-        "info": commands.command_info,
-        "lbat": commands.command_lbat,
-        "lcat": commands.command_lcat,
-        "lcd": commands.command_lcd,
-        "lcp": commands.command_lcp,
-        "lls": commands.command_lls,
-        "lmkdir": commands.command_lmkdir,
-        "lpwd": commands.command_lpwd,
-        "lrename": commands.command_lrename,
-        "lrmdir": commands.command_lrmdir,
-        "lrm": commands.command_lrm,
-        "ls": commands.command_ls,
-        "ltree": commands.command_ltree,
-        "metadata": commands.command_metadata,
-        "mkdir": commands.command_mkdir,
-        "module": commands.command_module,
-        "mount": commands.command_mount,
-        "put": commands.command_put,
-        "reconnect": commands.command_reconnect,
-        "reset": commands.command_reset,
-        "rmdir": commands.command_rmdir,
-        "rm": commands.command_rm,
-        "sessions": commands.command_sessions,
-        "shares": commands.command_shares,
-        "sizeof": commands.command_sizeof,
-        "tail": commands.command_tail,
-        "tree": commands.command_tree,
-        "umount": commands.command_umount,
-        "use": commands.command_use,
-        "quit": commands.command_quit,
+        "acls": commands.Command_acls,
+        "bat": commands.Command_bat,
+        "bhead": commands.Command_bhead,
+        "btail": commands.Command_btail,
+        "cat": commands.Command_cat,
+        "cd": commands.Command_cd,
+        "close": commands.Command_close,
+        "dir": commands.Command_dir,
+        "debug": commands.Command_debug,
+        "exit": commands.Command_exit,
+        "find": commands.Command_find,
+        "get": commands.Command_get,
+        "help": commands.Command_help,
+        "head": commands.Command_head,
+        "history": commands.Command_history,
+        "info": commands.Command_info,
+        "lbat": commands.Command_lbat,
+        "lcat": commands.Command_lcat,
+        "lcd": commands.Command_lcd,
+        "lcp": commands.Command_lcp,
+        "lls": commands.Command_lls,
+        "lmkdir": commands.Command_lmkdir,
+        "lpwd": commands.Command_lpwd,
+        "lrename": commands.Command_lrename,
+        "lrmdir": commands.Command_lrmdir,
+        "lrm": commands.Command_lrm,
+        "ls": commands.Command_ls,
+        "ltree": commands.Command_ltree,
+        "metadata": commands.Command_metadata,
+        "mkdir": commands.Command_mkdir,
+        "module": commands.Command_module,
+        "mount": commands.Command_mount,
+        "put": commands.Command_put,
+        "reconnect": commands.Command_reconnect,
+        "reset": commands.Command_reset,
+        "rmdir": commands.Command_rmdir,
+        "rm": commands.Command_rm,
+        "sessions": commands.Command_sessions,
+        "shares": commands.Command_shares,
+        "sizeof": commands.Command_sizeof,
+        "tail": commands.Command_tail,
+        "tree": commands.Command_tree,
+        "umount": commands.Command_umount,
+        "use": commands.Command_use,
+        "quit": commands.Command_quit,
     }
 
     def __init__(self, sessionsManager: SessionsManager, config: Config, logger: Logger):
@@ -137,7 +137,7 @@ class InteractiveShell(object):
 
                 except EOFError as e:
                     self.logger.print()
-                    running = False
+                    self.running = False
 
                 except Exception as err:
                     if self.config.debug:
@@ -156,7 +156,7 @@ class InteractiveShell(object):
 
                 except EOFError as e:
                     self.logger.print()
-                    running = False
+                    self.running = False
 
                 except Exception as err:
                     if self.config.debug:
@@ -182,7 +182,7 @@ class InteractiveShell(object):
 
         # Execute the command
         elif command in self.commands.keys():
-            self.commands[command](self, arguments, command)
+            self.commands[command].run(self, arguments, command)
 
         # Fallback to unknown command   
         else:

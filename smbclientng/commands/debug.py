@@ -5,21 +5,23 @@
 # Date created       : 18 mar 2025
 
 import traceback
+from smbclientng.core.Command import Command
 
 
-HELP = {
-    "description": [
-        "Command for dev debugging.",
-        "Syntax: 'debug'"
-    ], 
-    "subcommands": [],
-    "autocomplete": []
-}
+class Command_debug(Command):
+    HELP = {
+        "description": [
+            "Command for dev debugging.",
+            "Syntax: 'debug'"
+        ], 
+        "subcommands": [],
+        "autocomplete": []
+    }
 
-
-def command_debug(self, arguments: list[str], command: str):
-    try:
-        self.logger.print("[debug] command    = '%s'" % command)
-        self.logger.print("[debug] arguments  = %s" % arguments)
-    except Exception as e:
-        traceback.print_exc()
+    @classmethod
+    def run(cls, interactive_shell, arguments: list[str], command: str):
+        try:
+            interactive_shell.logger.print("[debug] command    = '%s'" % command)
+            interactive_shell.logger.print("[debug] arguments  = %s" % arguments)
+        except Exception as e:
+            traceback.print_exc()

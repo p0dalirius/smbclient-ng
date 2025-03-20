@@ -5,26 +5,28 @@
 # Date created       : 18 mar 2025
 
 from smbclientng.utils.decorator import active_smb_connection_needed, smb_share_is_set
+from smbclientng.core.Command import Command
 
 
-HELP = {
-    "description": [
-        "Displays a tree view of the remote directories.",
-        "Syntax: 'tree [directory]'"
-    ], 
-    "subcommands": [],
-    "autocomplete": ["remote_directory"]
-}
+class Command_tree(Command):
+    HELP = {
+        "description": [
+            "Displays a tree view of the remote directories.",
+            "Syntax: 'tree [directory]'"
+        ], 
+        "subcommands": [],
+        "autocomplete": ["remote_directory"]
+    }
 
-
-@active_smb_connection_needed
-@smb_share_is_set
-def command_tree(self, arguments: list[str], command: str):
+    @classmethod
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def run(cls, interactive_shell, arguments: list[str], command: str):
     # Command arguments required   : No
     # Active SMB connection needed : Yes
     # SMB share needed             : Yes
 
-    if len(arguments) == 0:
-        self.sessionsManager.current_session.tree(path='.')
-    else:
-        self.sessionsManager.current_session.tree(path=arguments[0])
+        if len(arguments) == 0:
+            interactive_shell.sessionsManager.current_session.tree(path='.')
+        else:
+            interactive_shell.sessionsManager.current_session.tree(path=arguments[0])

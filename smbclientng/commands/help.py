@@ -4,23 +4,26 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-
-HELP = {
-    "description": [
-        "Displays this help message.",
-        "Syntax: 'help'"
-    ], 
-    "subcommands": ["format"],
-    "autocomplete": []
-}
+from smbclientng.core.Command import Command
 
 
-def command_help(self, arguments: list[str], command: str):
-    # Command arguments required   : No
-    # Active SMB connection needed : No
-    # SMB share needed             : No
+class Command_help(Command):
+    HELP = {
+        "description": [
+            "Displays this help message.",
+            "Syntax: 'help'"
+        ], 
+        "subcommands": ["format"],
+        "autocomplete": []
+    }
 
-    if len(arguments) != 0:
-        self.commandCompleterObject.print_help(command=arguments[0])
-    else:
-        self.commandCompleterObject.print_help(command=None)
+    @classmethod
+    def run(cls, interactive_shell, arguments: list[str], command: str):
+        # Command arguments required   : No
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+
+        if len(arguments) != 0:
+            interactive_shell.commandCompleterObject.print_help(command=arguments[0])
+        else:
+            interactive_shell.commandCompleterObject.print_help(command=None)

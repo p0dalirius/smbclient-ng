@@ -9,51 +9,53 @@ from impacket.smbconnection import SessionError as SMBConnectionSessionError
 from impacket.smb3 import SessionError as SMB3SessionError
 from smbclientng.utils import resolve_remote_files
 import charset_normalizer
+from smbclientng.core.Command import Command
 
 
-HELP = {
-    "description": [
-        "Get the first <n> lines of a remote file.", 
-        "Syntax: 'head <file>'"
-    ], 
-    "subcommands": [],
-    "autocomplete": ["remote_file"]
-}
+class Command_head(Command):
+    HELP = {
+        "description": [
+            "Get the first <n> lines of a remote file.", 
+            "Syntax: 'head <file>'"
+        ], 
+        "subcommands": [],
+        "autocomplete": ["remote_file"]
+    }
 
+    @classmethod
+    @command_arguments_required
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def run(cls, interactive_shell, arguments: list[str], command: str):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
 
-@command_arguments_required
-@active_smb_connection_needed
-@smb_share_is_set
-def command_head(self, arguments: list[str], command: str):
-    # Command arguments required   : Yes
-    # Active SMB connection needed : Yes
-    # SMB share needed             : Yes
+        n_lines = 10
 
-    n_lines = 10
+        # Parse wildcards
+        files_and_directories = resolve_remote_files(interactive_shell.sessionsManager.current_session, arguments)
 
-    # Parse wildcards
-    files_and_directories = resolve_remote_files(self.sessionsManager.current_session, arguments)
+        for path_to_file in files_and_directories:
+            if interactive_shell.sessionsManager.current_session.path_isfile(pathFromRoot=path_to_file):
+                # Read the file
+                try:
+                    rawcontents = interactive_shell.sessionsManager.current_session.read_file(path=path_to_file)
 
-    for path_to_file in files_and_directories:
-        if self.sessionsManager.current_session.path_isfile(pathFromRoot=path_to_file):
-            # Read the file
-            try:
-                rawcontents = self.sessionsManager.current_session.read_file(path=path_to_file)
+                    if rawcontents is not None:
+                        encoding = charset_normalizer.detect(rawcontents)["encoding"]
 
-                if rawcontents is not None:
-                    encoding = charset_normalizer.detect(rawcontents)["encoding"]
+                        if encoding is not None:
+                            filecontent = rawcontents.decode(encoding).rstrip()
+                            lines = filecontent.split('\n')
+                            if len(lines) > n_lines:
+                                filecontent = '\n'.join(lines[:n_lines])
+                            if len(files_and_directories) > 1:
+                                interactive_shell.logger.print("\x1b[1;93m[>] %s\x1b[0m" % (path_to_file+' ').ljust(80,'='))
+                            interactive_shell.logger.print(filecontent)
 
-                    if encoding is not None:
-                        filecontent = rawcontents.decode(encoding).rstrip()
-                        lines = filecontent.split('\n')
-                        if len(lines) > n_lines:
-                            filecontent = '\n'.join(lines[:n_lines])
-                        if len(files_and_directories) > 1:
-                            self.logger.print("\x1b[1;93m[>] %s\x1b[0m" % (path_to_file+' ').ljust(80,'='))
-                        self.logger.print(filecontent)
-
-                    else:
-                        self.logger.error("[!] Could not detect charset of '%s'." % path_to_file)
-                        
-            except (SMBConnectionSessionError, SMB3SessionError) as e:
-                self.logger.error("[!] SMB Error: %s" % e)
+                        else:
+                            interactive_shell.logger.error("[!] Could not detect charset of '%s'." % path_to_file)
+                            
+                except (SMBConnectionSessionError, SMB3SessionError) as e:
+                    interactive_shell.logger.error("[!] SMB Error: %s" % e)

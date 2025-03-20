@@ -4,18 +4,15 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.commands.ls import command_ls
-
-    
-HELP = {
-    "description": [
-        "List the contents of the current working directory.",
-        "Syntax: 'dir'"
-    ], 
-    "subcommands": [],
-    "autocomplete": ["remote_directory"]
-}
+from smbclientng.commands.ls import Command_ls
 
 
-def command_dir(self, arguments: list[str], command: str):
-    command_ls(self, arguments, command)
+class Command_dir(Command_ls):
+    HELP = {
+        "description": [
+            "List the contents of the current working directory.",
+            "Syntax: 'dir'"
+        ], 
+        "subcommands": [],
+        "autocomplete": ["remote_directory"]
+    }

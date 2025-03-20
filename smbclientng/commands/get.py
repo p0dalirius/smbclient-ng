@@ -9,54 +9,56 @@ from impacket.smbconnection import SessionError as SMBConnectionSessionError
 from impacket.smb3 import SessionError as SMB3SessionError
 import traceback
 from smbclientng.utils.utils import resolve_remote_files
-
-
-HELP = {
-    "description": [
-        "Get a remote file.",
-        "Syntax: 'get [-r] [-k] <directory or file>'"
-    ], 
-    "subcommands": [],
-    "autocomplete": ["remote_file"]
-}
-
-
-@command_arguments_required
-@active_smb_connection_needed
-@smb_share_is_set
-def command_get(self, arguments: list[str], command: str):
-    # Command arguments required   : Yes
-    # Active SMB connection needed : Yes
-    # SMB share needed             : Yes
-
-    is_recursive = False
-    keep_remote_path = False  
-    # Parse '-r' option
-    while '-r' in arguments:
-        is_recursive = True
-        arguments.remove('-r')
+from smbclientng.core.Command import Command
     
-    # Parse '-k' option for keepRemotePath if you have it
-    while '-k' in arguments:
-        keep_remote_path = True
-        arguments.remove('-k')
 
-    # Handle 'get -r' with no other argument
-    if len(arguments) == 0:
-        arguments = ['*']
+class Command_get(Command):
+    HELP = {
+        "description": [
+            "Get a remote file.",
+            "Syntax: 'get [-r] [-k] <directory or file>'"
+        ], 
+        "subcommands": [],
+        "autocomplete": ["remote_file"]
+    }
 
-    # Parse wildcards
-    files_and_directories = resolve_remote_files(self.sessionsManager.current_session, arguments)
+    @classmethod
+    @command_arguments_required
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def run(cls, interactive_shell, arguments: list[str], command: str):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
 
-    # Download files/directories
-    for remotepath in files_and_directories:
-        try:
-            self.sessionsManager.current_session.get_file(
-                path=remotepath,
-                keepRemotePath=keep_remote_path,
-                is_recursive=is_recursive
-            )
-        except (SMBConnectionSessionError, SMB3SessionError) as e:
-            if self.config.debug:
-                traceback.print_exc()
-            self.logger.error("[!] SMB Error: %s" % e)
+        is_recursive = False
+        keep_remote_path = False  
+        # Parse '-r' option
+        while '-r' in arguments:
+            is_recursive = True
+            arguments.remove('-r')
+        
+        # Parse '-k' option for keepRemotePath if you have it
+        while '-k' in arguments:
+            keep_remote_path = True
+            arguments.remove('-k')
+
+        # Handle 'get -r' with no other argument
+        if len(arguments) == 0:
+            arguments = ['*']
+
+        # Parse wildcards
+        files_and_directories = resolve_remote_files(interactive_shell.sessionsManager.current_session, arguments)
+
+        # Download files/directories
+        for remotepath in files_and_directories:
+            try:
+                interactive_shell.sessionsManager.current_session.get_file(
+                    path=remotepath,
+                    keepRemotePath=keep_remote_path,
+                    is_recursive=is_recursive
+                )
+            except (SMBConnectionSessionError, SMB3SessionError) as e:
+                if interactive_shell.config.debug:
+                    traceback.print_exc()
+                interactive_shell.logger.error("[!] SMB Error: %s" % e)

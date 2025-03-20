@@ -4,20 +4,24 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-
-HELP = {
-    "description": [
-        "Connect to the remote machine (useful if connection timed out).", 
-        "Syntax: 'connect'"
-    ], 
-    "subcommands": [],
-    "autocomplete": []
-}
+from smbclientng.core.Command import Command
 
 
-def command_connect(self, arguments: list[str], command: str):
-    # Command arguments required   : No
-    # Active SMB connection needed : No
-    # SMB share needed             : No
+class Command_connect(Command): 
+    HELP = {
+        "description": [
+            "Connect to the remote machine (useful if connection timed out).", 
+            "Syntax: 'connect'"
+        ], 
+        "subcommands": [],
+        "autocomplete": []
+    }
 
-    self.sessionsManager.current_session.ping_smb_session()
+
+    @classmethod
+    def run(cls, interactive_shell, arguments: list[str], command: str):
+        # Command arguments required   : No
+        # Active SMB connection needed : No
+        # SMB share needed             : No
+
+        interactive_shell.sessionsManager.current_session.ping_smb_session()

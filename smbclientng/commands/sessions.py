@@ -4,16 +4,19 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-
-HELP = {
-    "description": [
-        "Manage the SMB sessions.", 
-        "Syntax: 'sessions [access|create|delete|execute|list]'"
-    ], 
-    "subcommands": ["create", "delete", "execute", "interact", "list"],
-    "autocomplete": []
-}
+from smbclientng.core.Command import Command
 
 
-def command_sessions(self, arguments: list[str], command: str):
-    self.sessionsManager.process_command_line(arguments)
+class Command_sessions(Command):
+    HELP = {
+        "description": [
+            "Manage the SMB sessions.", 
+            "Syntax: 'sessions [access|create|delete|execute|list]'"
+        ], 
+        "subcommands": ["create", "delete", "execute", "interact", "list"],
+        "autocomplete": []
+    }
+
+    @classmethod
+    def run(cls, interactive_shell, arguments: list[str], command: str):
+        interactive_shell.sessionsManager.process_command_line(arguments)

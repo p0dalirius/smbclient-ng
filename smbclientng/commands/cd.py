@@ -8,26 +8,28 @@ from smbclientng.utils.decorator import command_arguments_required, active_smb_c
 from impacket.smbconnection import SessionError as SMBConnectionSessionError
 from impacket.smb3 import SessionError as SMB3SessionError
 
+from smbclientng.core.Command import Command
 
-HELP = {
-    "description": [
-        "Change the current working directory.", 
-        "Syntax: 'cd <directory>'"
-    ], 
-    "subcommands": [],
-    "autocomplete": ["remote_directory"]
-}
+class Command_cd(Command):
+    HELP = {
+        "description": [
+            "Change the current working directory.", 
+            "Syntax: 'cd <directory>'"
+        ], 
+        "subcommands": [],
+        "autocomplete": ["remote_directory"]
+    }
 
+    @classmethod
+    @command_arguments_required
+    @active_smb_connection_needed
+    @smb_share_is_set
+    def run(cls, interactive_shell, arguments: list[str], command: str):
+        # Command arguments required   : Yes
+        # Active SMB connection needed : Yes
+        # SMB share needed             : Yes
 
-@command_arguments_required
-@active_smb_connection_needed
-@smb_share_is_set
-def command_cd(self, arguments: list[str], command: str):
-    # Command arguments required   : Yes
-    # Active SMB connection needed : Yes
-    # SMB share needed             : Yes
-
-    try:
-        self.sessionsManager.current_session.set_cwd(path=arguments[0])
-    except (SMBConnectionSessionError, SMB3SessionError) as e:
-        self.logger.error("[!] SMB Error: %s" % e)
+        try:
+            interactive_shell.sessionsManager.current_session.set_cwd(path=arguments[0])
+        except (SMBConnectionSessionError, SMB3SessionError) as e:
+            interactive_shell.logger.error("[!] SMB Error: %s" % e)

@@ -5,25 +5,27 @@
 # Date created       : 18 mar 2025
 
 from smbclientng.utils.decorator import command_arguments_required
+from smbclientng.core.Command import Command
 
 
-HELP = {
-    "description": [
-        "Loads a specific module for additional functionalities.",
-        "Syntax: 'module <name>'"
-    ], 
-    "subcommands": [],
-    "autocomplete": []
-}
+class Command_module(Command):
+    HELP = {
+        "description": [
+            "Loads a specific module for additional functionalities.",
+            "Syntax: 'module <name>'"
+        ], 
+        "subcommands": [],
+        "autocomplete": []
+    }
 
+    @classmethod
+    @command_arguments_required
+    def run(cls, interactive_shell, arguments: list[str], command: str):
+        module_name = arguments[0]
 
-@command_arguments_required
-def command_module(self, arguments: list[str], command: str):
-    module_name = arguments[0]
-
-    if module_name in self.modules.keys():
-        module = self.modules[module_name](self.sessionsManager.current_session, self.config, self.logger)
-        arguments_string = ' '.join(arguments[1:])
-        module.run(arguments_string)
-    else:
-        self.logger.error("Module '%s' does not exist." % module_name)
+        if module_name in interactive_shell.modules.keys():
+            module = interactive_shell.modules[module_name](interactive_shell.sessionsManager.current_session, interactive_shell.config, interactive_shell.logger)
+            arguments_string = ' '.join(arguments[1:])
+            module.run(arguments_string)
+        else:
+            interactive_shell.logger.error("Module '%s' does not exist." % module_name)
