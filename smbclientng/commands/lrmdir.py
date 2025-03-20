@@ -7,22 +7,24 @@
 from smbclientng.utils.decorator import command_arguments_required
 import os
 import shutil
-from smbclientng.core.Command import Command
+from smbclientng.types.Command import Command
     
 
 class Command_lrmdir(Command):
+    name = "lrmdir"
+    description = "Removes a local directory."
+
     HELP = {
         "description": [
-            "Removes a local directory.", 
+            description, 
             "Syntax: 'lrmdir <directory>'"
         ], 
         "subcommands": [],
         "autocomplete": ["local_directory"]
     }
-
-    @classmethod
+    
     @command_arguments_required
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : No
         # SMB share needed             : No

@@ -5,21 +5,23 @@
 # Date created       : 18 mar 2025
 
 import traceback
-from smbclientng.core.Command import Command
+from smbclientng.types.Command import Command
 
 
 class Command_debug(Command):
+    name = "debug"
+    description = "Command for dev debugging."
+
     HELP = {
         "description": [
-            "Command for dev debugging.",
+            description,
             "Syntax: 'debug'"
         ], 
         "subcommands": [],
         "autocomplete": []
     }
 
-    @classmethod
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         try:
             interactive_shell.logger.print("[debug] command    = '%s'" % command)
             interactive_shell.logger.print("[debug] arguments  = %s" % arguments)

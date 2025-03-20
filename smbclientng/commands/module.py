@@ -5,22 +5,24 @@
 # Date created       : 18 mar 2025
 
 from smbclientng.utils.decorator import command_arguments_required
-from smbclientng.core.Command import Command
+from smbclientng.types.Command import Command
 
 
 class Command_module(Command):
+    name = "module" 
+    description = "Loads a specific module for additional functionalities."
+
     HELP = {
         "description": [
-            "Loads a specific module for additional functionalities.",
+            description,
             "Syntax: 'module <name>'"
         ], 
         "subcommands": [],
         "autocomplete": []
     }
-
-    @classmethod
+    
     @command_arguments_required
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         module_name = arguments[0]
 
         if module_name in interactive_shell.modules.keys():

@@ -6,25 +6,26 @@
 
 import ntpath    
 from smbclientng.utils.decorator import command_arguments_required, active_smb_connection_needed, smb_share_is_set
-from smbclientng.core.Command import Command
+from smbclientng.types.Command import Command
 
 
 class Command_rm(Command):
+    name = "rm"
+    description = "Removes a remote file."
+
     HELP = {
         "description": [
-            "Removes a remote file.", 
+            description,
             "Syntax: 'rm <remote_file>'"
         ], 
         "subcommands": [],
         "autocomplete": ["remote_file"]
     }
 
-
-    @classmethod
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes

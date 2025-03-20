@@ -7,7 +7,7 @@
 from __future__ import annotations
 import argparse
 import shlex
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from smbclientng.core.SMBSession import SMBSession
     from smbclientng.core.Logger import Logger
@@ -23,15 +23,30 @@ class Command(object):
 
     name: str = ""
     description: str = ""
-    smbSession: SMBSession
-    options: argparse.Namespace
 
-    def __init__(self, smbSession: SMBSession, config: Config, logger: Logger):
+    smbSession: Optional[SMBSession] = None
+    config: Optional[Config] = None
+    logger: Optional[Logger] = None
+
+    options: Optional[argparse.Namespace] = None
+    parser: Optional[argparse.ArgumentParser] = None
+
+    def __init__(self, smbSession: Optional[SMBSession] = None, config: Optional[Config] = None, logger: Optional[Logger] = None):
         self.smbSession = smbSession
         self.config = config
         self.logger = logger
 
-    def parseArgs(self):
+        self.parser = self.setupParser()
+
+        kept_lines = []
+        for line in self.HELP["description"]:
+            if not line.strip().lower().startswith("syntax:"):
+                kept_lines.append(line)
+        usage = ':'.join(self.parser.format_usage().strip().split(":")[1:])
+        kept_lines.append("Syntax: '%s'" % (usage))
+        self.HELP["description"] = kept_lines
+
+    def setupParser(self) -> argparse.ArgumentParser:
         raise NotImplementedError("Subclasses must implement this method")
 
     def run(self):
@@ -42,16 +57,18 @@ class Command(object):
         """
         raise NotImplementedError("Subclasses must implement this method")
 
-    def processArguments(self, parser: argparse.ArgumentParser, arguments) -> argparse.Namespace:
+    def processArguments(self, arguments) -> argparse.Namespace:
         if type(arguments) == list:
             arguments = ' '.join(arguments)
         
         __iterableArguments = shlex.split(arguments)
 
         try:
-            self.options = parser.parse_args(__iterableArguments)
+            self.parser = self.setupParser()
+            self.options = self.parser.parse_args(__iterableArguments)
         except SystemExit as e:
-            pass
+            print("SystemExit")
+            return self.options
 
         return self.options
         

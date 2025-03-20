@@ -4,27 +4,38 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
+import argparse
 from smbclientng.utils.decorator import command_arguments_required, active_smb_connection_needed
-from smbclientng.core.Command import Command
+from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
+
 
 class Command_use(Command):
+    name = "use"    
+    description = "Use a SMB share."
+
     HELP = {
         "description": [
-            "Use a SMB share.", 
-            "Syntax: 'use <sharename>'"
-        ], 
+            description, 
+        ],
         "subcommands": [],
         "autocomplete": ["share"]
     }
 
-    @classmethod
+    def setupParser(self) -> argparse.ArgumentParser:
+        parser = CommandArgumentParser(description=self.description)
+        parser.add_argument('sharename', help='The name of the share to use')
+        return parser
+    
     @command_arguments_required
     @active_smb_connection_needed
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : No
-        
+
+        self.options = self.processArguments(arguments=arguments)
+
         sharename = arguments[0]
 
         # Reload the list of shares

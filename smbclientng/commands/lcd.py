@@ -4,24 +4,26 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
+from smbclientng.types.Command import Command
 from smbclientng.utils.decorator import command_arguments_required
 import os
-from smbclientng.core.Command import Command
 
 
 class Command_lcd(Command):
+    name = "lcd"
+    description = "Changes the current local directory."
+
     HELP = {
         "description": [
-            "Changes the current local directory.",
+            description,
             "Syntax: 'lcd <directory>'"
         ], 
         "subcommands": [],
         "autocomplete": ["local_directory"]
     }
-
-    @classmethod
+    
     @command_arguments_required
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : No
         # SMB share needed             : No

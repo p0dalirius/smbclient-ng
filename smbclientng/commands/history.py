@@ -5,21 +5,23 @@
 # Date created       : 18 mar 2025
 
 import readline
-from smbclientng.core.Command import Command
+from smbclientng.types.Command import Command
 
 
 class Command_history(Command):
+    name = "history"
+    description = "Displays the command history."   
+
     HELP = {
         "description": [
-            "Displays the command history.",
+            description,
             "Syntax: 'history'"
         ], 
         "subcommands": [],
         "autocomplete": []
     }
 
-    @classmethod
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : No
         # SMB share needed             : No

@@ -4,26 +4,27 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.utils.decorator import command_arguments_required
-import os
 from smbclientng.utils.utils import resolve_local_files
 from smbclientng.utils.utils import unix_permissions, b_filesize
+from smbclientng.types.Command import Command
 import datetime
-from smbclientng.core.Command import Command
+import os
 
 
 class Command_lls(Command):
+    name = "lls"
+    description = "Lists the contents of the current local directory."
+
     HELP = {
         "description": [
-            "Lists the contents of the current local directory.", 
+            description,
             "Syntax: 'lls'"
         ],
         "subcommands": [],
         "autocomplete": ["local_directory"]
     }
-
-    @classmethod
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : No
         # SMB share needed             : No

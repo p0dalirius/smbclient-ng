@@ -3,8 +3,8 @@ import argparse
 import sys
 
 # Local library imports
-from smbclientng.core.Config import Config
-from smbclientng.core.Credentials import Credentials
+from smbclientng.types.Config import Config
+from smbclientng.types.Credentials import Credentials
 from smbclientng.core.InteractiveShell import InteractiveShell
 from smbclientng.core.Logger import Logger
 from smbclientng.core.SessionsManager import SessionsManager

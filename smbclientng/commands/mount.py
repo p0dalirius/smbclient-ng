@@ -8,24 +8,26 @@ from smbclientng.utils.decorator import command_arguments_required, active_smb_c
 from impacket.smbconnection import SessionError as SMBConnectionSessionError
 from impacket.smb3 import SessionError as SMB3SessionError
 import ntpath
-from smbclientng.core.Command import Command
+from smbclientng.types.Command import Command
 
 
 class Command_mount(Command):
+    name = "mount"
+    description = "Creates a mount point of the remote share on the local machine."
+
     HELP = {
         "description": [
-            "Creates a mount point of the remote share on the local machine.",
+            description,
             "Syntax: 'mount <remote_path> <local_mountpoint>'"
         ], 
         "subcommands": [],
         "autocomplete": ["remote_directory"]
     }
-
-    @classmethod
+    
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes

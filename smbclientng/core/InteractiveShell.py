@@ -17,7 +17,7 @@ import smbclientng.commands as commands
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from smbclientng.core.SessionsManager import SessionsManager
-    from smbclientng.core.Config import Config
+    from smbclientng.types.Config import Config
     from smbclientng.core.Logger import Logger
 
 
@@ -182,7 +182,9 @@ class InteractiveShell(object):
 
         # Execute the command
         elif command in self.commands.keys():
-            self.commands[command].run(self, arguments, command)
+            command_instance = self.commands[command](smbSession=self.sessionsManager.current_session, config=self.config, logger=self.logger)
+            command_instance.run(self, arguments, command)
+            del command_instance
 
         # Fallback to unknown command   
         else:

@@ -4,31 +4,33 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
+from smbclientng.types.Command import Command
 from smbclientng.utils.decorator import command_arguments_required
 from smbclientng.utils.utils import resolve_local_files
 from impacket.smbconnection import SessionError as SMBConnectionSessionError
 from impacket.smb3 import SessionError as SMB3SessionError
-import os
-import ntpath
-import charset_normalizer
 from rich.console import Console
 from rich.syntax import Syntax
-from smbclientng.core.Command import Command
+import charset_normalizer
+import os
+import ntpath
 
 
 class Command_lbat(Command):
+    name = "lbat"
+    description = "Pretty prints the contents of a local file."
+
     HELP = {
         "description": [
-            "Pretty prints the contents of a local file.", 
+            description, 
             "Syntax: 'lbat <file>'"
         ], 
         "subcommands": [],
         "autocomplete": ["local_file"]
     }
 
-    @classmethod
     @command_arguments_required
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : No
         # SMB share needed             : No

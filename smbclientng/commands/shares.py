@@ -7,22 +7,25 @@
 from smbclientng.utils.decorator import active_smb_connection_needed
 from rich.console import Console
 from rich.table import Table
-from smbclientng.core.Command import Command
+from smbclientng.types.Command import Command
 
 
 class Command_shares(Command):
+    name = "shares" 
+    description = "Lists the SMB shares served by the remote machine."
+
     HELP = {
         "description": [
-                "Lists the SMB shares served by the remote machine.", 
+            description, 
             "Syntax: 'shares'"
         ], 
         "subcommands": ["rights"],
         "autocomplete": []
     }
 
-    @classmethod
+    
     @active_smb_connection_needed
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : Yes
         # SMB share needed             : No

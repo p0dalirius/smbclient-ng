@@ -5,24 +5,26 @@
 # Date created       : 18 mar 2025
 
 from smbclientng.utils.decorator import command_arguments_required, active_smb_connection_needed, smb_share_is_set
-from smbclientng.core.Command import Command
+from smbclientng.types.Command import Command
 
 
 class Command_rmdir(Command):
+    name = "rmdir"  
+    description = "Removes a remote directory."
+
     HELP = {
         "description": [
-            "Removes a remote directory.", 
+            description, 
             "Syntax: 'rmdir <directory>'"
         ], 
         "subcommands": [],
         "autocomplete": ["remote_directory"]
     }
 
-    @classmethod
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes

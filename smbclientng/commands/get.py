@@ -4,48 +4,46 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
+import argparse
+import traceback
 from smbclientng.utils.decorator import command_arguments_required, active_smb_connection_needed, smb_share_is_set
 from impacket.smbconnection import SessionError as SMBConnectionSessionError
 from impacket.smb3 import SessionError as SMB3SessionError
-import traceback
 from smbclientng.utils.utils import resolve_remote_files
-from smbclientng.core.Command import Command
-    
+from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
+
 
 class Command_get(Command):
+    name = "get"
+    description = "Get a remote file."
+
     HELP = {
         "description": [
-            "Get a remote file.",
-            "Syntax: 'get [-r] [-k] <directory or file>'"
-        ], 
+            description,
+        ],
         "subcommands": [],
         "autocomplete": ["remote_file"]
     }
 
-    @classmethod
+    def setupParser(self) -> argparse.ArgumentParser:
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+
+        parser.add_argument("-r", "--recursive", dest='recursive', action='store_true', default=False, help='Recursively get files')
+        parser.add_argument("--dont-keep-remote-path", dest='dont_keep_remote_path', action='store_true', default=False, help='Do not keep the remote path')
+        parser.add_argument('files', nargs='*', help='Files or directories to get')
+
+        return parser
+
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes
 
-        is_recursive = False
-        keep_remote_path = False  
-        # Parse '-r' option
-        while '-r' in arguments:
-            is_recursive = True
-            arguments.remove('-r')
-        
-        # Parse '-k' option for keepRemotePath if you have it
-        while '-k' in arguments:
-            keep_remote_path = True
-            arguments.remove('-k')
-
-        # Handle 'get -r' with no other argument
-        if len(arguments) == 0:
-            arguments = ['*']
+        self.options = self.processArguments(arguments=arguments)
 
         # Parse wildcards
         files_and_directories = resolve_remote_files(interactive_shell.sessionsManager.current_session, arguments)
@@ -55,8 +53,8 @@ class Command_get(Command):
             try:
                 interactive_shell.sessionsManager.current_session.get_file(
                     path=remotepath,
-                    keepRemotePath=keep_remote_path,
-                    is_recursive=is_recursive
+                    keepRemotePath=self.options.dont_keep_remote_path,
+                    is_recursive=self.options.recursive
                 )
             except (SMBConnectionSessionError, SMB3SessionError) as e:
                 if interactive_shell.config.debug:

@@ -4,19 +4,21 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.core.Command import Command
+from smbclientng.types.Command import Command
 
 
 class Command_exit(Command):
+    name = "exit"
+    description = "Exits the interactive shell."
+
     HELP = {
         "description": [
-            "Exits the interactive shell.",
+            description,
             "Syntax: 'exit'"
         ], 
         "subcommands": [],
         "autocomplete": []
     }
-
-    @classmethod
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    
+    def run(self, interactive_shell, arguments: list[str], command: str):
         interactive_shell.running = False

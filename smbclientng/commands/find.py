@@ -5,13 +5,16 @@
 # Date created       : 18 mar 2025
 
 from smbclientng.utils.decorator import command_arguments_required, active_smb_connection_needed, smb_share_is_set
-from smbclientng.core.Command import Command
+from smbclientng.types.Command import Command
 
 
-class Command_find(Command):    
+class Command_find(Command):
+    name = "find"
+    description = "Search for files in a directory hierarchy"
+
     HELP = {
         "description": [
-            "Search for files in a directory hierarchy",
+            description,
             "Syntax: find [-h] [-name NAME] [-iname INAME] [-type TYPE] [-size SIZE] [-ls]",
             "             [-download] [-maxdepth MAXDEPTH] [-mindepth MINDEPTH]",
             "             [--exclude-dir DIRNAME[:DEPTH[:CASE]]] [PATH ...]"
@@ -20,11 +23,10 @@ class Command_find(Command):
         "autocomplete": []
     }
 
-    @classmethod
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes

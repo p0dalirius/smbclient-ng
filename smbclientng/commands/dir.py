@@ -8,9 +8,12 @@ from smbclientng.commands.ls import Command_ls
 
 
 class Command_dir(Command_ls):
+    name = "dir"
+    description = "List the contents of the current working directory."
+
     HELP = {
         "description": [
-            "List the contents of the current working directory.",
+            description,
             "Syntax: 'dir'"
         ], 
         "subcommands": [],

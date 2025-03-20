@@ -5,24 +5,26 @@
 # Date created       : 18 mar 2025
 
 from smbclientng.utils.decorator import active_smb_connection_needed, smb_share_is_set
-from smbclientng.utils import resolve_remote_files, windows_ls_entry
-from smbclientng.core.Command import Command
+from smbclientng.utils.utils import resolve_remote_files, windows_ls_entry
+from smbclientng.types.Command import Command
 
 
 class Command_ls(Command):
+    name = "ls"
+    description = "List the contents of the current remote working directory."
+
     HELP = {
         "description": [
-            "List the contents of the current remote working directory.", 
+            description, 
             "Syntax: 'ls'"
         ], 
         "subcommands": [],
         "autocomplete": ["remote_directory"]
     }
 
-
     @active_smb_connection_needed
     @smb_share_is_set
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes

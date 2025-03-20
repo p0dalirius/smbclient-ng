@@ -5,8 +5,8 @@
 # Date created       : 18 mar 2025
 
 from smbclientng.utils.decorator import command_arguments_required, active_smb_connection_needed, smb_share_is_set
-from smbclientng.core.Command import Command
 from smbclientng.utils.utils import resolve_remote_files
+from smbclientng.types.Command import Command
 from rich.syntax import Syntax
 from rich.console import Console
 from impacket.smbconnection import SessionError as SMBConnectionSessionError
@@ -16,21 +16,22 @@ import ntpath
 
 
 class Command_bat(Command):
+    name = "bat"
+    description = "Pretty prints the contents of a remote file."
+
     HELP = {
         "description": [
-            "Pretty prints the contents of a remote file.", 
+            description, 
             "Syntax: 'bat <file>'"
         ], 
         "subcommands": [],
         "autocomplete": ["remote_file"]
     }
 
-
-    @classmethod
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes

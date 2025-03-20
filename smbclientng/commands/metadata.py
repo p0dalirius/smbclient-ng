@@ -4,30 +4,32 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-import traceback
+
 from smbclientng.utils.decorator import command_arguments_required, smb_share_is_set, active_smb_connection_needed
-from smbclientng.utils import resolve_remote_files
+from smbclientng.utils.utils import resolve_remote_files, b_filesize
+from smbclientng.types.Command import Command
 import datetime
-from smbclientng.utils.utils import b_filesize
 import ntpath
-from smbclientng.core.Command import Command
+import traceback
 
 
 class Command_metadata(Command):
+    name = "metadata"
+    description = "Get all metadata about a remote file."
+
     HELP = {
         "description": [
-            "Get all metadata about a remote file.",
+            description,
             "Syntax: 'metadata <remote_file_path>'"
         ], 
         "subcommands": [],
         "autocomplete": []
     }
-
-    @classmethod
+    
     @command_arguments_required
     @smb_share_is_set
     @active_smb_connection_needed
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes

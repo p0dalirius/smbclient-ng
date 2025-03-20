@@ -4,21 +4,23 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.core.Command import Command
+from smbclientng.types.Command import Command
 
 
 class Command_reconnect(Command):
+    name = "reconnect"
+    description = "Reconnect to the remote machine (useful if connection timed out)."
+
     HELP = {
         "description": [
-            "Reconnect to the remote machine (useful if connection timed out).", 
+            description,
             "Syntax: 'reconnect'"
         ], 
         "subcommands": [],
         "autocomplete": []
     }
 
-    @classmethod
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : No
         # SMB share needed             : No

@@ -9,24 +9,26 @@ from smbclientng.utils.utils import resolve_remote_files
 from impacket.smbconnection import SessionError as SMBConnectionSessionError
 from impacket.smb3 import SessionError as SMB3SessionError
 import charset_normalizer
-from smbclientng.core.Command import Command
+from smbclientng.types.Command import Command
 
 
 class Command_cat(Command):
+    name = "cat"
+    description = "Get the contents of a remote file."
+
     HELP = {
         "description": [
-            "Get the contents of a remote file.", 
+            description, 
             "Syntax: 'cat <file>'"
         ], 
         "subcommands": [],
         "autocomplete": ["remote_file"]
     }
 
-    @classmethod
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes

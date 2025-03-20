@@ -4,7 +4,7 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.core.Command import Command
+from smbclientng.types.Command import Command
 from smbclientng.utils.decorator import active_smb_connection_needed, smb_share_is_set
 from smbclientng.utils import windows_ls_entry
 from impacket.smb3structs import SMB2_0_INFO_SECURITY, SMB2_SEC_INFO_00, OWNER_SECURITY_INFORMATION, DACL_SECURITY_INFORMATION, GROUP_SECURITY_INFORMATION, READ_CONTROL, FILE_READ_ATTRIBUTES, FILE_DIRECTORY_FILE, FILE_NON_DIRECTORY_FILE, FILE_OPEN
@@ -12,19 +12,21 @@ import ntpath
 
 
 class Command_acls(Command):
+    name = "acls"
+    description = "List ACLs of files and folders in cwd."
+
     HELP = {
         "description": [
-            "List ACLs of files and folders in cwd.", 
+            description, 
             "Syntax: 'acls'"
         ], 
         "subcommands": [],
         "autocomplete": ["remote_directory"]
     }
 
-    @classmethod
     @active_smb_connection_needed
     @smb_share_is_set
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : Yes
         # SMB share needed             : Yes

@@ -6,21 +6,24 @@
 
 from smbclientng.utils.decorator import command_arguments_required
 import os
-from smbclientng.core.Command import Command
+from smbclientng.types.Command import Command
+
 
 class Command_lrename(Command):
+    name = "lrename"
+    description = "Renames a local file."
+
     HELP = {
         "description": [
-            "Renames a local file.", 
+            description, 
             "Syntax: 'lrename <oldfilename> <newfilename>'"
         ], 
         "subcommands": [],
         "autocomplete": ["local_file"]
     }
 
-    @classmethod
     @command_arguments_required
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : No
         # SMB share needed             : No

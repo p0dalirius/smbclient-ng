@@ -38,6 +38,11 @@ class CommandArgumentParser(argparse.ArgumentParser):
 
     exit_on_error: bool = False
 
+    def __init__(self, *args, **kwargs):
+        # Initialize the parent class with exit_on_error set to False
+        kwargs['exit_on_error'] = self.exit_on_error
+        super().__init__(*args, **kwargs)
+
     def error(self, message: str):
         """
         Overrides the default error handling of argparse.ArgumentParser to provide a custom error message and help display.

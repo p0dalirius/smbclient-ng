@@ -4,22 +4,24 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.utils import local_tree
-from smbclientng.core.Command import Command
+from smbclientng.utils.utils import local_tree
+from smbclientng.types.Command import Command
 
 
 class Command_ltree(Command):
+    name = "ltree"
+    description = "Displays a tree view of the local directories."  
+
     HELP = {
         "description": [
-            "Displays a tree view of the local directories.",
+            description,
             "Syntax: 'ltree [directory]'"
         ], 
         "subcommands": [],
         "autocomplete": ["local_directory"]
     }
-
-    @classmethod
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : No
         # SMB share needed             : No

@@ -5,21 +5,23 @@
 # Date created       : 18 mar 2025
 
 import sys
-from smbclientng.core.Command import Command
+from smbclientng.types.Command import Command
 
 
 class Command_reset(Command):
+    name = "reset"
+    description = "Reset the TTY output, useful if it was broken after printing a binary file on stdout."
+
     HELP = {
         "description": [
-            "Reset the TTY output, useful if it was broken after printing a binary file on stdout.",
+            description,
             "Syntax: 'reset'"
         ], 
         "subcommands": [],
         "autocomplete": []
     }
-
-    @classmethod
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : No
         # SMB share needed             : No

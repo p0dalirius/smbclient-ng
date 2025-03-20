@@ -4,19 +4,21 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.core.Command import Command
+from smbclientng.types.Command import Command
 
 
 class Command_sessions(Command):
+    name = "sessions"
+    description = "Manage the SMB sessions."
+
     HELP = {
         "description": [
-            "Manage the SMB sessions.", 
+            description, 
             "Syntax: 'sessions [access|create|delete|execute|list]'"
         ], 
         "subcommands": ["create", "delete", "execute", "interact", "list"],
         "autocomplete": []
     }
-
-    @classmethod
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+  
+    def run(self, interactive_shell, arguments: list[str], command: str):
         interactive_shell.sessionsManager.process_command_line(arguments)

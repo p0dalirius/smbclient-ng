@@ -4,28 +4,30 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
+from smbclientng.types.Command import Command
 from smbclientng.utils.decorator import command_arguments_required
 from smbclientng.utils.utils import resolve_local_files
 from impacket.smbconnection import SessionError as SMBConnectionSessionError
 from impacket.smb3 import SessionError as SMB3SessionError
 import os
 import charset_normalizer
-from smbclientng.core.Command import Command
 
 
 class Command_lcat(Command):
+    name = "lcat"   
+    description = "Print the contents of a local file."
+
     HELP = {
         "description": [
-            "Print the contents of a local file.", 
+            description, 
             "Syntax: 'lcat <file>'"
         ], 
         "subcommands": [],
         "autocomplete": ["local_file"]
     }
-
-    @classmethod
+    
     @command_arguments_required
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : No
         # SMB share needed             : No

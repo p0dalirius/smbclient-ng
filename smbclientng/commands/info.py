@@ -7,24 +7,26 @@
 from smbclientng.utils.decorator import command_arguments_required, active_smb_connection_needed, smb_share_is_set
 from impacket.smbconnection import SessionError as SMBConnectionSessionError
 from impacket.smb3 import SessionError as SMB3SessionError
-from smbclientng.core.Command import Command
+from smbclientng.types.Command import Command
 
 
 class Command_info(Command):
+    name = "info"
+    description = "Get information about the server and or the share."
+
     HELP = {
         "description": [
-            "Get information about the server and or the share.",
+            description,
             "Syntax: 'info [server|share]'"
         ], 
         "subcommands": ["server", "share"],
         "autocomplete": []
     }
 
-    @classmethod
     @command_arguments_required
     @active_smb_connection_needed
     @smb_share_is_set
-    def run(cls, interactive_shell, arguments: list[str], command: str):
+    def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : No
         # Active SMB connection needed : Yes
         # SMB share needed             : No
