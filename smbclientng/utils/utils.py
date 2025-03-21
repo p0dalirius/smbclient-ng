@@ -506,6 +506,7 @@ def smb_entry_iterator(smb_client, smb_share: str, start_paths: list[str], exclu
             - depth (int): The current depth level of the entry within the traversal.
             - is_last_entry (bool): True if the entry is the last within its directory, False otherwise.
     """
+
     def entry_matches_filters(entry, filters) -> bool:
         """
         Checks if an entry matches the provided filters.
@@ -517,6 +518,7 @@ def smb_entry_iterator(smb_client, smb_share: str, start_paths: list[str], exclu
         Returns:
             bool: True if the entry matches the filters, False otherwise.
         """
+
         # Filter by type
         entry_type = 'd' if entry.is_directory() else 'f'
         if 'type' in filters and filters['type'] != entry_type:
@@ -527,7 +529,7 @@ def smb_entry_iterator(smb_client, smb_share: str, start_paths: list[str], exclu
             name_patterns = filters['name']
             if isinstance(name_patterns, str):
                 name_patterns = [name_patterns]
-            if not any(fnmatch.fnmatchcase(entry_name, pattern) for pattern in name_patterns):
+            if not any(fnmatch.fnmatchcase(entry.get_longname(), pattern) for pattern in name_patterns):
                 return False
 
         # Filter by name (case-insensitive)
@@ -535,8 +537,7 @@ def smb_entry_iterator(smb_client, smb_share: str, start_paths: list[str], exclu
             iname_patterns = filters['iname']
             if isinstance(iname_patterns, str):
                 iname_patterns = [iname_patterns]
-            entry_name_lower = entry_name.lower()
-            if not any(fnmatch.fnmatch(entry_name_lower, pattern.lower()) for pattern in iname_patterns):
+            if not any(fnmatch.fnmatch(entry.get_longname().lower(), pattern.lower()) for pattern in iname_patterns):
                 return False
 
         # Filter by size
@@ -567,8 +568,15 @@ def smb_entry_iterator(smb_client, smb_share: str, start_paths: list[str], exclu
 
         operator, number, unit = match.groups()
         number = int(number)
-        unit_multipliers = {'': 1, 'B': 1, 'K': 1024, 'M': 1024**2,
-                            'G': 1024**3, 'T': 1024**4, 'P': 1024**5}
+        unit_multipliers = {
+            '': 1, 
+            'B': 1, 
+            'K': 1024, 
+            'M': 1024**2,
+            'G': 1024**3, 
+            'T': 1024**4, 
+            'P': 1024**5
+        }
         multiplier = unit_multipliers.get(unit.upper(), 1)
         threshold = number * multiplier
 
@@ -619,24 +627,8 @@ def smb_entry_iterator(smb_client, smb_share: str, start_paths: list[str], exclu
 
                 # Recursion for directories
                 if entry.is_directory():
-                    yield_dir = True
-                    if filters:
-                        # Check if 'type' filter is specified
-                        if 'type' in filters:
-                            if filters['type'] == 'd':
-                                yield_dir = True
-                            else:
-                                yield_dir = False
-                        else:
-                            # Filters are applied, but 'type' is not specified
-                            # Assume filters are for files, prevent directory from being yielded
-                            yield_dir = False
-                    else:
-                        # No filters, yield directories
-                        yield_dir = True
-
                     # Yield the directory if it matches the criteria
-                    if yield_dir:
+                    if entry_matches_filters(entry, filters):
                         yield entry, fullpath, current_depth, is_last_entry
 
                     if max_depth is None or current_depth < max_depth:
@@ -651,13 +643,8 @@ def smb_entry_iterator(smb_client, smb_share: str, start_paths: list[str], exclu
                             filters=filters
                         )
                 else:
-                    # Apply filters
-                    if filters:
-                        if not entry_matches_filters(entry, filters):
-                            continue
-
-                    # Yield the file
-                    yield entry, fullpath, current_depth, is_last_entry
+                    if entry_matches_filters(entry, filters):
+                        yield entry, fullpath, current_depth, is_last_entry
 
         except SessionError as err:
             message = f"{err}. Base path: {base_path}"
