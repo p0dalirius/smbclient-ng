@@ -28,9 +28,9 @@ class Command_get(Command):
 
     def setupParser(self) -> argparse.ArgumentParser:
         parser = CommandArgumentParser(prog=self.name, description=self.description)
-        parser.add_argument("-r", "--recursive", dest='recursive', action='store_true', default=False, help='Recursively get files')
-        parser.add_argument("--dont-keep-remote-path", dest='dont_keep_remote_path', action='store_true', default=False, help='Do not keep the remote path')
-        parser.add_argument('files', nargs='*', help='Files or directories to get')
+        parser.add_argument("-r", "--recursive", dest='recursive', action='store_true', default=False, help="Recursively get files")
+        parser.add_argument("--dont-keep-remote-path", dest='dont_keep_remote_path', action='store_true', default=False, help="Do not keep the remote path")
+        parser.add_argument('files', nargs='*', help="Files or directories to get")
         return parser
 
     @active_smb_connection_needed
@@ -52,13 +52,24 @@ class Command_get(Command):
 
         # Download files/directories
         for remotepath in files_and_directories:
-            try:
-                interactive_shell.sessionsManager.current_session.get_file(
-                    path=remotepath,
-                    keepRemotePath=(not self.options.dont_keep_remote_path),
-                    is_recursive=self.options.recursive
-                )
-            except (SMBConnectionSessionError, SMB3SessionError) as e:
-                if interactive_shell.config.debug:
-                    traceback.print_exc()
-                interactive_shell.logger.error("[!] SMB Error: %s" % e)
+            entry = interactive_shell.sessionsManager.current_session.get_entry(remotepath)
+
+            if self.options.recursive:
+                try:
+                    interactive_shell.sessionsManager.current_session.get_file(
+                        path=remotepath,
+                        keepRemotePath=(not self.options.dont_keep_remote_path),
+                        is_recursive=self.options.recursive
+                    )
+                except (SMBConnectionSessionError, SMB3SessionError) as e:
+                    if interactive_shell.config.debug:
+                        traceback.print_exc()
+                    interactive_shell.logger.error("[!] SMB Error: %s" % e)
+            else:
+                if not entry.is_directory():
+                    interactive_shell.sessionsManager.current_session.get_file(
+                        path=remotepath,
+                        keepRemotePath=(not self.options.dont_keep_remote_path),
+                    )
+                else:
+                    interactive_shell.logger.error("[!] Entry '%s' is a directory, use the -r option to recursively get directories" % (remotepath))
