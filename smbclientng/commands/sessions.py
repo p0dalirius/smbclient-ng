@@ -30,8 +30,4 @@ class Command_sessions(Command):
         # Active SMB connection needed : No
         # SMB share needed             : No
 
-        self.options = self.processArguments(arguments=arguments)
-        if self.options is None:
-            return 
-
         interactive_shell.sessionsManager.process_command_line(arguments)

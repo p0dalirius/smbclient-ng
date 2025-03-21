@@ -22,5 +22,4 @@ class Command_dir(Command_ls):
     }
 
     def setupParser(self) -> CommandArgumentParser:
-        parser = CommandArgumentParser(prog=self.name, description=self.description)
-        return parser
+        return super().setupParser()

@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from smbclientng.core.SMBSession import SMBSession
     from smbclientng.core.Logger import Logger
-    from smbclientng.core.Config import Config
+    from smbclientng.types.Config import Config
 
 
 class Module(object):
@@ -23,8 +23,8 @@ class Module(object):
 
     name: str = ""
     description: str = ""
-    smbSession: SMBSession
-    options: argparse.Namespace
+    smbSession: SMBSession = None
+    options: argparse.Namespace = None
 
     def __init__(self, smbSession: SMBSession, config: Config, logger: Logger):
         self.smbSession = smbSession

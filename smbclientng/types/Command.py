@@ -39,13 +39,14 @@ class Command(object):
 
         self.parser = self.setupParser()
 
-        kept_lines = []
-        for line in self.HELP["description"]:
-            if not line.strip().lower().startswith("syntax:"):
-                kept_lines.append(line)
-        usage = ':'.join(self.parser.format_usage().strip().split(":")[1:])
-        kept_lines.append("Syntax: '%s'" % (usage))
-        self.HELP["description"] = kept_lines
+        if self.parser is not None:
+            kept_lines = []
+            for line in self.HELP["description"]:
+                if not line.strip().lower().startswith("syntax:"):
+                    kept_lines.append(line)
+            usage = ':'.join(self.parser.format_usage().strip().split(":")[1:])
+            kept_lines.append("Syntax: '%s'" % (usage))
+            self.HELP["description"] = kept_lines
 
     def setupParser(self) -> argparse.ArgumentParser:
         raise NotImplementedError("Subclasses must implement this method")
