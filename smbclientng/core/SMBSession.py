@@ -23,6 +23,7 @@ import subprocess
 from smbclientng.core.LocalFileIO import LocalFileIO
 from smbclientng.utils.utils import b_filesize, STYPE_MASK, is_port_open, smb_entry_iterator
 from smbclientng.core.SIDResolver import SIDResolver
+from smbclientng.utils.paths import normalize_alternate_data_stream_path
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from smbclientng.core.Logger import Logger
@@ -1081,6 +1082,10 @@ class SMBSession(object):
             # Normalize path and strip leading backslash
             path = ntpath.normpath(path + ntpath.sep).lstrip(ntpath.sep)
 
+            basename = ntpath.basename(path)
+            if ':' in basename:
+                path, stream_name = basename.split(':',1)[0], basename.split(':',1)[1]
+
             try:
                 contents = self.smbClient.listPath(
                     shareName=self.smb_share,
@@ -1090,7 +1095,7 @@ class SMBSession(object):
                 contents = [
                     c for c in contents
                     if c.get_longname() == ntpath.basename(path) and not c.is_directory()
-                ]
+                ] 
                 return (len(contents) != 0)
             except Exception as e:
                 return False
@@ -1253,6 +1258,9 @@ class SMBSession(object):
 
         if self.path_isfile(pathFromRoot=path):
             path = path.replace('/', ntpath.sep)
+
+            path = normalize_alternate_data_stream_path(path)
+
             if path.startswith(ntpath.sep):
                 # Absolute path
                 tmp_file_path = ntpath.normpath(path)
