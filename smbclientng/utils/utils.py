@@ -519,6 +519,9 @@ def smb_entry_iterator(smb_client, smb_share: str, start_paths: list[str], exclu
             bool: True if the entry matches the filters, False otherwise.
         """
 
+        if filters is None:
+            return True
+
         # Filter by type
         entry_type = 'd' if entry.is_directory() else 'f'
         if 'type' in filters and filters['type'] != entry_type:
