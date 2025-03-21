@@ -4,7 +4,6 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 23 may 2024
 
-
 import os
 import ntpath
 from smbclientng.types.Module import Module
@@ -140,7 +139,15 @@ class Find(Module):
 
             try:
                 exclusion_rules = self.parse_exclude_dirs(self.options.exclude_dir)
-                start_paths = self.options.paths or [self.smbSession.smb_cwd]
+                if len(self.options.paths) == 0:
+                    start_paths = [self.smbSession.smb_cwd]
+                else:
+                    start_paths = []
+                    for path in self.options.paths:
+                        if path.startswith('/') or path.startswith(ntpath.sep):
+                            start_paths.append(path)
+                        else:
+                            start_paths.append(ntpath.normpath(self.smbSession.smb_cwd + ntpath.sep + path))
 
                 # Prepare filters
                 filters = {}
