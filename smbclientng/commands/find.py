@@ -4,8 +4,9 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.utils.decorator import command_arguments_required, active_smb_connection_needed, smb_share_is_set
+from smbclientng.utils.decorator import active_smb_connection_needed, smb_share_is_set
 from smbclientng.types.Command import Command
+from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
 class Command_find(Command):
@@ -22,6 +23,10 @@ class Command_find(Command):
         "subcommands": [],
         "autocomplete": []
     }
+
+    def setupParser(self) -> CommandArgumentParser: 
+        parser = CommandArgumentParser(prog=self.name, description=self.description)
+        return parser
 
     @active_smb_connection_needed
     @smb_share_is_set

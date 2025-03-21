@@ -9,8 +9,8 @@ import pefile
 import shutil
 import tempfile
 import zipfile
-from smbclientng.core.Module import Module
-from smbclientng.core.ModuleArgumentParser import ModuleArgumentParser
+from smbclientng.types.Module import Module
+from smbclientng.types.ModuleArgumentParser import ModuleArgumentParser
 
 
 def pe_get_version(pathtopefile):
