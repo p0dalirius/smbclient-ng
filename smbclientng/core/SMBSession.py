@@ -1369,13 +1369,12 @@ class SMBSession(object):
             path (str, optional): The starting path on the SMB share from which to begin listing the tree.
                                   Defaults to the root of the current share.
         """
+
         if path is None:
             path = self.smb_cwd or ''
 
         # Normalize and parse the path
         path = path.replace('/', ntpath.sep)
-        path = ntpath.normpath(path)
-        path = path.strip(ntpath.sep)
 
         # Handle relative and absolute paths
         if not ntpath.isabs(path):
@@ -1448,6 +1447,8 @@ class SMBSession(object):
             self.init_smb_session()
         except Exception as e:
             self.logger.error(f"Error during tree traversal: {e}")
+            if self.config.debug:
+                traceback.print_exc()
 
     def umount(self, local_mount_point: str):
         """
