@@ -10,7 +10,7 @@ from smbclientng.core.Logger import Logger
 from smbclientng.core.SessionsManager import SessionsManager
 
 
-VERSION = "2.1.8"
+VERSION = "3.0.0"
 
 
 def parseArgs():
@@ -75,9 +75,7 @@ def parseArgs():
     if options.user and not (options.password or options.no_pass or options.hashes):
         from getpass import getpass
 
-        options.password = getpass(
-            f"  | Provide a password for '{options.domain}\\{options.user}': "
-        )
+        options.password = getpass(f"  | Provide a password for '{options.domain}\\{options.user}': ")
 
     if options.aes_key:
         options.kerberos = True
