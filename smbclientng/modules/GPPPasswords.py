@@ -12,8 +12,8 @@ from Cryptodome.Util.Padding import unpad
 import impacket
 import io
 import ntpath
-from smbclientng.core.Module import Module
-from smbclientng.core.ModuleArgumentParser import ModuleArgumentParser
+from smbclientng.types.Module import Module
+from smbclientng.types.ModuleArgumentParser import ModuleArgumentParser
 import xml
 from xml.dom import minidom
 

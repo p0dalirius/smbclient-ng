@@ -5,8 +5,8 @@
 # Date created       : 23 may 2024
 
 
-from smbclientng.core.Module import Module
-from smbclientng.core.ModuleArgumentParser import ModuleArgumentParser
+from smbclientng.types.Module import Module
+from smbclientng.types.ModuleArgumentParser import ModuleArgumentParser
 
 
 class Users(Module):
