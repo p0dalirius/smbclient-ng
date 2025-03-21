@@ -22,22 +22,18 @@ class Command_module(Command):
     }
 
     def setupParser(self) -> CommandArgumentParser:
-        parser = CommandArgumentParser(prog=self.name, description=self.description)
-        parser.add_argument('module', type=str, nargs='?', help='Module name')
-        return parser
+        return None
 
     def run(self, interactive_shell, arguments: list[str], command: str):
         # Command arguments required   : Yes
         # Active SMB connection needed : No
         # SMB share needed             : No
 
-        self.options = self.processArguments(arguments=arguments)
-        if self.options is None:
-            return 
+        module_name = arguments[0]
 
-        if self.options.module in interactive_shell.modules.keys():
-            module = interactive_shell.modules[self.options.module](interactive_shell.sessionsManager.current_session, interactive_shell.config, interactive_shell.logger)
+        if module_name in interactive_shell.modules.keys():
+            module = interactive_shell.modules[module_name](interactive_shell.sessionsManager.current_session, interactive_shell.config, interactive_shell.logger)
             arguments_string = ' '.join(arguments[1:])
             module.run(arguments_string)
         else:
-            interactive_shell.logger.error("Module '%s' does not exist." % self.options.module)
+            interactive_shell.logger.error("Module '%s' does not exist." % module_name)
