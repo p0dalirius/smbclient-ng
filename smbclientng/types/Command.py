@@ -61,7 +61,7 @@ class Command(object):
 
     def processArguments(self, arguments) -> argparse.Namespace:
         if type(arguments) == list:
-            arguments = ' '.join(arguments)
+            arguments = shlex.join(arguments)
         
         __iterableArguments = shlex.split(arguments)
 
