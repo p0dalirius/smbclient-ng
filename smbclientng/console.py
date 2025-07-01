@@ -80,10 +80,6 @@ def parseArgs():
     if options.aes_key:
         options.kerberos = True
 
-    if options.kerberos and not options.kdcHost:
-        print("[!] Kerberos authentication requires --kdcHost.")
-        sys.exit(1)
-
     if options.hashes and ":" not in options.hashes:
         options.hashes = ":" + options.hashes
 
