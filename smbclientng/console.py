@@ -55,6 +55,8 @@ def parseArgs():
     group_auth = parser.add_argument_group("Authentication & Connection")
     group_auth.add_argument("-d", "--domain", default=".", type=str, help="Authentication domain.")
     group_auth.add_argument("-u", "--user", type=str, help="Username for authentication.")
+    group_auth.add_argument("-k", "--kerberos", action="store_true", help="Use Kerberos authentication.")
+    group_auth.add_argument("--kdcHost", type=str, help="Fully qualified domain name (FQDN) of key distribution center (KDC) for Kerberos.")
 
     # Password & Hashes
     group_secrets = parser.add_argument_group("Secrets")
@@ -63,8 +65,6 @@ def parseArgs():
     group_creds.add_argument("--no-pass", action="store_true", help="Do not prompt for a password.")
     group_creds.add_argument("--hashes", type=str, metavar="[LMHASH:]NTHASH", help="NT/LM hashes.")
     group_creds.add_argument("--aes-key", type=str, metavar="HEXKEY", help="AES key for Kerberos authentication.")
-    group_creds.add_argument("-k", "--kerberos", action="store_true", help="Use Kerberos authentication.")
-    group_creds.add_argument("--kdcHost", type=str, help="Fully qualified domain name (FQDN) of key distribution center (KDC) for Kerberos.")
 
     options = parser.parse_args()
 
@@ -79,10 +79,6 @@ def parseArgs():
 
     if options.aes_key:
         options.kerberos = True
-
-    if options.kerberos and not options.kdcHost:
-        print("[!] Kerberos authentication requires --kdcHost.")
-        sys.exit(1)
 
     if options.hashes and ":" not in options.hashes:
         options.hashes = ":" + options.hashes
