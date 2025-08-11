@@ -1,0 +1,86 @@
+name: Auto‑prefix & Label Issues
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  prefix_and_label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure labels exist, then prefix titles & add labels
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+
+            // 1. Ensure required labels exist
+            const required = [
+              { name: 'bug',         color: 'd73a4a', description: 'Something isn\'t working' },
+              { name: 'enhancement', color: 'a2eeef', description: 'New feature or request' }
+            ];
+
+            // Fetch current labels in the repo
+            const { data: existingLabels } = await github.rest.issues.listLabelsForRepo({
+              owner, repo, per_page: 100
+            });
+            const existingNames = new Set(existingLabels.map(l => l.name));
+
+            // Create any missing labels
+            for (const lbl of required) {
+              if (!existingNames.has(lbl.name)) {
+                await github.rest.issues.createLabel({
+                  owner,
+                  repo,
+                  name: lbl.name,
+                  color: lbl.color,
+                  description: lbl.description
+                });
+                console.log(`Created label "${lbl.name}"`);
+              }
+            }
+
+            // 2. Fetch all open issues
+            const issues = await github.paginate(
+              github.rest.issues.listForRepo,
+              { owner, repo, state: 'open', per_page: 100 }
+            );
+
+            // 3. Keyword sets
+            const enhancementWords = ["add", "added", "improve", "improved"];
+            const bugWords         = ["bug", "error", "problem", "crash", "failed", "fix", "fixed"];
+
+            // 4. Process each issue
+            for (const issue of issues) {
+              const origTitle = issue.title;
+              const lower     = origTitle.toLowerCase();
+
+              // skip if already prefixed
+              if (/^\[(bug|enhancement)\]/i.test(origTitle)) continue;
+
+              let prefix, labelToAdd;
+              if (enhancementWords.some(w => lower.includes(w))) {
+                prefix     = "[enhancement]";
+                labelToAdd = "enhancement";
+              } else if (bugWords.some(w => lower.includes(w))) {
+                prefix     = "[bug]";
+                labelToAdd = "bug";
+              }
+
+              if (prefix) {
+                // update title
+                await github.rest.issues.update({
+                  owner, repo, issue_number: issue.number,
+                  title: `${prefix} ${origTitle}`
+                });
+                console.log(`Prefixed title of #${issue.number}`);
+
+                // add label
+                await github.rest.issues.addLabels({
+                  owner, repo, issue_number: issue.number,
+                  labels: [labelToAdd]
+                });
+                console.log(`Added label "${labelToAdd}" to #${issue.number}`);
+              }
+            }
