@@ -1,0 +1,39 @@
+name: Lint
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 isort
+
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 smbclientng --count --select=E9,F63,F7,F82 --show-source --statistics --extend-ignore=E501,E203
+        # exit-zero treats all errors as warnings
+        flake8 smbclientng --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --extend-ignore=E501,E203
+
+    - name: Check import sorting with isort
+      run: |
+        isort --check-only --diff smbclientng
