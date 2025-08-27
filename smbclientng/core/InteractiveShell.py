@@ -14,6 +14,7 @@ import sys
 import traceback
 from importlib import import_module
 from typing import TYPE_CHECKING
+from datetime import datetime
 
 import smbclientng.commands as commands
 from smbclientng.core.CommandCompleter import CommandCompleter
@@ -114,6 +115,8 @@ class InteractiveShell(object):
         readline.set_completer(self.commandCompleterObject.complete)
         readline.parse_and_bind("tab: complete")
         readline.set_completer_delims("\n")
+        # History with timestamps: list of tuples (datetime, command_line)
+        self.history: list[tuple[datetime, str]] = []
         # Additional modules
         self.__load_modules()
 
@@ -133,9 +136,10 @@ class InteractiveShell(object):
         if len(pre_interaction_commands) > 0:
             for line in pre_interaction_commands:
                 try:
-                    self.logger.print("%s%s" % (self.__prompt(), line.strip()))
-                    readline.add_history(line.strip())
-                    self.process_line(commandLine=line.strip())
+                    line_stripped = line.strip()
+                    self.logger.print("%s%s" % (self.__prompt(), line_stripped))
+                    self.__record_history_entry(line_stripped)
+                    self.process_line(commandLine=line_stripped)
                 except KeyboardInterrupt:
                     self.logger.print()
 
@@ -153,6 +157,9 @@ class InteractiveShell(object):
             while self.running:
                 try:
                     user_input = input(self.__prompt()).strip()
+                    # Record history and write to logfile
+                    if len(user_input) > 0:
+                        self.__record_history_entry(user_input)
                     self.logger.write_to_logfile(self.__prompt() + user_input)
                     self.process_line(commandLine=user_input)
                 except KeyboardInterrupt:
@@ -327,3 +334,18 @@ class InteractiveShell(object):
             )
 
         return str_prompt
+
+    def __record_history_entry(self, command_line: str):
+        """Record a command in both the in-memory timestamped history and readline."""
+        if command_line is None:
+            return
+        command_line = command_line.strip()
+        if len(command_line) == 0:
+            return
+        # Save in-memory with timestamp
+        self.history.append((datetime.now(), command_line))
+        # Also push to readline for compatibility with shell shortcuts
+        try:
+            readline.add_history(command_line)
+        except Exception:
+            pass
