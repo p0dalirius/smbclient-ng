@@ -12,9 +12,9 @@ import readline
 import shlex
 import sys
 import traceback
+from datetime import datetime
 from importlib import import_module
 from typing import TYPE_CHECKING
-from datetime import datetime
 
 import smbclientng.commands as commands
 from smbclientng.core.CommandCompleter import CommandCompleter

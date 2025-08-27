@@ -67,7 +67,9 @@ class Command_history(Command):
 
         if self.options.clear:
             readline.clear_history()
-            if hasattr(interactive_shell, "history") and isinstance(interactive_shell.history, list):
+            if hasattr(interactive_shell, "history") and isinstance(
+                interactive_shell.history, list
+            ):
                 interactive_shell.history.clear()
             print("Command history cleared.")
             return
@@ -116,9 +118,8 @@ class Command_history(Command):
                         ts, line = history_with_ts[i - 1]
                     except Exception:
                         continue
-                    if (
-                        self.options.contains is not None
-                        and (line is None or self.options.contains not in line)
+                    if self.options.contains is not None and (
+                        line is None or self.options.contains not in line
                     ):
                         continue
                     timestamp_str = ts.strftime("%Y-%m-%d %H:%M:%S")
@@ -126,9 +127,8 @@ class Command_history(Command):
                 else:
                     # Fallback to readline only
                     line = readline.get_history_item(i)
-                    if (
-                        self.options.contains is not None
-                        and (line is None or self.options.contains not in line)
+                    if self.options.contains is not None and (
+                        line is None or self.options.contains not in line
                     ):
                         continue
                     if line is None:
