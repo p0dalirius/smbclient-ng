@@ -31,7 +31,7 @@ from impacket.smbconnection import SessionError, SMBConnection
 from smbclientng.core.LocalFileIO import LocalFileIO
 from smbclientng.core.SIDResolver import SIDResolver
 from smbclientng.utils.paths import normalize_alternate_data_stream_path
-from smbclientng.utils.utils import (STYPE_MASK, b_filesize, is_port_open,
+from smbclientng.utils.utils import (STYPE_MASK, filesize, is_port_open,
                                      smb_entry_iterator)
 
 if TYPE_CHECKING:
@@ -792,12 +792,12 @@ class SMBSession(object):
                 MaxReadSize = self.smbClient.getIOCapabilities()["MaxReadSize"]
                 self.logger.print(
                     "  │ ├─ Max size of read chunk ── : %d bytes (%s)"
-                    % (MaxReadSize, b_filesize(MaxReadSize))
+                    % (MaxReadSize, filesize(MaxReadSize))
                 )
                 MaxWriteSize = self.smbClient.getIOCapabilities()["MaxWriteSize"]
                 self.logger.print(
                     "  │ └─ Max size of write chunk ─ : %d bytes (%s)"
-                    % (MaxWriteSize, b_filesize(MaxWriteSize))
+                    % (MaxWriteSize, filesize(MaxWriteSize))
                 )
                 self.logger.print("  └─")
             else:
@@ -849,12 +849,12 @@ class SMBSession(object):
                 MaxReadSize = self.smbClient.getIOCapabilities()["MaxReadSize"]
                 self.logger.print(
                     "  │ ├─ \x1b[94mMax size of read chunk\x1b[0m \x1b[90m──\x1b[0m : \x1b[93m%d bytes (%s)\x1b[0m"
-                    % (MaxReadSize, b_filesize(MaxReadSize))
+                    % (MaxReadSize, filesize(MaxReadSize))
                 )
                 MaxWriteSize = self.smbClient.getIOCapabilities()["MaxWriteSize"]
                 self.logger.print(
                     "  │ └─ \x1b[94mMax size of write chunk\x1b[0m \x1b[90m─\x1b[0m : \x1b[93m%d bytes (%s)\x1b[0m"
-                    % (MaxWriteSize, b_filesize(MaxWriteSize))
+                    % (MaxWriteSize, filesize(MaxWriteSize))
                 )
                 self.logger.print("  └─")
 
