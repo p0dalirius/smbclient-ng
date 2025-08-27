@@ -13,12 +13,9 @@ class Command_close(Command):
     description = "Closes the SMB connection to the remote machine."
 
     HELP = {
-        "description": [
-            description, 
-            "Syntax: 'close'"
-        ], 
+        "description": [description, "Syntax: 'close'"],
         "subcommands": [],
-        "autocomplete": []
+        "autocomplete": [],
     }
 
     def setupParser(self) -> CommandArgumentParser:
@@ -32,7 +29,7 @@ class Command_close(Command):
 
         self.options = self.processArguments(arguments=arguments)
         if self.options is None:
-            return 
+            return
 
         interactive_shell.sessionsManager.current_session.ping_smb_session()
         if interactive_shell.sessionsManager.current_session.connected:

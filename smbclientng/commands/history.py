@@ -5,29 +5,48 @@
 # Date created       : 18 mar 2025
 
 import readline
+
 from smbclientng.types.Command import Command
 from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
 class Command_history(Command):
     name = "history"
-    description = "Displays the command history."   
+    description = "Displays the command history."
 
     HELP = {
-        "description": [
-            description,
-            "Syntax: 'history'"
-        ], 
+        "description": [description, "Syntax: 'history'"],
         "subcommands": [],
-        "autocomplete": []
+        "autocomplete": [],
     }
 
     def setupParser(self) -> CommandArgumentParser:
         parser = CommandArgumentParser(prog=self.name, description=self.description)
-        parser.add_argument('--start', type=int, nargs='?', default=1, help='Start line of the history to display')
-        parser.add_argument('--stop', type=int, nargs='?', default=None, help='Stop line of the history to display')
-        parser.add_argument('--contains', type=str, help='Filter history by commands containing this string')
-        parser.add_argument('--clear', default=False, action='store_true', help='Clear the command history')
+        parser.add_argument(
+            "--start",
+            type=int,
+            nargs="?",
+            default=1,
+            help="Start line of the history to display",
+        )
+        parser.add_argument(
+            "--stop",
+            type=int,
+            nargs="?",
+            default=None,
+            help="Stop line of the history to display",
+        )
+        parser.add_argument(
+            "--contains",
+            type=str,
+            help="Filter history by commands containing this string",
+        )
+        parser.add_argument(
+            "--clear",
+            default=False,
+            action="store_true",
+            help="Clear the command history",
+        )
         return parser
 
     def run(self, interactive_shell, arguments: list[str], command: str):
@@ -37,7 +56,7 @@ class Command_history(Command):
 
         self.options = self.processArguments(arguments=arguments)
         if self.options is None:
-            return 
+            return
 
         if self.options.clear:
             readline.clear_history()
@@ -67,7 +86,10 @@ class Command_history(Command):
             history = []
             for i in range(self.options.start, self.options.stop + 1):
                 line = readline.get_history_item(i)
-                if self.options.contains is not None and self.options.contains not in line:
+                if (
+                    self.options.contains is not None
+                    and self.options.contains not in line
+                ):
                     continue
                 history.append(format_string % (i, line))
 

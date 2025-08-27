@@ -5,20 +5,19 @@
 # Date created       : 18 mar 2025
 
 import os
+
 from smbclientng.types.Command import Command
 from smbclientng.types.CommandArgumentParser import CommandArgumentParser
+
 
 class Command_lpwd(Command):
     name = "lpwd"
     description = "Shows the current local directory."
 
     HELP = {
-        "description": [
-            description,
-            "Syntax: 'lpwd'"
-        ],
+        "description": [description, "Syntax: 'lpwd'"],
         "subcommands": [],
-        "autocomplete": []
+        "autocomplete": [],
     }
 
     def setupParser(self) -> CommandArgumentParser:
@@ -32,6 +31,6 @@ class Command_lpwd(Command):
 
         self.options = self.processArguments(arguments=arguments)
         if self.options is None:
-            return 
+            return
 
         interactive_shell.logger.print(os.getcwd())

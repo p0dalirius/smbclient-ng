@@ -5,6 +5,7 @@
 # Date created       : 18 mar 2025
 
 import sys
+
 from smbclientng.types.Command import Command
 from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
@@ -14,14 +15,11 @@ class Command_reset(Command):
     description = "Reset the TTY output, useful if it was broken after printing a binary file on stdout."
 
     HELP = {
-        "description": [
-            description,
-            "Syntax: 'reset'"
-        ], 
+        "description": [description, "Syntax: 'reset'"],
         "subcommands": [],
-        "autocomplete": []
+        "autocomplete": [],
     }
-    
+
     def setupParser(self) -> CommandArgumentParser:
         parser = CommandArgumentParser(prog=self.name, description=self.description)
         return parser
@@ -30,7 +28,7 @@ class Command_reset(Command):
         # Command arguments required   : No
         # Active SMB connection needed : No
         # SMB share needed             : No
-        sys.stdout.write('\x1b[?25h') # Sets the cursor to on
-        sys.stdout.write('\x1b[v')  
-        sys.stdout.write('\x1b[o') # Reset
+        sys.stdout.write("\x1b[?25h")  # Sets the cursor to on
+        sys.stdout.write("\x1b[v")
+        sys.stdout.write("\x1b[o")  # Reset
         sys.stdout.flush()

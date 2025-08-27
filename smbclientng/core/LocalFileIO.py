@@ -5,13 +5,18 @@
 # Date created       : 17 mar 2025
 
 from __future__ import annotations
-import os
+
 import ntpath
-from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn, TimeRemainingColumn, TransferSpeedColumn
+import os
 from typing import TYPE_CHECKING
+
+from rich.progress import (BarColumn, DownloadColumn, Progress, TextColumn,
+                           TimeRemainingColumn, TransferSpeedColumn)
+
 if TYPE_CHECKING:
-    from smbclientng.core.Logger import Logger
     from typing import Optional
+
+    from smbclientng.core.Logger import Logger
 
 
 class LocalFileIO(object):
@@ -31,11 +36,18 @@ class LocalFileIO(object):
         read(self, size): Reads data from the file up to the specified size and updates the progress bar if expected size is provided.
     """
 
-    def __init__(self, mode: str, path: str, logger: Logger, expected_size: Optional[int] = None, keepRemotePath: bool = False):
+    def __init__(
+        self,
+        mode: str,
+        path: str,
+        logger: Logger,
+        expected_size: Optional[int] = None,
+        keepRemotePath: bool = False,
+    ):
         super(LocalFileIO, self).__init__()
         self.logger = logger
         self.mode = mode
-        # Convert remote path format to local operating system path format 
+        # Convert remote path format to local operating system path format
         self.path = os.path.normpath(path.replace(ntpath.sep, os.path.sep))
         self.dir = None
         self.expected_size = expected_size
@@ -46,19 +58,23 @@ class LocalFileIO(object):
             if keepRemotePath:
                 self.dir = os.path.dirname(self.path)
                 if not self.dir:
-                    self.dir = '.' + os.path.sep
+                    self.dir = "." + os.path.sep
             else:
-                self.dir = '.' + os.path.sep
+                self.dir = "." + os.path.sep
 
             if not os.path.exists(self.dir):
                 self.logger.debug("Creating local directory '%s'" % self.dir)
                 os.makedirs(self.dir)
 
-            self.logger.debug("Openning local '%s' with mode '%s'" % (self.path, self.mode))
-            
+            self.logger.debug(
+                "Openning local '%s' with mode '%s'" % (self.path, self.mode)
+            )
+
             try:
-                self.fd = open(self.dir + os.path.sep + os.path.basename(self.path), self.mode)
-            except PermissionError as err:
+                self.fd = open(
+                    self.dir + os.path.sep + os.path.basename(self.path), self.mode
+                )
+            except PermissionError:
                 self.fd = None
 
         # Write to remote (read local)
@@ -66,11 +82,13 @@ class LocalFileIO(object):
             if ntpath.sep in self.path:
                 self.dir = os.path.dirname(self.path)
 
-            self.logger.debug("Openning local '%s' with mode '%s'" % (self.path, self.mode))
-            
+            self.logger.debug(
+                "Openning local '%s' with mode '%s'" % (self.path, self.mode)
+            )
+
             try:
                 self.fd = open(self.path, self.mode)
-            except PermissionError as err:
+            except PermissionError:
                 self.fd = None
 
             if self.fd is not None:
@@ -95,7 +113,7 @@ class LocalFileIO(object):
                 description="'%s'" % os.path.basename(self.path),
                 start=True,
                 total=self.expected_size,
-                visible=True
+                visible=True,
             )
 
     def write(self, data: bytes):
@@ -117,7 +135,7 @@ class LocalFileIO(object):
             return self.fd.write(data)
         else:
             return 0
-    
+
     def read(self, size: int):
         """
         Reads a specified amount of data from the file.
@@ -161,7 +179,7 @@ class LocalFileIO(object):
 
         if self.expected_size is not None:
             self.__progress.stop()
-        
+
         del self
 
     def set_error(self, message: str):

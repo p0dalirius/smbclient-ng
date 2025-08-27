@@ -5,12 +5,14 @@
 # Date created       : 17 mar 2025
 
 from __future__ import annotations
+
 import argparse
 import shlex
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
-    from smbclientng.core.SMBSession import SMBSession
     from smbclientng.core.Logger import Logger
+    from smbclientng.core.SMBSession import SMBSession
     from smbclientng.types.Config import Config
 
 
@@ -42,16 +44,17 @@ class Module(object):
         """
         raise NotImplementedError("Subclasses must implement this method")
 
-    def processArguments(self, parser: argparse.ArgumentParser, arguments) -> argparse.Namespace:
-        if type(arguments) == list:
-            arguments = ' '.join(arguments)
-        
+    def processArguments(
+        self, parser: argparse.ArgumentParser, arguments
+    ) -> argparse.Namespace:
+        if isinstance(arguments, list):
+            arguments = " ".join(arguments)
+
         __iterableArguments = shlex.split(arguments)
 
         try:
             self.options = parser.parse_args(__iterableArguments)
-        except SystemExit as e:
+        except SystemExit:
             pass
 
         return self.options
-        

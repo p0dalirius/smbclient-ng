@@ -15,8 +15,8 @@ from smbclientng.commands.dir import Command_dir
 from smbclientng.commands.exit import Command_exit
 from smbclientng.commands.find import Command_find
 from smbclientng.commands.get import Command_get
-from smbclientng.commands.help import Command_help
 from smbclientng.commands.head import Command_head
+from smbclientng.commands.help import Command_help
 from smbclientng.commands.history import Command_history
 from smbclientng.commands.info import Command_info
 from smbclientng.commands.lbat import Command_lbat
@@ -27,8 +27,8 @@ from smbclientng.commands.lls import Command_lls
 from smbclientng.commands.lmkdir import Command_lmkdir
 from smbclientng.commands.lpwd import Command_lpwd
 from smbclientng.commands.lrename import Command_lrename
-from smbclientng.commands.lrmdir import Command_lrmdir
 from smbclientng.commands.lrm import Command_lrm
+from smbclientng.commands.lrmdir import Command_lrmdir
 from smbclientng.commands.ls import Command_ls
 from smbclientng.commands.ltree import Command_ltree
 from smbclientng.commands.metadata import Command_metadata
@@ -39,8 +39,8 @@ from smbclientng.commands.put import Command_put
 from smbclientng.commands.quit import Command_quit
 from smbclientng.commands.reconnect import Command_reconnect
 from smbclientng.commands.reset import Command_reset
-from smbclientng.commands.rmdir import Command_rmdir
 from smbclientng.commands.rm import Command_rm
+from smbclientng.commands.rmdir import Command_rmdir
 from smbclientng.commands.sessions import Command_sessions
 from smbclientng.commands.shares import Command_shares
 from smbclientng.commands.sizeof import Command_sizeof
@@ -49,10 +49,9 @@ from smbclientng.commands.tree import Command_tree
 from smbclientng.commands.umount import Command_umount
 from smbclientng.commands.use import Command_use
 
-
 __all__ = [
     "Command_acls",
-    "Command_bat",  
+    "Command_bat",
     "Command_bhead",
     "Command_btail",
     "Command_cat",

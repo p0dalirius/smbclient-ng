@@ -4,11 +4,12 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 23 may 2024
 
-import os
 import ntpath
+import os
+
 from smbclientng.types.Module import Module
 from smbclientng.types.ModuleArgumentParser import ModuleArgumentParser
-from smbclientng.utils.utils import windows_ls_entry, smb_entry_iterator
+from smbclientng.utils.utils import smb_entry_iterator, windows_ls_entry
 
 
 class Find(Module):
@@ -37,31 +38,87 @@ class Find(Module):
         parser = ModuleArgumentParser(prog=self.name, description=self.description)
 
         # Adding positional arguments
-        parser.add_argument("paths", metavar="PATH", type=str, nargs="*", default=[], help="The starting point(s) for the search.")
-        parser.add_argument("-q", "--quiet", action="store_true", default=False, help="Suppress normal output.")
+        parser.add_argument(
+            "paths",
+            metavar="PATH",
+            type=str,
+            nargs="*",
+            default=[],
+            help="The starting point(s) for the search.",
+        )
+        parser.add_argument(
+            "-q",
+            "--quiet",
+            action="store_true",
+            default=False,
+            help="Suppress normal output.",
+        )
 
         # Adding options for filtering
-        parser.add_argument("-name", action='append', help="Base of file name (the path with the leading directories removed).")
-        parser.add_argument("-iname", action='append', help="Like -name, but the match is case insensitive.")
-        parser.add_argument("-type", type=str, default=None, help="File type (e.g., f for regular file, d for directory).")
+        parser.add_argument(
+            "-name",
+            action="append",
+            help="Base of file name (the path with the leading directories removed).",
+        )
+        parser.add_argument(
+            "-iname",
+            action="append",
+            help="Like -name, but the match is case insensitive.",
+        )
+        parser.add_argument(
+            "-type",
+            type=str,
+            default=None,
+            help="File type (e.g., f for regular file, d for directory).",
+        )
         parser.add_argument("-size", type=str, help="File uses n units of space.")
-        parser.add_argument('--exclude-dir', action='append', default=[], metavar='DIRNAME[:DEPTH[:CASE]]',
-                    help=("Exclude directories matching DIRNAME until specified depth and case sensitivity. "
-                          "DEPTH specifies the recursion depth (-1 for all depths, default is 0). "
-                          "CASE can be 'i' for case-insensitive or 's' for case-sensitive (default). "
-                          "Format: DIRNAME[:DEPTH[:CASE]]"))
+        parser.add_argument(
+            "--exclude-dir",
+            action="append",
+            default=[],
+            metavar="DIRNAME[:DEPTH[:CASE]]",
+            help=(
+                "Exclude directories matching DIRNAME until specified depth and case sensitivity. "
+                "DEPTH specifies the recursion depth (-1 for all depths, default is 0). "
+                "CASE can be 'i' for case-insensitive or 's' for case-sensitive (default). "
+                "Format: DIRNAME[:DEPTH[:CASE]]"
+            ),
+        )
         # parser.add_argument("-mtime", type=str, help="File's data was last modified n*24 hours ago")
         # parser.add_argument("-ctime", type=str, help="File's status was last changed n*24 hours ago")
         # parser.add_argument("-atime", type=str, help="File was last accessed n*24 hours ago")
 
         # Adding actions
-        parser.add_argument("-ls", action="store_true", default=False, help="List current file in ls -dils format on standard output.")
-        parser.add_argument("-download", action="store_true", default=False, help="List current file in ls -dils format on standard output.")
-        parser.add_argument("-o", "--outputfile", type=str, help="Write the names of the files found to the specified file.")
+        parser.add_argument(
+            "-ls",
+            action="store_true",
+            default=False,
+            help="List current file in ls -dils format on standard output.",
+        )
+        parser.add_argument(
+            "-download",
+            action="store_true",
+            default=False,
+            help="List current file in ls -dils format on standard output.",
+        )
+        parser.add_argument(
+            "-o",
+            "--outputfile",
+            type=str,
+            help="Write the names of the files found to the specified file.",
+        )
 
         # Other options
-        parser.add_argument("-maxdepth", type=int, help="Descend at most levels (a non-negative integer) levels of directories below the command line arguments.")
-        parser.add_argument("-mindepth", type=int, help="Do not apply any tests or actions at levels less than levels (a non-negative integer).")
+        parser.add_argument(
+            "-maxdepth",
+            type=int,
+            help="Descend at most levels (a non-negative integer) levels of directories below the command line arguments.",
+        )
+        parser.add_argument(
+            "-mindepth",
+            type=int,
+            help="Do not apply any tests or actions at levels less than levels (a non-negative integer).",
+        )
 
         if not arguments.strip():
             parser.print_help()
@@ -82,7 +139,7 @@ class Find(Module):
             self.options = args
 
         return self.options
-    
+
     def parse_exclude_dirs(self, exclude_dirs):
         """
         Parses the exclude directory arguments and returns a list of exclusion rules.
@@ -94,7 +151,7 @@ class Find(Module):
         """
         exclusion_rules = []
         for item in exclude_dirs:
-            parts = item.split(':')
+            parts = item.split(":")
             dirname = parts[0]
             depth = 0  # Default depth
             case_sensitive = False  # Default to case-insensitive
@@ -109,19 +166,17 @@ class Find(Module):
             # Parse case sensitivity if provided
             if len(parts) > 2 and parts[2]:
                 case_flag = parts[2].lower()
-                if case_flag == 's':
+                if case_flag == "s":
                     case_sensitive = True
-                elif case_flag == 'i':
+                elif case_flag == "i":
                     case_sensitive = False
                 else:
                     # Invalid case flag, default to case-sensitive
                     case_sensitive = True
 
-            exclusion_rules.append({
-                'dirname': dirname,
-                'depth': depth,
-                'case_sensitive': case_sensitive
-            })
+            exclusion_rules.append(
+                {"dirname": dirname, "depth": depth, "case_sensitive": case_sensitive}
+            )
         return exclusion_rules
 
     def run(self, arguments):
@@ -135,7 +190,7 @@ class Find(Module):
             # Prepare output file
             if self.options.outputfile is not None:
                 os.makedirs(os.path.dirname(self.options.outputfile), exist_ok=True)
-                open(self.options.outputfile, 'w').close()
+                open(self.options.outputfile, "w").close()
 
             try:
                 exclusion_rules = self.parse_exclude_dirs(self.options.exclude_dir)
@@ -144,21 +199,25 @@ class Find(Module):
                 else:
                     start_paths = []
                     for path in self.options.paths:
-                        if path.startswith('/') or path.startswith(ntpath.sep):
+                        if path.startswith("/") or path.startswith(ntpath.sep):
                             start_paths.append(path)
                         else:
-                            start_paths.append(ntpath.normpath(self.smbSession.smb_cwd + ntpath.sep + path))
+                            start_paths.append(
+                                ntpath.normpath(
+                                    self.smbSession.smb_cwd + ntpath.sep + path
+                                )
+                            )
 
                 # Prepare filters
                 filters = {}
                 if self.options.type:
-                    filters['type'] = self.options.type
+                    filters["type"] = self.options.type
                 if self.options.name:
-                    filters['name'] = self.options.name
+                    filters["name"] = self.options.name
                 if self.options.iname:
-                    filters['iname'] = self.options.iname
+                    filters["iname"] = self.options.iname
                 if self.options.size:
-                    filters['size'] = self.options.size
+                    filters["size"] = self.options.size
 
                 generator = smb_entry_iterator(
                     smb_client=self.smbSession.smbClient,
@@ -167,7 +226,7 @@ class Find(Module):
                     exclusion_rules=exclusion_rules,
                     max_depth=self.options.maxdepth,
                     min_depth=self.options.mindepth or 0,
-                    filters=filters
+                    filters=filters,
                 )
 
                 for entry, fullpath, depth, is_last_entry in generator:
@@ -178,13 +237,15 @@ class Find(Module):
                     # Output formats
                     output_str = ""
                     if self.options.ls:
-                        output_str = windows_ls_entry(entry=entry, config=self.config, pathToPrint=fullpath)
+                        output_str = windows_ls_entry(
+                            entry=entry, config=self.config, pathToPrint=fullpath
+                        )
                     else:
-                        output_str = fullpath.replace(ntpath.sep, '/')
+                        output_str = fullpath.replace(ntpath.sep, "/")
 
                     if self.options.outputfile is not None:
-                        with open(self.options.outputfile, 'a') as f:
-                            f.write(output_str + '\n')
+                        with open(self.options.outputfile, "a") as f:
+                            f.write(output_str + "\n")
 
                     if not self.options.quiet and not self.options.download:
                         print(output_str)

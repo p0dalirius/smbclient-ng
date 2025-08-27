@@ -26,7 +26,7 @@ class Config(object):
     not_interactive: bool = False
     startup_script = None
     commands = []
-    
+
     _debug: bool
     _no_colors: bool
 

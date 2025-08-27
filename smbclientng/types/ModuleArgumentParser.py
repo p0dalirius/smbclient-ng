@@ -14,7 +14,7 @@ class ModuleArgumentParserError(Exception):
     A custom exception class for handling errors specific to the ModuleArgumentParser class.
     """
 
-    def __init__(self,  message):
+    def __init__(self, message):
         self.message = message
 
     def __str__(self):
@@ -42,13 +42,13 @@ class ModuleArgumentParser(argparse.ArgumentParser):
         """
         Overrides the default error handling of argparse.ArgumentParser to provide a custom error message and help display.
 
-        This method is called when ArgumentParser encounters an error. It displays the help message and writes the error message 
-        to stderr.        
+        This method is called when ArgumentParser encounters an error. It displays the help message and writes the error message
+        to stderr.
 
         Args:
             message (str): The error message to be displayed.
         """
 
         self.print_help()
-        sys.stderr.write('\n[!] Error: %s\n' % message)
+        sys.stderr.write("\n[!] Error: %s\n" % message)
         raise ModuleArgumentParserError(message)

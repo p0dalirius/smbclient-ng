@@ -5,6 +5,7 @@
 # Date created       : 17 mar 2025
 
 from __future__ import annotations
+
 import datetime
 import fnmatch
 import ntpath
@@ -12,11 +13,15 @@ import os
 import re
 import socket
 import stat
-from impacket.smbconnection import SessionError
 from typing import TYPE_CHECKING
+
+from impacket.smbconnection import SessionError
+
 if TYPE_CHECKING:
     from typing import Optional
+
     from impacket.smb import SharedFile
+
     from smbclientng.core.Config import Config
     from smbclientng.core.SMBSession import SMBSession
 
@@ -37,14 +42,16 @@ def parse_lm_nt_hashes(lm_nt_hashes_string: str) -> tuple[str, str]:
         tuple: A tuple containing two strings (lm_hash_value, nt_hash_value).
                - lm_hash_value: The LM hash value or its default if not provided.
                - nt_hash_value: The NT hash value or its default if not provided.
-    
+
     Extracted from p0dalirius/sectools library
     Src: https://github.com/p0dalirius/sectools/blob/7bb3f5cb7815ad4d4845713c8739e2e2b0ea4e75/sectools/windows/crypto.py#L11-L24
     """
 
     lm_hash_value, nt_hash_value = "", ""
     if lm_nt_hashes_string is not None:
-        matched = re.match("([0-9a-f]{32})?(:)?([0-9a-f]{32})?", lm_nt_hashes_string.strip().lower())
+        matched = re.match(
+            "([0-9a-f]{32})?(:)?([0-9a-f]{32})?", lm_nt_hashes_string.strip().lower()
+        )
         m_lm_hash, m_sep, m_nt_hash = matched.groups()
         if m_lm_hash is None and m_sep is None and m_nt_hash is None:
             lm_hash_value, nt_hash_value = "", ""
@@ -57,7 +64,7 @@ def parse_lm_nt_hashes(lm_nt_hashes_string: str) -> tuple[str, str]:
     return lm_hash_value, nt_hash_value
 
 
-def b_filesize(l: int) -> str:
+def filesize(size: int) -> str:
     """
     Convert a file size from bytes to a more readable format using the largest appropriate unit.
 
@@ -66,17 +73,17 @@ def b_filesize(l: int) -> str:
     two decimal places.
 
     Args:
-        l (int): The file size in bytes.
+        size (int): The file size in bytes.
 
     Returns:
         str: A string representing the file size in a more readable format, including the appropriate unit.
     """
 
-    units = ['B','kB','MB','GB','TB','PB']
+    units = ["B", "kB", "MB", "GB", "TB", "PB"]
     for k in range(len(units)):
-        if l < (1024**(k+1)):
+        if size < (1024 ** (k + 1)):
             break
-    return "%4.2f %s" % (round(l/(1024**(k)),2), units[k])
+    return "%4.2f %s" % (round(size / (1024 ** (k)), 2), units[k])
 
 
 def unix_permissions(entryname: str) -> str:
@@ -99,21 +106,21 @@ def unix_permissions(entryname: str) -> str:
     mode = os.lstat(entryname).st_mode
     permissions = []
 
-    permissions.append('d' if stat.S_ISDIR(mode) else '-')
+    permissions.append("d" if stat.S_ISDIR(mode) else "-")
 
-    permissions.append('r' if mode & stat.S_IRUSR else '-')
-    permissions.append('w' if mode & stat.S_IWUSR else '-')
-    permissions.append('x' if mode & stat.S_IXUSR else '-')
+    permissions.append("r" if mode & stat.S_IRUSR else "-")
+    permissions.append("w" if mode & stat.S_IWUSR else "-")
+    permissions.append("x" if mode & stat.S_IXUSR else "-")
 
-    permissions.append('r' if mode & stat.S_IRGRP else '-')
-    permissions.append('w' if mode & stat.S_IWGRP else '-')
-    permissions.append('x' if mode & stat.S_IXGRP else '-')
+    permissions.append("r" if mode & stat.S_IRGRP else "-")
+    permissions.append("w" if mode & stat.S_IWGRP else "-")
+    permissions.append("x" if mode & stat.S_IXGRP else "-")
 
-    permissions.append('r' if mode & stat.S_IROTH else '-')
-    permissions.append('w' if mode & stat.S_IWOTH else '-')
-    permissions.append('x' if mode & stat.S_IXOTH else '-')
+    permissions.append("r" if mode & stat.S_IROTH else "-")
+    permissions.append("w" if mode & stat.S_IWOTH else "-")
+    permissions.append("x" if mode & stat.S_IXOTH else "-")
 
-    return ''.join(permissions)
+    return "".join(permissions)
 
 
 def STYPE_MASK(stype_value: int) -> list[str]:
@@ -131,28 +138,23 @@ def STYPE_MASK(stype_value: int) -> list[str]:
     """
 
     known_flags = {
-        ## One of the following values may be specified. You can isolate these values by using the STYPE_MASK value.
+        # One of the following values may be specified. You can isolate these values by using the STYPE_MASK value.
         # Disk drive.
         "STYPE_DISKTREE": 0x0,
-
         # Print queue.
         "STYPE_PRINTQ": 0x1,
-
         # Communication device.
         "STYPE_DEVICE": 0x2,
-
         # Interprocess communication (IPC).
         "STYPE_IPC": 0x3,
-
-        ## In addition, one or both of the following values may be specified.
+        # In addition, one or both of the following values may be specified.
         # Special share reserved for interprocess communication (IPC$) or remote administration of the server (ADMIN$).
         # Can also refer to administrative shares such as C$, D$, E$, and so forth. For more information, see Network Share Functions.
         "STYPE_SPECIAL": 0x80000000,
-
         # A temporary share.
-        "STYPE_TEMPORARY": 0x40000000
+        "STYPE_TEMPORARY": 0x40000000,
     }
-    flags : list[str] = []
+    flags: list[str] = []
     if (stype_value & 0b11) == known_flags["STYPE_DISKTREE"]:
         flags.append("STYPE_DISKTREE")
     elif (stype_value & 0b11) == known_flags["STYPE_PRINTQ"]:
@@ -168,47 +170,71 @@ def STYPE_MASK(stype_value: int) -> list[str]:
     return flags
 
 
-def windows_ls_entry(entry: SharedFile, config: Config, pathToPrint: Optional[str] =None):
+def windows_ls_entry(
+    entry: SharedFile, config: Config, pathToPrint: Optional[str] = None
+):
     """
     This function generates a metadata string based on the attributes of the provided entry object.
-    
+
     Parameters:
         entry (object): An object representing a file or directory entry.
 
     Returns:
         str: A string representing the metadata of the entry, including attributes like directory, archive, compressed, hidden, normal, readonly, system, and temporary.
     """
-    
+
     if pathToPrint is not None:
         pathToPrint = pathToPrint + ntpath.sep + entry.get_longname()
     else:
         pathToPrint = entry.get_longname()
 
     meta_string = ""
-    meta_string += ("d" if entry.is_directory() else "-")
-    meta_string += ("a" if entry.is_archive() else "-")
-    meta_string += ("c" if entry.is_compressed() else "-")
-    meta_string += ("h" if entry.is_hidden() else "-")
-    meta_string += ("n" if entry.is_normal() else "-")
-    meta_string += ("r" if entry.is_readonly() else "-")
-    meta_string += ("s" if entry.is_system() else "-")
-    meta_string += ("t" if entry.is_temporary() else "-")
+    meta_string += "d" if entry.is_directory() else "-"
+    meta_string += "a" if entry.is_archive() else "-"
+    meta_string += "c" if entry.is_compressed() else "-"
+    meta_string += "h" if entry.is_hidden() else "-"
+    meta_string += "n" if entry.is_normal() else "-"
+    meta_string += "r" if entry.is_readonly() else "-"
+    meta_string += "s" if entry.is_system() else "-"
+    meta_string += "t" if entry.is_temporary() else "-"
 
-    size_str = b_filesize(entry.get_filesize())
+    size_str = filesize(entry.get_filesize())
 
-    date_str = datetime.datetime.fromtimestamp(entry.get_atime_epoch()).strftime("%Y-%m-%d %H:%M")
-    
+    date_str = datetime.datetime.fromtimestamp(entry.get_atime_epoch()).strftime(
+        "%Y-%m-%d %H:%M"
+    )
+
     output_str = ""
     if entry.is_directory():
         if config.no_colors:
-            output_str = ("%s %10s  %s  %s\\" % (meta_string, size_str, date_str, pathToPrint))
+            output_str = "%s %10s  %s  %s\\" % (
+                meta_string,
+                size_str,
+                date_str,
+                pathToPrint,
+            )
         else:
-            output_str = ("%s %10s  %s  \x1b[1;96m%s\x1b[0m\\" % (meta_string, size_str, date_str, pathToPrint))
+            output_str = "%s %10s  %s  \x1b[1;96m%s\x1b[0m\\" % (
+                meta_string,
+                size_str,
+                date_str,
+                pathToPrint,
+            )
     else:
         if config.no_colors:
-            output_str = ("%s %10s  %s  %s" % (meta_string, size_str, date_str, pathToPrint))
+            output_str = "%s %10s  %s  %s" % (
+                meta_string,
+                size_str,
+                date_str,
+                pathToPrint,
+            )
         else:
-            output_str = ("%s %10s  %s  \x1b[1m%s\x1b[0m" % (meta_string, size_str, date_str, pathToPrint))
+            output_str = "%s %10s  %s  \x1b[1m%s\x1b[0m" % (
+                meta_string,
+                size_str,
+                date_str,
+                pathToPrint,
+            )
 
     return output_str
 
@@ -228,97 +254,127 @@ def local_tree(path: str, config: Config):
     def recurse_action(base_dir="", path=[], prompt=[]):
         bars = ["│   ", "├── ", "└── "]
 
-        local_path = os.path.normpath(base_dir + os.path.sep + os.path.sep.join(path) + os.path.sep)
+        local_path = os.path.normpath(
+            base_dir + os.path.sep + os.path.sep.join(path) + os.path.sep
+        )
 
         entries = []
         try:
             entries = os.listdir(local_path)
         except Exception as err:
             if config.no_colors:
-                print("%s%s" % (''.join(prompt+[bars[2]]), err))
+                print("%s%s" % ("".join(prompt + [bars[2]]), err))
             else:
-                print("%s\x1b[1;91m%s\x1b[0m" % (''.join(prompt+[bars[2]]), err))
-            return 
+                print("%s\x1b[1;91m%s\x1b[0m" % ("".join(prompt + [bars[2]]), err))
+            return
 
         entries = sorted(entries)
 
-        # 
+        #
         if len(entries) > 1:
             index = 0
             for entry in entries:
                 index += 1
-                # This is the first entry 
+                # This is the first entry
                 if index == 0:
                     if os.path.isdir(local_path + os.path.sep + entry):
                         if config.no_colors:
-                            print("%s%s%s" % (''.join(prompt+[bars[1]]), entry, os.path.sep))
+                            print(
+                                "%s%s%s"
+                                % ("".join(prompt + [bars[1]]), entry, os.path.sep)
+                            )
                         else:
-                            print("%s\x1b[1;96m%s\x1b[0m%s" % (''.join(prompt+[bars[1]]), entry, os.path.sep))
+                            print(
+                                "%s\x1b[1;96m%s\x1b[0m%s"
+                                % ("".join(prompt + [bars[1]]), entry, os.path.sep)
+                            )
                         recurse_action(
-                            base_dir=base_dir, 
-                            path=path+[entry],
-                            prompt=prompt+["│   "]
+                            base_dir=base_dir,
+                            path=path + [entry],
+                            prompt=prompt + ["│   "],
                         )
                     else:
                         if config.no_colors:
-                            print("%s%s" % (''.join(prompt+[bars[1]]), entry))
+                            print("%s%s" % ("".join(prompt + [bars[1]]), entry))
                         else:
-                            print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[1]]), entry))
+                            print(
+                                "%s\x1b[1m%s\x1b[0m"
+                                % ("".join(prompt + [bars[1]]), entry)
+                            )
 
                 # This is the last entry
                 elif index == len(entries):
                     if os.path.isdir(local_path + os.path.sep + entry):
                         if config.no_colors:
-                            print("%s%s%s" % (''.join(prompt+[bars[2]]), entry, os.path.sep))
+                            print(
+                                "%s%s%s"
+                                % ("".join(prompt + [bars[2]]), entry, os.path.sep)
+                            )
                         else:
-                            print("%s\x1b[1;96m%s\x1b[0m%s" % (''.join(prompt+[bars[2]]), entry, os.path.sep))
+                            print(
+                                "%s\x1b[1;96m%s\x1b[0m%s"
+                                % ("".join(prompt + [bars[2]]), entry, os.path.sep)
+                            )
                         recurse_action(
-                            base_dir=base_dir, 
-                            path=path+[entry],
-                            prompt=prompt+["    "]
+                            base_dir=base_dir,
+                            path=path + [entry],
+                            prompt=prompt + ["    "],
                         )
                     else:
                         if config.no_colors:
-                            print("%s%s" % (''.join(prompt+[bars[2]]), entry))
+                            print("%s%s" % ("".join(prompt + [bars[2]]), entry))
                         else:
-                            print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[2]]), entry))
-                    
+                            print(
+                                "%s\x1b[1m%s\x1b[0m"
+                                % ("".join(prompt + [bars[2]]), entry)
+                            )
+
                 # These are entries in the middle
                 else:
                     if os.path.isdir(local_path + os.path.sep + entry):
                         if config.no_colors:
-                            print("%s%s%s" % (''.join(prompt+[bars[1]]), entry, os.path.sep))
+                            print(
+                                "%s%s%s"
+                                % ("".join(prompt + [bars[1]]), entry, os.path.sep)
+                            )
                         else:
-                            print("%s\x1b[1;96m%s\x1b[0m%s" % (''.join(prompt+[bars[1]]), entry, os.path.sep))
+                            print(
+                                "%s\x1b[1;96m%s\x1b[0m%s"
+                                % ("".join(prompt + [bars[1]]), entry, os.path.sep)
+                            )
                         recurse_action(
-                            base_dir=base_dir, 
-                            path=path+[entry],
-                            prompt=prompt+["│   "]
+                            base_dir=base_dir,
+                            path=path + [entry],
+                            prompt=prompt + ["│   "],
                         )
                     else:
                         if config.no_colors:
-                            print("%s%s" % (''.join(prompt+[bars[1]]), entry))
+                            print("%s%s" % ("".join(prompt + [bars[1]]), entry))
                         else:
-                            print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[1]]), entry))
+                            print(
+                                "%s\x1b[1m%s\x1b[0m"
+                                % ("".join(prompt + [bars[1]]), entry)
+                            )
 
-        # 
+        #
         elif len(entries) == 1:
             entry = entries[0]
             if os.path.isdir(local_path + os.path.sep + entry):
                 if config.no_colors:
-                    print("%s%s%s" % (''.join(prompt+[bars[2]]), entry, os.path.sep))
+                    print("%s%s%s" % ("".join(prompt + [bars[2]]), entry, os.path.sep))
                 else:
-                    print("%s\x1b[1;96m%s\x1b[0m%s" % (''.join(prompt+[bars[2]]), entry, os.path.sep))
+                    print(
+                        "%s\x1b[1;96m%s\x1b[0m%s"
+                        % ("".join(prompt + [bars[2]]), entry, os.path.sep)
+                    )
                 recurse_action(
-                    base_dir=base_dir, 
-                    path=path+[entry],
-                    prompt=prompt+["    "]
+                    base_dir=base_dir, path=path + [entry], prompt=prompt + ["    "]
                 )
             else:
                 if config.no_colors:
-                    print("%s%s" % (''.join(prompt+[bars[2]]), entry))
+                    print("%s%s" % ("".join(prompt + [bars[2]]), entry))
                 else:
-                    print("%s\x1b[1m%s\x1b[0m" % (''.join(prompt+[bars[2]]), entry))
+                    print("%s\x1b[1m%s\x1b[0m" % ("".join(prompt + [bars[2]]), entry))
 
     # Entrypoint
     try:
@@ -326,12 +382,8 @@ def local_tree(path: str, config: Config):
             print("%s%s" % (path, os.path.sep))
         else:
             print("\x1b[1;96m%s\x1b[0m%s" % (path, os.path.sep))
-        recurse_action(
-            base_dir=os.getcwd(),
-            path=[path],
-            prompt=[""]
-        )
-    except (BrokenPipeError, KeyboardInterrupt) as e:
+        recurse_action(base_dir=os.getcwd(), path=[path], prompt=[""])
+    except (BrokenPipeError, KeyboardInterrupt):
         print("[!] Interrupted.")
 
 
@@ -352,14 +404,14 @@ def resolve_local_files(arguments: list[str]) -> list[str]:
 
     resolved_files: list[str] = []
     for arg in arguments:
-        if '*' in arg:
+        if "*" in arg:
             try:
-                path = os.path.dirname(arg) or '.'
+                path = os.path.dirname(arg) or "."
                 pattern = os.path.basename(arg)
                 for entry in os.listdir(path):
                     if fnmatch.fnmatch(entry, pattern):
                         resolved_files.append(os.path.join(path, entry))
-            except FileNotFoundError as err:
+            except FileNotFoundError:
                 pass
         else:
             resolved_files.append(arg)
@@ -388,66 +440,77 @@ def resolve_remote_files(smbSession: SMBSession, arguments: list[str]) -> list[s
     resolved_pathFromRoot_files = []
     for arg in arguments:
         # Parse argument values
-        if DEBUG: print(f"[debug] Parsing argument '{arg}'")
+        if DEBUG:
+            print(f"[debug] Parsing argument '{arg}'")
 
         # Handle wildcard '*'
-        if arg == '*':
-            if DEBUG: print("[debug] |--> Argument is a wildcard")
+        if arg == "*":
+            if DEBUG:
+                print("[debug] |--> Argument is a wildcard")
             # Find all the remote files in current directory
             cwd = smbSession.smb_cwd or ntpath.sep  # Ensure cwd is not empty
-            search_path = ntpath.join(cwd, '*')
+            search_path = ntpath.join(cwd, "*")
             contents = smbSession.smbClient.listPath(
-                shareName=smbSession.smb_share,
-                path=search_path
+                shareName=smbSession.smb_share, path=search_path
             )
-            contents = [e for e in contents if e.get_longname() not in ['.', '..']]
+            contents = [e for e in contents if e.get_longname() not in [".", ".."]]
             for entry in contents:
                 # Construct absolute path starting from the root
-                resolved_path = ntpath.normpath(ntpath.join(ntpath.sep, cwd, entry.get_longname()))
+                resolved_path = ntpath.normpath(
+                    ntpath.join(ntpath.sep, cwd, entry.get_longname())
+                )
                 resolved_pathFromRoot_files.append(resolved_path)
 
         # Handle relative paths
         elif not arg.startswith(ntpath.sep):
             # Get the full path relative to the current working directory
             full_arg_path = ntpath.join(smbSession.smb_cwd, arg)
-            if '*' in arg:
-                if DEBUG: print("[debug] |--> Argument is a relative path with wildcard")
+            if "*" in arg:
+                if DEBUG:
+                    print("[debug] |--> Argument is a relative path with wildcard")
                 # Get the directory and pattern
                 dir_name = ntpath.dirname(full_arg_path) or smbSession.smb_cwd
                 pattern = ntpath.basename(arg)
-                search_path = ntpath.join(dir_name, '*')
+                search_path = ntpath.join(dir_name, "*")
                 contents = smbSession.smbClient.listPath(
-                    shareName=smbSession.smb_share,
-                    path=search_path
+                    shareName=smbSession.smb_share, path=search_path
                 )
-                contents = [e for e in contents if e.get_longname() not in ['.', '..']]
+                contents = [e for e in contents if e.get_longname() not in [".", ".."]]
                 for entry in contents:
                     if fnmatch.fnmatch(entry.get_longname(), pattern):
-                        resolved_path = ntpath.normpath(ntpath.join(ntpath.sep, dir_name, entry.get_longname()))
+                        resolved_path = ntpath.normpath(
+                            ntpath.join(ntpath.sep, dir_name, entry.get_longname())
+                        )
                         resolved_pathFromRoot_files.append(resolved_path)
             else:
-                if DEBUG: print("[debug] |--> Argument is a relative path")
-                resolved_path = ntpath.normpath(ntpath.join(ntpath.sep, smbSession.smb_cwd, arg))
+                if DEBUG:
+                    print("[debug] |--> Argument is a relative path")
+                resolved_path = ntpath.normpath(
+                    ntpath.join(ntpath.sep, smbSession.smb_cwd, arg)
+                )
                 resolved_pathFromRoot_files.append(resolved_path)
 
         # Handle absolute paths
         elif arg.startswith(ntpath.sep):
-            if '*' in arg:
-                if DEBUG: print("[debug] |--> Argument is an absolute path with wildcard")
+            if "*" in arg:
+                if DEBUG:
+                    print("[debug] |--> Argument is an absolute path with wildcard")
                 dir_name = ntpath.dirname(arg) or ntpath.sep
                 pattern = ntpath.basename(arg)
-                search_path = ntpath.join(dir_name, '*')
+                search_path = ntpath.join(dir_name, "*")
                 contents = smbSession.smbClient.listPath(
-                    shareName=smbSession.smb_share,
-                    path=search_path
+                    shareName=smbSession.smb_share, path=search_path
                 )
-                contents = [e for e in contents if e.get_longname() not in ['.', '..']]
+                contents = [e for e in contents if e.get_longname() not in [".", ".."]]
                 for entry in contents:
                     if fnmatch.fnmatch(entry.get_longname(), pattern):
-                        resolved_path = ntpath.normpath(ntpath.join(dir_name, entry.get_longname()))
+                        resolved_path = ntpath.normpath(
+                            ntpath.join(dir_name, entry.get_longname())
+                        )
                         resolved_pathFromRoot_files.append(resolved_path)
             else:
-                if DEBUG: print("[debug] |--> Argument is an absolute path")
+                if DEBUG:
+                    print("[debug] |--> Argument is an absolute path")
                 resolved_path = ntpath.normpath(arg)
                 resolved_pathFromRoot_files.append(resolved_path)
 
@@ -473,7 +536,7 @@ def is_port_open(target: str, port: int, timeout: float) -> tuple[bool, Optional
     Returns:
         bool, str: True if the port is open, otherwise False and error message.
     """
-    
+
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.settimeout(timeout)
@@ -482,8 +545,17 @@ def is_port_open(target: str, port: int, timeout: float) -> tuple[bool, Optional
     except Exception as e:
         return False, str(e)
 
-    
-def smb_entry_iterator(smb_client, smb_share: str, start_paths: list[str], exclusion_rules=[], max_depth: Optional[int] = None, min_depth: int = 0, current_depth: int = 0, filters: Optional[dict] = None):
+
+def smb_entry_iterator(
+    smb_client,
+    smb_share: str,
+    start_paths: list[str],
+    exclusion_rules=[],
+    max_depth: Optional[int] = None,
+    min_depth: int = 0,
+    current_depth: int = 0,
+    filters: Optional[dict] = None,
+):
     """
     Iterates over SMB entries by traversing directories in a depth-first manner.
 
@@ -523,29 +595,35 @@ def smb_entry_iterator(smb_client, smb_share: str, start_paths: list[str], exclu
             return True
 
         # Filter by type
-        entry_type = 'd' if entry.is_directory() else 'f'
-        if 'type' in filters and filters['type'] != entry_type:
+        entry_type = "d" if entry.is_directory() else "f"
+        if "type" in filters and filters["type"] != entry_type:
             return False
 
         # Filter by name (case-sensitive)
-        if 'name' in filters:
-            name_patterns = filters['name']
+        if "name" in filters:
+            name_patterns = filters["name"]
             if isinstance(name_patterns, str):
                 name_patterns = [name_patterns]
-            if not any(fnmatch.fnmatchcase(entry.get_longname(), pattern) for pattern in name_patterns):
+            if not any(
+                fnmatch.fnmatchcase(entry.get_longname(), pattern)
+                for pattern in name_patterns
+            ):
                 return False
 
         # Filter by name (case-insensitive)
-        if 'iname' in filters:
-            iname_patterns = filters['iname']
+        if "iname" in filters:
+            iname_patterns = filters["iname"]
             if isinstance(iname_patterns, str):
                 iname_patterns = [iname_patterns]
-            if not any(fnmatch.fnmatch(entry.get_longname().lower(), pattern.lower()) for pattern in iname_patterns):
+            if not any(
+                fnmatch.fnmatch(entry.get_longname().lower(), pattern.lower())
+                for pattern in iname_patterns
+            ):
                 return False
 
         # Filter by size
-        if 'size' in filters and not entry.is_directory():
-            size_filter = filters['size']
+        if "size" in filters and not entry.is_directory():
+            size_filter = filters["size"]
             size = entry.get_filesize()
             if not size_matches_filter(size, size_filter):
                 return False
@@ -565,27 +643,27 @@ def smb_entry_iterator(smb_client, smb_share: str, start_paths: list[str], exclu
         """
         import re
 
-        match = re.match(r'([+-]?)(\d+)([BKMGTP]?)', size_filter, re.IGNORECASE)
+        match = re.match(r"([+-]?)(\d+)([BKMGTP]?)", size_filter, re.IGNORECASE)
         if not match:
             return False
 
         operator, number, unit = match.groups()
         number = int(number)
         unit_multipliers = {
-            '': 1, 
-            'B': 1, 
-            'K': 1024, 
-            'M': 1024**2,
-            'G': 1024**3, 
-            'T': 1024**4, 
-            'P': 1024**5
+            "": 1,
+            "B": 1,
+            "K": 1024,
+            "M": 1024**2,
+            "G": 1024**3,
+            "T": 1024**4,
+            "P": 1024**5,
         }
         multiplier = unit_multipliers.get(unit.upper(), 1)
         threshold = number * multiplier
 
-        if operator == '+':
+        if operator == "+":
             return size >= threshold
-        elif operator == '-':
+        elif operator == "-":
             return size <= threshold
         else:
             return size == threshold
@@ -594,30 +672,31 @@ def smb_entry_iterator(smb_client, smb_share: str, start_paths: list[str], exclu
     for base_path in start_paths:
         try:
             entries = smb_client.listPath(
-                shareName=smb_share,
-                path=ntpath.join(base_path, '*')
+                shareName=smb_share, path=ntpath.join(base_path, "*")
             )
 
-            entries = [e for e in entries if e.get_longname() not in ['.', '..']]
+            entries = [e for e in entries if e.get_longname() not in [".", ".."]]
             entries.sort(key=lambda e: (not e.is_directory(), e.get_longname().lower()))
 
             entries_count = len(entries)
             for index, entry in enumerate(entries):
                 # Determine if this is the last entry in the directory
-                is_last_entry = (index == entries_count - 1)
+                is_last_entry = index == entries_count - 1
                 entry_name = entry.get_longname()
                 fullpath = ntpath.join(base_path, entry_name)
 
                 # Apply exclusion rules
                 exclude = False
                 for rule in exclusion_rules:
-                    dirname = rule['dirname']
-                    depth = rule.get('depth', -1)
-                    case_sensitive = rule.get('case_sensitive', True)
+                    dirname = rule["dirname"]
+                    depth = rule.get("depth", -1)
+                    case_sensitive = rule.get("case_sensitive", True)
                     match_name = entry_name if case_sensitive else entry_name.lower()
                     match_dirname = dirname if case_sensitive else dirname.lower()
 
-                    if match_name == match_dirname and (depth == -1 or current_depth <= depth):
+                    if match_name == match_dirname and (
+                        depth == -1 or current_depth <= depth
+                    ):
                         exclude = True
                         break
 
@@ -625,7 +704,9 @@ def smb_entry_iterator(smb_client, smb_share: str, start_paths: list[str], exclu
                     continue
 
                 # Apply depth filtering
-                if (max_depth is not None and current_depth > max_depth) or current_depth < min_depth:
+                if (
+                    max_depth is not None and current_depth > max_depth
+                ) or current_depth < min_depth:
                     continue
 
                 # Recursion for directories
@@ -643,7 +724,7 @@ def smb_entry_iterator(smb_client, smb_share: str, start_paths: list[str], exclu
                             max_depth=max_depth,
                             min_depth=min_depth,
                             current_depth=current_depth + 1,
-                            filters=filters
+                            filters=filters,
                         )
                 else:
                     if entry_matches_filters(entry, filters):

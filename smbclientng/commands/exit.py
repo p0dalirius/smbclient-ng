@@ -13,14 +13,11 @@ class Command_exit(Command):
     description = "Exits the interactive shell."
 
     HELP = {
-        "description": [
-            description,
-            "Syntax: 'exit'"
-        ], 
+        "description": [description, "Syntax: 'exit'"],
         "subcommands": [],
-        "autocomplete": []
+        "autocomplete": [],
     }
-    
+
     def setupParser(self) -> CommandArgumentParser:
         parser = CommandArgumentParser(prog=self.name, description=self.description)
         return parser

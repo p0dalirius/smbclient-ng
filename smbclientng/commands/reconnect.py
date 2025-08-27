@@ -13,12 +13,9 @@ class Command_reconnect(Command):
     description = "Reconnect to the remote machine (useful if connection timed out)."
 
     HELP = {
-        "description": [
-            description,
-            "Syntax: 'reconnect'"
-        ], 
+        "description": [description, "Syntax: 'reconnect'"],
         "subcommands": [],
-        "autocomplete": []
+        "autocomplete": [],
     }
 
     def setupParser(self) -> CommandArgumentParser:

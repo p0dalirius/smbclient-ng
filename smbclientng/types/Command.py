@@ -5,13 +5,16 @@
 # Date created       : 17 mar 2025
 
 from __future__ import annotations
+
 import argparse
 import shlex
-from smbclientng.types.CommandArgumentParser import CommandArgumentParserError
 from typing import TYPE_CHECKING, Optional
+
+from smbclientng.types.CommandArgumentParser import CommandArgumentParserError
+
 if TYPE_CHECKING:
-    from smbclientng.core.SMBSession import SMBSession
     from smbclientng.core.Logger import Logger
+    from smbclientng.core.SMBSession import SMBSession
     from smbclientng.types.Config import Config
 
 
@@ -32,7 +35,12 @@ class Command(object):
     options: Optional[argparse.Namespace] = None
     parser: Optional[argparse.ArgumentParser] = None
 
-    def __init__(self, smbSession: Optional[SMBSession] = None, config: Optional[Config] = None, logger: Optional[Logger] = None):
+    def __init__(
+        self,
+        smbSession: Optional[SMBSession] = None,
+        config: Optional[Config] = None,
+        logger: Optional[Logger] = None,
+    ):
         self.smbSession = smbSession
         self.config = config
         self.logger = logger
@@ -44,7 +52,7 @@ class Command(object):
             for line in self.HELP["description"]:
                 if not line.strip().lower().startswith("syntax:"):
                     kept_lines.append(line)
-            usage = ':'.join(self.parser.format_usage().strip().split(":")[1:])
+            usage = ":".join(self.parser.format_usage().strip().split(":")[1:])
             kept_lines.append("Syntax: '%s'" % (usage))
             self.HELP["description"] = kept_lines
 
@@ -60,20 +68,19 @@ class Command(object):
         raise NotImplementedError("Subclasses must implement this method")
 
     def processArguments(self, arguments) -> argparse.Namespace:
-        if type(arguments) == list:
+        if isinstance(arguments, list):
             arguments = shlex.join(arguments)
-        
+
         __iterableArguments = shlex.split(arguments)
 
         try:
             self.parser = self.setupParser()
             self.options = self.parser.parse_args(__iterableArguments)
 
-        except CommandArgumentParserError as e:
+        except CommandArgumentParserError:
             return None
-        
-        except SystemExit as e:
+
+        except SystemExit:
             return self.options
 
         return self.options
-        

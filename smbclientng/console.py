@@ -2,13 +2,12 @@
 import argparse
 import sys
 
-# Local library imports
-from smbclientng.types.Config import Config
-from smbclientng.types.Credentials import Credentials
 from smbclientng.core.InteractiveShell import InteractiveShell
 from smbclientng.core.Logger import Logger
 from smbclientng.core.SessionsManager import SessionsManager
-
+# Local library imports
+from smbclientng.types.Config import Config
+from smbclientng.types.Credentials import Credentials
 
 VERSION = "3.0.0"
 
@@ -32,50 +31,107 @@ def parseArgs():
         % ("v" + VERSION)
     )
 
-    parser = argparse.ArgumentParser(description="smbclient-ng, a fast and user-friendly way to interact with SMB shares.")
-    
+    parser = argparse.ArgumentParser(
+        description="smbclient-ng, a fast and user-friendly way to interact with SMB shares."
+    )
+
     group_config = parser.add_argument_group("Config")
     group_config.add_argument("--debug", action="store_true", help="Enable debug mode.")
-    group_config.add_argument("--no-colors", action="store_true", help="Disable colored output.")
+    group_config.add_argument(
+        "--no-colors", action="store_true", help="Disable colored output."
+    )
     group_config.add_argument("-l", "--logfile", type=str, help="Log file path.")
-    group_config.add_argument("-T", "--timeout", type=float, default=3, help="Timeout for SMB connections (default: 3s)")
-    group_config.add_argument("-a", "--advertised-name", type=str, help="Advertised machine name.")
+    group_config.add_argument(
+        "-T",
+        "--timeout",
+        type=float,
+        default=3,
+        help="Timeout for SMB connections (default: 3s)",
+    )
+    group_config.add_argument(
+        "-a", "--advertised-name", type=str, help="Advertised machine name."
+    )
 
     group_commands = parser.add_argument_group("Commands")
-    group_commands.add_argument("-C", "--command", default=[], action="append", help="smbclient-ng commands to execute.")
-    group_commands.add_argument("-S", "--startup-script", type=str, help="Startup script with commands.")
-    group_commands.add_argument("-N", "--not-interactive", action="store_true", help="Non-interactive mode.")
+    group_commands.add_argument(
+        "-C",
+        "--command",
+        default=[],
+        action="append",
+        help="smbclient-ng commands to execute.",
+    )
+    group_commands.add_argument(
+        "-S", "--startup-script", type=str, help="Startup script with commands."
+    )
+    group_commands.add_argument(
+        "-N", "--not-interactive", action="store_true", help="Non-interactive mode."
+    )
 
     # Target arguments
     group_target = parser.add_argument_group("Target")
-    group_target.add_argument("-H", "--host", required=True, type=str, help="Target SMB Server IP or hostname.")
-    group_target.add_argument("-P", "--port", type=int, default=445, help="Target SMB Server port (default: 445).")
+    group_target.add_argument(
+        "-H",
+        "--host",
+        required=True,
+        type=str,
+        help="Target SMB Server IP or hostname.",
+    )
+    group_target.add_argument(
+        "-P",
+        "--port",
+        type=int,
+        default=445,
+        help="Target SMB Server port (default: 445).",
+    )
 
     # Authentication arguments
     group_auth = parser.add_argument_group("Authentication & Connection")
-    group_auth.add_argument("-d", "--domain", default=".", type=str, help="Authentication domain.")
-    group_auth.add_argument("-u", "--user", type=str, help="Username for authentication.")
-    group_auth.add_argument("-k", "--kerberos", action="store_true", help="Use Kerberos authentication.")
-    group_auth.add_argument("--kdcHost", type=str, help="Fully qualified domain name (FQDN) of key distribution center (KDC) for Kerberos.")
+    group_auth.add_argument(
+        "-d", "--domain", default=".", type=str, help="Authentication domain."
+    )
+    group_auth.add_argument(
+        "-u", "--user", type=str, help="Username for authentication."
+    )
+    group_auth.add_argument(
+        "-k", "--kerberos", action="store_true", help="Use Kerberos authentication."
+    )
+    group_auth.add_argument(
+        "--kdcHost",
+        type=str,
+        help="Fully qualified domain name (FQDN) of key distribution center (KDC) for Kerberos.",
+    )
 
     # Password & Hashes
     group_secrets = parser.add_argument_group("Secrets")
     group_creds = group_secrets.add_mutually_exclusive_group()
-    group_creds.add_argument("-p", "--password", type=str, nargs="?", help="Password.")       
-    group_creds.add_argument("--no-pass", action="store_true", help="Do not prompt for a password.")
-    group_creds.add_argument("--hashes", type=str, metavar="[LMHASH:]NTHASH", help="NT/LM hashes.")
-    group_creds.add_argument("--aes-key", type=str, metavar="HEXKEY", help="AES key for Kerberos authentication.")
+    group_creds.add_argument("-p", "--password", type=str, nargs="?", help="Password.")
+    group_creds.add_argument(
+        "--no-pass", action="store_true", help="Do not prompt for a password."
+    )
+    group_creds.add_argument(
+        "--hashes", type=str, metavar="[LMHASH:]NTHASH", help="NT/LM hashes."
+    )
+    group_creds.add_argument(
+        "--aes-key",
+        type=str,
+        metavar="HEXKEY",
+        help="AES key for Kerberos authentication.",
+    )
 
     options = parser.parse_args()
 
-    if options.not_interactive and (options.startup_script is None and len(options.command) == 0):
+    if options.not_interactive and (
+        options.startup_script is None and len(options.command) == 0
+    ):
         print("[+] Option --not-interactive requires --startup-script or --command.")
         sys.exit(1)
 
     if options.user and not (options.password or options.no_pass or options.hashes):
         from getpass import getpass
 
-        options.password = getpass(f"  | Provide a password for '{options.domain}\\{options.user}': ")
+        options.password = getpass(
+            f"  | Provide a password for '{options.domain}\\{options.user}': "
+        )
 
     if options.aes_key:
         options.kerberos = True
@@ -104,7 +160,7 @@ def run():
     Returns:
         None
     """
-    
+
     options = parseArgs()
 
     config = Config()
@@ -140,9 +196,7 @@ def run():
         sys.exit(1)
     else:
         shell = InteractiveShell(
-            sessionsManager=sessions_manager,
-            config=config,
-            logger=logger
+            sessionsManager=sessions_manager, config=config, logger=logger
         )
         shell.run()
         logger.debug("Exiting the console.")

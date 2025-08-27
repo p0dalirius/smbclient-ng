@@ -9,16 +9,13 @@ from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
 
 class Command_module(Command):
-    name = "module" 
+    name = "module"
     description = "Loads a specific module for additional functionalities."
 
     HELP = {
-        "description": [
-            description,
-            "Syntax: 'module <name>'"
-        ], 
+        "description": [description, "Syntax: 'module <name>'"],
         "subcommands": [],
-        "autocomplete": []
+        "autocomplete": [],
     }
 
     def setupParser(self) -> CommandArgumentParser:
@@ -32,8 +29,12 @@ class Command_module(Command):
         module_name = arguments[0]
 
         if module_name in interactive_shell.modules.keys():
-            module = interactive_shell.modules[module_name](interactive_shell.sessionsManager.current_session, interactive_shell.config, interactive_shell.logger)
-            arguments_string = ' '.join(arguments[1:])
+            module = interactive_shell.modules[module_name](
+                interactive_shell.sessionsManager.current_session,
+                interactive_shell.config,
+                interactive_shell.logger,
+            )
+            arguments_string = " ".join(arguments[1:])
             module.run(arguments_string)
         else:
             interactive_shell.logger.error("Module '%s' does not exist." % module_name)

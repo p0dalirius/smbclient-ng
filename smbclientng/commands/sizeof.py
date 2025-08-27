@@ -4,13 +4,16 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.utils.decorator import active_smb_connection_needed, smb_share_is_set
-from impacket.smbconnection import SessionError as SMBConnectionSessionError
-from impacket.smb3 import SessionError as SMB3SessionError
-from smbclientng.utils import b_filesize, smb_entry_iterator
 import ntpath
+
+from impacket.smb3 import SessionError as SMB3SessionError
+from impacket.smbconnection import SessionError as SMBConnectionSessionError
+
 from smbclientng.types.Command import Command
 from smbclientng.types.CommandArgumentParser import CommandArgumentParser
+from smbclientng.utils import b_filesize, smb_entry_iterator
+from smbclientng.utils.decorator import (active_smb_connection_needed,
+                                         smb_share_is_set)
 
 
 class Command_sizeof(Command):
@@ -18,17 +21,19 @@ class Command_sizeof(Command):
     description = "Recursively compute the size of a folder."
 
     HELP = {
-        "description": [
-            description, 
-            "Syntax: 'sizeof [directory|file]'"
-        ], 
+        "description": [description, "Syntax: 'sizeof [directory|file]'"],
         "subcommands": [],
-        "autocomplete": ["remote_directory"]
+        "autocomplete": ["remote_directory"],
     }
 
     def setupParser(self) -> CommandArgumentParser:
         parser = CommandArgumentParser(prog=self.name, description=self.description)
-        parser.add_argument('path', type=str, nargs='*', help='List of remote directories or files to compute the size of')
+        parser.add_argument(
+            "path",
+            type=str,
+            nargs="*",
+            help="List of remote directories or files to compute the size of",
+        )
         return parser
 
     @active_smb_connection_needed
@@ -40,22 +45,27 @@ class Command_sizeof(Command):
 
         self.options = self.processArguments(arguments=arguments)
         if self.options is None:
-            return 
+            return
 
         # Parse the arguments to get the path(s)
         if len(self.options.path) == 0:
-            self.options.path = ['.']
+            self.options.path = ["."]
 
         total_size = 0
         for path in self.options.path:
             # Normalize and parse the path
-            path = path.replace('/', ntpath.sep)
+            path = path.replace("/", ntpath.sep)
             path = ntpath.normpath(path)
             path = path.strip(ntpath.sep)
 
             # Handle relative and absolute paths
             if not ntpath.isabs(path):
-                path = ntpath.normpath(ntpath.join(interactive_shell.sessionsManager.current_session.smb_cwd or '', path))
+                path = ntpath.normpath(
+                    ntpath.join(
+                        interactive_shell.sessionsManager.current_session.smb_cwd or "",
+                        path,
+                    )
+                )
             else:
                 path = path.lstrip(ntpath.sep)
                 path = ntpath.normpath(path)
@@ -67,12 +77,12 @@ class Command_sizeof(Command):
                     smb_share=interactive_shell.sessionsManager.current_session.smb_share,
                     start_paths=[path],
                     exclusion_rules=[],
-                    max_depth=None
+                    max_depth=None,
                 )
 
                 path_size = 0
-                
-                LINE_CLEAR = '\x1b[2K'
+
+                LINE_CLEAR = "\x1b[2K"
 
                 # Prepare the path display
                 if interactive_shell.config.no_colors:
@@ -88,7 +98,7 @@ class Command_sizeof(Command):
                         size_str = b_filesize(path_size)
                         output_line = f"\r{size_str}\t{path_display}"
                         # Clear the line after the cursor
-                        print(output_line, end='\r')
+                        print(output_line, end="\r")
 
                 # After processing all entries, format and print the result for the current path
                 print(end=LINE_CLEAR)

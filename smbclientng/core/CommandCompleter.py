@@ -4,16 +4,35 @@
 # Date created       : 17 mar 2025
 
 from __future__ import annotations
+
 import ntpath
 import os
 import shlex
-from smbclientng.commands import *
 from typing import TYPE_CHECKING
+
+from smbclientng.commands import (Command_acls, Command_bat, Command_bhead,
+                                  Command_btail, Command_cat, Command_cd,
+                                  Command_close, Command_dir, Command_exit,
+                                  Command_find, Command_get, Command_head,
+                                  Command_help, Command_history, Command_info,
+                                  Command_lbat, Command_lcat, Command_lcd,
+                                  Command_lcp, Command_lls, Command_lmkdir,
+                                  Command_lpwd, Command_lrename, Command_lrm,
+                                  Command_lrmdir, Command_ls, Command_ltree,
+                                  Command_metadata, Command_mkdir,
+                                  Command_module, Command_mount, Command_put,
+                                  Command_quit, Command_reconnect,
+                                  Command_reset, Command_rm, Command_rmdir,
+                                  Command_sessions, Command_shares,
+                                  Command_sizeof, Command_tail, Command_tree,
+                                  Command_umount, Command_use)
+
 if TYPE_CHECKING:
     from typing import Optional
-    from smbclientng.core.SMBSession import SMBSession
+
     from smbclientng.core.Config import Config
     from smbclientng.core.Logger import Logger
+    from smbclientng.core.SMBSession import SMBSession
 
 
 class CommandCompleter(object):
@@ -65,7 +84,6 @@ class CommandCompleter(object):
         "module": Command_module.HELP,
         "mount": Command_mount.HELP,
         "put": Command_put.HELP,
-        "quit": Command_quit.HELP,
         "reconnect": Command_reconnect.HELP,
         "reset": Command_reset.HELP,
         "rmdir": Command_rmdir.HELP,
@@ -79,7 +97,7 @@ class CommandCompleter(object):
         "use": Command_use.HELP,
         "quit": Command_quit.HELP,
     }
-    
+
     smbSession: SMBSession
     config: Config
     logger: Logger
@@ -89,7 +107,7 @@ class CommandCompleter(object):
         self.smbSession = smbSession
         self.config = config
         self.logger = logger
-        # Pre computing for some commands 
+        # Pre computing for some commands
         self.commands["help"]["subcommands"] = ["format"] + list(self.commands.keys())
         self.commands["help"]["subcommands"].remove("help")
 
@@ -108,17 +126,19 @@ class CommandCompleter(object):
         """
 
         if state == 0:
-            
+
             # No text typed yet, need the list of commands available
             if len(text) == 0:
                 self.matches = [s for s in self.commands.keys()]
-            
+
             # Parsing a command
             elif len(text) != 0:
                 # This is for the main command
                 if text.count(" ") == 0:
-                    self.matches = [s for s in self.commands.keys() if s and s.startswith(text)]
-                
+                    self.matches = [
+                        s for s in self.commands.keys() if s and s.startswith(text)
+                    ]
+
                 # This is for subcommands
                 elif text.count(" ") >= 1:
                     command, remainder = text.split(" ", 1)
@@ -142,44 +162,67 @@ class CommandCompleter(object):
                         if "remote_directory" in self.commands[command]["autocomplete"]:
                             # Choose remote directory
                             path = ""
-                            if '\\' in remainder.strip() or '/' in remainder.strip():
-                                path = remainder.strip().replace(ntpath.sep, '/')
-                                path = '/'.join(path.split('/')[:-1]) 
+                            if "\\" in remainder.strip() or "/" in remainder.strip():
+                                path = remainder.strip().replace(ntpath.sep, "/")
+                                path = "/".join(path.split("/")[:-1])
                             # Get remote directory contents
-                            directory_contents = self.smbSession.list_contents(path=path).items()
-                            # 
+                            directory_contents = self.smbSession.list_contents(
+                                path=path
+                            ).items()
+                            #
                             matching_entries = []
                             for _, entry in directory_contents:
-                                if entry.is_directory() and entry.get_longname() not in [".",".."]:
+                                if (
+                                    entry.is_directory()
+                                    and entry.get_longname() not in [".", ".."]
+                                ):
                                     if len(path) != 0:
-                                        matching_entries.append(path + '/' + entry.get_longname() + '/')
+                                        matching_entries.append(
+                                            path + "/" + entry.get_longname() + "/"
+                                        )
                                     else:
-                                        matching_entries.append(entry.get_longname() + '/')
+                                        matching_entries.append(
+                                            entry.get_longname() + "/"
+                                        )
                             #
                             for m in matching_entries:
-                                if m.lower().startswith(remainder.lower()) or shlex.quote(m).lower().startswith(remainder.lower()):
+                                if m.lower().startswith(
+                                    remainder.lower()
+                                ) or shlex.quote(m).lower().startswith(
+                                    remainder.lower()
+                                ):
                                     self.matches.append(command + " " + shlex.quote(m))
 
                         # Autocomplete file
                         if "remote_file" in self.commands[command]["autocomplete"]:
                             # Choose remote file
                             path = ""
-                            if '\\' in remainder.strip() or '/' in remainder.strip():
-                                path = remainder.strip().replace(ntpath.sep, '/')
-                                path = '/'.join(path.split('/')[:-1])
+                            if "\\" in remainder.strip() or "/" in remainder.strip():
+                                path = remainder.strip().replace(ntpath.sep, "/")
+                                path = "/".join(path.split("/")[:-1])
                             # Get remote directory contents
-                            directory_contents = self.smbSession.list_contents(path=path).items()
-                            # 
+                            directory_contents = self.smbSession.list_contents(
+                                path=path
+                            ).items()
+                            #
                             matching_entries = []
                             for _, entry in directory_contents:
-                                if (not entry.is_directory()) and entry.get_longname() not in [".",".."]:
+                                if (
+                                    not entry.is_directory()
+                                ) and entry.get_longname() not in [".", ".."]:
                                     if len(path) != 0:
-                                        matching_entries.append(path + '/' + entry.get_longname())
+                                        matching_entries.append(
+                                            path + "/" + entry.get_longname()
+                                        )
                                     else:
                                         matching_entries.append(entry.get_longname())
-                            # 
+                            #
                             for m in matching_entries:
-                                if m.lower().startswith(remainder.lower()) or shlex.quote(m).lower().startswith(remainder.lower()):
+                                if m.lower().startswith(
+                                    remainder.lower()
+                                ) or shlex.quote(m).lower().startswith(
+                                    remainder.lower()
+                                ):
                                     self.matches.append(command + " " + shlex.quote(m))
 
                         # Autocomplete local_directory
@@ -196,13 +239,19 @@ class CommandCompleter(object):
                             directory_contents = os.listdir(path=path + os.path.sep)
                             matching_entries = []
                             for entry in directory_contents:
-                                if entry not in [".",".."]:
+                                if entry not in [".", ".."]:
                                     entry_path = path + os.path.sep + entry
                                     if os.path.isdir(entry_path):
-                                        matching_entries.append(entry_path + os.path.sep)
+                                        matching_entries.append(
+                                            entry_path + os.path.sep
+                                        )
                             #
                             for m in matching_entries:
-                                if m.lower().startswith(remainder.lower()) or shlex.quote(m).lower().startswith(remainder.lower()):
+                                if m.lower().startswith(
+                                    remainder.lower()
+                                ) or shlex.quote(m).lower().startswith(
+                                    remainder.lower()
+                                ):
                                     self.matches.append(command + " " + shlex.quote(m))
 
                         # Autocomplete local_file
@@ -215,17 +264,21 @@ class CommandCompleter(object):
                             # Current dir
                             if len(path.strip()) == 0:
                                 path = "."
-                            # 
+                            #
                             directory_contents = os.listdir(path=(path + os.path.sep))
                             matching_entries = []
                             for entry in directory_contents:
-                                if entry not in [".",".."]:
+                                if entry not in [".", ".."]:
                                     entry_path = path + os.path.sep + entry
                                     if not os.path.isdir(entry_path):
                                         matching_entries.append(entry_path)
-                            # 
+                            #
                             for m in matching_entries:
-                                if m.lower().startswith(remainder.lower()) or shlex.quote(m).lower().startswith(remainder.lower()):
+                                if m.lower().startswith(
+                                    remainder.lower()
+                                ) or shlex.quote(m).lower().startswith(
+                                    remainder.lower()
+                                ):
                                     self.matches.append(command + " " + shlex.quote(m))
 
                         else:
@@ -263,10 +316,10 @@ class CommandCompleter(object):
         """
 
         if command is not None:
-            if command not in list(self.commands.keys())+["format"]:
+            if command not in list(self.commands.keys()) + ["format"]:
                 self.logger.error("Help for command '%s' does not exist." % command)
                 return
-        
+
         # Print help for a specific command
         if command is not None:
             if command == "format":
@@ -274,25 +327,41 @@ class CommandCompleter(object):
             else:
                 self.logger.print("│")
                 if self.config.no_colors:
-                    command_str = command + "─"* (15 - len(command))
+                    command_str = command + "─" * (15 - len(command))
                     if len(self.commands[command]["description"]) == 0:
                         self.logger.print("│ ■ %s┤  " % command_str)
                     elif len(self.commands[command]["description"]) == 1:
-                        self.logger.print("│ ■ %s┤ %s " % (command_str, self.commands[command]["description"][0]))
+                        self.logger.print(
+                            "│ ■ %s┤ %s "
+                            % (command_str, self.commands[command]["description"][0])
+                        )
                     else:
-                        self.logger.print("│ ■ %s┤ %s " % (command_str, self.commands[command]["description"][0]))
+                        self.logger.print(
+                            "│ ■ %s┤ %s "
+                            % (command_str, self.commands[command]["description"][0])
+                        )
                         for line in self.commands[command]["description"][1:]:
-                            self.logger.print("│ %s│ %s " % (" "*(15+2), line))
+                            self.logger.print("│ %s│ %s " % (" " * (15 + 2), line))
                 else:
-                    command_str = command + " \x1b[90m" + "─"* (15 - len(command)) + "\x1b[0m"
+                    command_str = (
+                        command + " \x1b[90m" + "─" * (15 - len(command)) + "\x1b[0m"
+                    )
                     if len(self.commands[command]["description"]) == 0:
                         self.logger.print("│ ■ %s\x1b[90m┤\x1b[0m  " % command_str)
                     elif len(self.commands[command]["description"]) == 1:
-                        self.logger.print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
+                        self.logger.print(
+                            "│ ■ %s\x1b[90m┤\x1b[0m %s "
+                            % (command_str, self.commands[command]["description"][0])
+                        )
                     else:
-                        self.logger.print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
+                        self.logger.print(
+                            "│ ■ %s\x1b[90m┤\x1b[0m %s "
+                            % (command_str, self.commands[command]["description"][0])
+                        )
                         for line in self.commands[command]["description"][1:]:
-                            self.logger.print("│ %s\x1b[90m│\x1b[0m %s " % (" "*(15+3), line))
+                            self.logger.print(
+                                "│ %s\x1b[90m│\x1b[0m %s " % (" " * (15 + 3), line)
+                            )
                 self.logger.print("│")
         # Generic help
         else:
@@ -300,25 +369,41 @@ class CommandCompleter(object):
             commands = sorted(self.commands.keys())
             for command in commands:
                 if self.config.no_colors:
-                    command_str = command + "─"* (15 - len(command))
+                    command_str = command + "─" * (15 - len(command))
                     if len(self.commands[command]["description"]) == 0:
                         self.logger.print("│ ■ %s┤  " % command_str)
                     elif len(self.commands[command]["description"]) == 1:
-                        self.logger.print("│ ■ %s┤ %s " % (command_str, self.commands[command]["description"][0]))
+                        self.logger.print(
+                            "│ ■ %s┤ %s "
+                            % (command_str, self.commands[command]["description"][0])
+                        )
                     else:
-                        self.logger.print("│ ■ %s┤ %s " % (command_str, self.commands[command]["description"][0]))
+                        self.logger.print(
+                            "│ ■ %s┤ %s "
+                            % (command_str, self.commands[command]["description"][0])
+                        )
                         for line in self.commands[command]["description"][1:]:
-                            self.logger.print("│ %s│ %s " % (" "*(15+2), line))
+                            self.logger.print("│ %s│ %s " % (" " * (15 + 2), line))
                 else:
-                    command_str = command + " \x1b[90m" + "─"* (15 - len(command)) + "\x1b[0m"
+                    command_str = (
+                        command + " \x1b[90m" + "─" * (15 - len(command)) + "\x1b[0m"
+                    )
                     if len(self.commands[command]["description"]) == 0:
                         self.logger.print("│ ■ %s\x1b[90m┤\x1b[0m  " % command_str)
                     elif len(self.commands[command]["description"]) == 1:
-                        self.logger.print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
+                        self.logger.print(
+                            "│ ■ %s\x1b[90m┤\x1b[0m %s "
+                            % (command_str, self.commands[command]["description"][0])
+                        )
                     else:
-                        self.logger.print("│ ■ %s\x1b[90m┤\x1b[0m %s " % (command_str, self.commands[command]["description"][0]))
+                        self.logger.print(
+                            "│ ■ %s\x1b[90m┤\x1b[0m %s "
+                            % (command_str, self.commands[command]["description"][0])
+                        )
                         for line in self.commands[command]["description"][1:]:
-                            self.logger.print("│ %s\x1b[90m│\x1b[0m %s " % (" "*(15+3), line))
+                            self.logger.print(
+                                "│ %s\x1b[90m│\x1b[0m %s " % (" " * (15 + 3), line)
+                            )
                 self.logger.print("│")
 
     def print_help_format(self):
@@ -350,4 +435,3 @@ class CommandCompleter(object):
             self.logger.print("\x1b[90m││└───────>\x1b[0m Compressed")
             self.logger.print("\x1b[90m│└────────>\x1b[0m Archived")
             self.logger.print("\x1b[90m└─────────>\x1b[0m Directory")
-

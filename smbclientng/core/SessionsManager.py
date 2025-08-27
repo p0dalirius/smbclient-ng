@@ -5,14 +5,19 @@
 # Date created       : 20 may 2024
 
 from __future__ import annotations
+
 import datetime
 import time
-from smbclientng.types.Credentials import Credentials
-from smbclientng.types.ModuleArgumentParser import ModuleArgumentParser, ModuleArgumentParserError
-from smbclientng.core.SMBSession import SMBSession
 from typing import TYPE_CHECKING
+
+from smbclientng.core.SMBSession import SMBSession
+from smbclientng.types.Credentials import Credentials
+from smbclientng.types.ModuleArgumentParser import (ModuleArgumentParser,
+                                                    ModuleArgumentParserError)
+
 if TYPE_CHECKING:
     from typing import Optional
+
     from smbclientng.core.Logger import Logger
     from smbclientng.types.Config import Config
 
@@ -42,7 +47,14 @@ class SessionsManager(object):
         self.config = config
         self.logger = logger
 
-    def create_new_session(self, credentials: Credentials, host: str, timeout: int, port: int = 445, advertisedName: Optional[str] = None):
+    def create_new_session(
+        self,
+        credentials: Credentials,
+        host: str,
+        timeout: int,
+        port: int = 445,
+        advertisedName: Optional[str] = None,
+    ):
         """
         Creates a new session with the given session information.
 
@@ -52,7 +64,7 @@ class SessionsManager(object):
         Returns:
             None
         """
-        
+
         smbSession = SMBSession(
             host=host,
             port=port,
@@ -60,7 +72,7 @@ class SessionsManager(object):
             credentials=credentials,
             advertisedName=advertisedName,
             config=self.config,
-            logger=self.logger
+            logger=self.logger,
         )
         if smbSession.init_smb_session():
             self.sessions[self.next_session_id] = {
@@ -129,60 +141,175 @@ class SessionsManager(object):
         parser = ModuleArgumentParser(add_help=True, prog="sessions", description="")
 
         # interact
-        mode_interact = ModuleArgumentParser(add_help=False, description="Switch to the specified session.")
-        mode_interact.add_argument("-i", "--session-id", type=int, default=None, required=True, help="Session ID to interact with.")
+        mode_interact = ModuleArgumentParser(
+            add_help=False, description="Switch to the specified session."
+        )
+        mode_interact.add_argument(
+            "-i",
+            "--session-id",
+            type=int,
+            default=None,
+            required=True,
+            help="Session ID to interact with.",
+        )
 
         # Create
-        mode_create = ModuleArgumentParser(add_help=False, description="Create a new session.")
-        mode_create.add_argument("--advertised-name", dest="advertisedName", metavar="ADVERTISED_NAME", required=False, type=str, help="Advertised name of your machine to the SMB client.")
+        mode_create = ModuleArgumentParser(
+            add_help=False, description="Create a new session."
+        )
+        mode_create.add_argument(
+            "--advertised-name",
+            dest="advertisedName",
+            metavar="ADVERTISED_NAME",
+            required=False,
+            type=str,
+            help="Advertised name of your machine to the SMB client.",
+        )
         group_target = mode_create.add_argument_group("Target")
-        group_target.add_argument("--host", action="store", metavar="HOST", required=True, type=str, help="IP address or hostname of the SMB Server to connect to.")  
-        group_target.add_argument("--port", action="store", metavar="PORT", type=int, default=445, help="Port of the SMB Server to connect to. (default: 445)")
-        group_target.add_argument( "--timeout", dest="timeout", metavar="TIMEOUT", required=False, type=int, default=3, help="Timeout in seconds for SMB connections (default: 3)")
+        group_target.add_argument(
+            "--host",
+            action="store",
+            metavar="HOST",
+            required=True,
+            type=str,
+            help="IP address or hostname of the SMB Server to connect to.",
+        )
+        group_target.add_argument(
+            "--port",
+            action="store",
+            metavar="PORT",
+            type=int,
+            default=445,
+            help="Port of the SMB Server to connect to. (default: 445)",
+        )
+        group_target.add_argument(
+            "--timeout",
+            dest="timeout",
+            metavar="TIMEOUT",
+            required=False,
+            type=int,
+            default=3,
+            help="Timeout in seconds for SMB connections (default: 3)",
+        )
         authconn = mode_create.add_argument_group("Authentication & connection")
-        authconn.add_argument("--kdcHost", dest="kdcHost", action="store", metavar="FQDN KDC", help="FQDN of KDC for Kerberos.")
-        authconn.add_argument("-d", "--domain", dest="auth_domain", metavar="DOMAIN", action="store", default='.', help="(FQDN) domain to authenticate to.")
-        authconn.add_argument("-u", "--user", dest="auth_username", metavar="USER", action="store", help="User to authenticate with.")
+        authconn.add_argument(
+            "--kdcHost",
+            dest="kdcHost",
+            action="store",
+            metavar="FQDN KDC",
+            help="FQDN of KDC for Kerberos.",
+        )
+        authconn.add_argument(
+            "-d",
+            "--domain",
+            dest="auth_domain",
+            metavar="DOMAIN",
+            action="store",
+            default=".",
+            help="(FQDN) domain to authenticate to.",
+        )
+        authconn.add_argument(
+            "-u",
+            "--user",
+            dest="auth_username",
+            metavar="USER",
+            action="store",
+            help="User to authenticate with.",
+        )
         secret = mode_create.add_argument_group()
         cred = secret.add_mutually_exclusive_group()
-        cred.add_argument("--no-pass", action="store_true", help="Don't ask for password (useful for -k).")
-        cred.add_argument("-p", "--password", dest="auth_password", metavar="PASSWORD", action="store", nargs="?", help="Password to authenticate with.")
-        cred.add_argument("-H", "--hashes", dest="auth_hashes", action="store", metavar="[LMHASH:]NTHASH", help="NT/LM hashes, format is LMhash:NThash.")
-        cred.add_argument("--aes-key", dest="aesKey", action="store", metavar="hex key", help="AES key to use for Kerberos Authentication (128 or 256 bits).")
-        secret.add_argument("-k", "--kerberos", dest="use_kerberos", action="store_true", help="Use Kerberos authentication. Grabs credentials from .ccache file (KRB5CCNAME) based on target parameters. If valid credentials cannot be found, it will use the ones specified in the command line.")
+        cred.add_argument(
+            "--no-pass",
+            action="store_true",
+            help="Don't ask for password (useful for -k).",
+        )
+        cred.add_argument(
+            "-p",
+            "--password",
+            dest="auth_password",
+            metavar="PASSWORD",
+            action="store",
+            nargs="?",
+            help="Password to authenticate with.",
+        )
+        cred.add_argument(
+            "-H",
+            "--hashes",
+            dest="auth_hashes",
+            action="store",
+            metavar="[LMHASH:]NTHASH",
+            help="NT/LM hashes, format is LMhash:NThash.",
+        )
+        cred.add_argument(
+            "--aes-key",
+            dest="aesKey",
+            action="store",
+            metavar="hex key",
+            help="AES key to use for Kerberos Authentication (128 or 256 bits).",
+        )
+        secret.add_argument(
+            "-k",
+            "--kerberos",
+            dest="use_kerberos",
+            action="store_true",
+            help="Use Kerberos authentication. Grabs credentials from .ccache file (KRB5CCNAME) based on target parameters. If valid credentials cannot be found, it will use the ones specified in the command line.",
+        )
 
         # Delete
-        mode_delete = ModuleArgumentParser(add_help=False, description="Delete the specified session.")
+        mode_delete = ModuleArgumentParser(
+            add_help=False, description="Delete the specified session."
+        )
         group_sessions = mode_delete.add_mutually_exclusive_group(required=True)
-        group_sessions.add_argument("-i", "--session-id", type=int, default=[], action="append", help="One or more ID of sessions to target.")
-        group_sessions.add_argument("-a", "--all", default=False, action="store_true", help="Delete all sessions.")
+        group_sessions.add_argument(
+            "-i",
+            "--session-id",
+            type=int,
+            default=[],
+            action="append",
+            help="One or more ID of sessions to target.",
+        )
+        group_sessions.add_argument(
+            "-a",
+            "--all",
+            default=False,
+            action="store_true",
+            help="Delete all sessions.",
+        )
 
         # Execute
-        #mode_execute = ModuleArgumentParser(add_help=False, description="Send a smbclient-ng command line in one or more sessions.")
-        #group_sessions = mode_execute.add_mutually_exclusive_group(required=True)
-        #group_sessions.add_argument("-i", "--session-id", type=int, default=[], action="append", help="One or more ID of sessions to target.")
-        #group_sessions.add_argument("-a", "--all", default=False, action="store_true", help="Execute command in all sessions.")
-        #mode_execute.add_argument("-c", "--command", type=str, required=True, help="Command to execute in the target sessions.")
+        # mode_execute = ModuleArgumentParser(add_help=False, description="Send a smbclient-ng command line in one or more sessions.")
+        # group_sessions = mode_execute.add_mutually_exclusive_group(required=True)
+        # group_sessions.add_argument("-i", "--session-id", type=int, default=[], action="append", help="One or more ID of sessions to target.")
+        # group_sessions.add_argument("-a", "--all", default=False, action="store_true", help="Execute command in all sessions.")
+        # mode_execute.add_argument("-c", "--command", type=str, required=True, help="Command to execute in the target sessions.")
 
         # List
-        mode_list = ModuleArgumentParser(add_help=False, description="List the registered sessions.")
+        mode_list = ModuleArgumentParser(
+            add_help=False, description="List the registered sessions."
+        )
 
         # Register subparsers
         subparsers = parser.add_subparsers(help="Action", dest="action", required=True)
-        subparsers.add_parser("interact", parents=[mode_interact], help=mode_interact.description)
-        subparsers.add_parser("create", parents=[mode_create], help=mode_create.description)
-        subparsers.add_parser("delete", parents=[mode_delete], help=mode_delete.description)
-        #subparsers.add_parser("execute", parents=[mode_execute], help=mode_execute.description)
+        subparsers.add_parser(
+            "interact", parents=[mode_interact], help=mode_interact.description
+        )
+        subparsers.add_parser(
+            "create", parents=[mode_create], help=mode_create.description
+        )
+        subparsers.add_parser(
+            "delete", parents=[mode_delete], help=mode_delete.description
+        )
+        # subparsers.add_parser("execute", parents=[mode_execute], help=mode_execute.description)
         subparsers.add_parser("list", parents=[mode_list], help=mode_list.description)
 
         try:
             options = parser.parse_args(arguments)
-        except (SystemExit, ModuleArgumentParserError) as e:
+        except (SystemExit, ModuleArgumentParserError):
             return
-        
+
         # Process actions
 
-        # 
+        #
         if options.action == "interact":
             if options.session_id is not None:
                 if options.session_id in self.sessions.keys():
@@ -191,7 +318,7 @@ class SessionsManager(object):
                 else:
                     self.logger.error("No session with id #%d" % options.session_id)
 
-        # 
+        #
         elif options.action == "create":
             credentials = Credentials(
                 domain=options.auth_domain,
@@ -200,32 +327,34 @@ class SessionsManager(object):
                 hashes=options.auth_hashes,
                 use_kerberos=options.use_kerberos,
                 aesKey=options.aesKey,
-                kdcHost=options.kdcHost
+                kdcHost=options.kdcHost,
             )
             self.create_new_session(
                 credentials=credentials,
                 host=options.host,
                 port=options.port,
-                timeout=options.timeout
+                timeout=options.timeout,
             )
-        
-        # 
+
+        #
         elif options.action == "delete":
             if len(options.session_id) != 0:
                 for session_id in options.session_id:
                     if session_id in self.sessions.keys():
-                        self.logger.info("Closing and deleting session #%d" % session_id)
+                        self.logger.info(
+                            "Closing and deleting session #%d" % session_id
+                        )
                         self.delete_session(session_id=session_id)
                     else:
                         self.logger.error("No session with id #%d" % session_id)
-            elif options.all == True:
+            elif options.all:
                 all_session_ids = list(self.sessions.keys())
                 for session_id in all_session_ids:
                     print("[+] Closing and deleting session #%d" % session_id)
                     self.delete_session(session_id=session_id)
 
         #  FIXME: Not implemented
-        #elif options.action == "execute":
+        # elif options.action == "execute":
         #    if options.command is not None:
         #        if len(options.session_id) != 0:
         #            for session_id in session_id:
@@ -237,17 +366,26 @@ class SessionsManager(object):
         #            all_session_ids = list(self.sessions.keys())
         #            for session_id in all_session_ids:
         #                pass
-        
-        # 
+
+        #
         elif options.action == "list":
             for sessionId in sorted(self.sessions.keys()):
                 session = self.sessions[sessionId]["smbSession"]
-                created_at_str = str(datetime.datetime.fromtimestamp(self.sessions[sessionId]["created_at"]))
+                created_at_str = str(
+                    datetime.datetime.fromtimestamp(
+                        self.sessions[sessionId]["created_at"]
+                    )
+                )
                 if sessionId == self.current_session_id:
                     if self.config.no_colors:
-                        print(f"=> [#{sessionId:<2} - '{session.credentials.domain}\\{session.credentials.username}' @ {session.host}:{session.port}] created at [{created_at_str}] [current session]")
+                        print(
+                            f"=> [#{sessionId:<2} - '{session.credentials.domain}\\{session.credentials.username}' @ {session.host}:{session.port}] created at [{created_at_str}] [current session]"
+                        )
                     else:
-                        print(f"\x1b[48;2;50;50;50m=> #{sessionId:<2} - '\x1b[1;96m{session.credentials.domain}\x1b[0m\x1b[48;2;50;50;50m\\\x1b[1;96m{session.credentials.username}\x1b[0m\x1b[48;2;50;50;50m\x1b[1m' @ {session.host}:{session.port} created at [{created_at_str}]\x1b[0m\x1b[48;2;50;50;50m [\x1b[93mcurrent session\x1b[0m\x1b[48;2;50;50;50m]\x1b[0m")
+                        print(
+                            f"\x1b[48;2;50;50;50m=> #{sessionId:<2} - '\x1b[1;96m{session.credentials.domain}\x1b[0m\x1b[48;2;50;50;50m\\\x1b[1;96m{session.credentials.username}\x1b[0m\x1b[48;2;50;50;50m\x1b[1m' @ {session.host}:{session.port} created at [{created_at_str}]\x1b[0m\x1b[48;2;50;50;50m [\x1b[93mcurrent session\x1b[0m\x1b[48;2;50;50;50m]\x1b[0m"
+                        )
                 else:
-                    print(f"── #{sessionId:<2} - '\x1b[1;96m{session.credentials.domain}\x1b[0m\\\x1b[1;96m{session.credentials.username}\x1b[0m\x1b[1m' @ {session.host}:{session.port} created at [{created_at_str}]\x1b[0m")
-                
+                    print(
+                        f"── #{sessionId:<2} - '\x1b[1;96m{session.credentials.domain}\x1b[0m\\\x1b[1;96m{session.credentials.username}\x1b[0m\x1b[1m' @ {session.host}:{session.port} created at [{created_at_str}]\x1b[0m"
+                    )

@@ -5,9 +5,12 @@
 # Date created       : 17 mar 2025
 
 from __future__ import annotations
-from smbclientng.utils.utils import parse_lm_nt_hashes
+
 import binascii
 from typing import TYPE_CHECKING
+
+from smbclientng.utils.utils import parse_lm_nt_hashes
+
 if TYPE_CHECKING:
     from typing import Optional
 
@@ -43,7 +46,16 @@ class Credentials(object):
     aesKey: Optional[str]
     kdcHost: Optional[str]
 
-    def __init__(self, domain: str, username: str, password: str, hashes: Optional[str] = None, use_kerberos: bool = False, aesKey: Optional[str] = None, kdcHost: Optional[str] = None):
+    def __init__(
+        self,
+        domain: str,
+        username: str,
+        password: str,
+        hashes: Optional[str] = None,
+        use_kerberos: bool = False,
+        aesKey: Optional[str] = None,
+        kdcHost: Optional[str] = None,
+    ):
         super(Credentials, self).__init__()
         # Identity
         self.domain = domain
@@ -52,7 +64,7 @@ class Credentials(object):
 
         # Hashes
         self.set_hashes(hashes=hashes)
-        
+
         # Kerberos
         self.use_kerberos = use_kerberos
         self.kdcHost = kdcHost
@@ -76,7 +88,6 @@ class Credentials(object):
         self.lm_hex = ""
         self.lm_raw = b""
 
-        lmhash, nthash = None, None
         if hashes is not None:
             self.lm_hex, self.nt_hex = parse_lm_nt_hashes(hashes)
             if len(self.lm_hex) != 0:
@@ -125,14 +136,11 @@ class Credentials(object):
             "domain": self.domain,
             "username": self.username,
             "password": self.password,
-            "hashes": {
-                "lm_hash": self.lm_hex,
-                "nt_hash": self.nt_hex
-            },
+            "hashes": {"lm_hash": self.lm_hex, "nt_hash": self.nt_hex},
             "use_kerberos": self.use_kerberos,
             "aesKey": self.aesKey,
-            "kdcHost": self.kdcHost
+            "kdcHost": self.kdcHost,
         }
-    
+
     def __repr__(self):
         return f"<Credentials for '{self.domain}\\{self.username}'>"

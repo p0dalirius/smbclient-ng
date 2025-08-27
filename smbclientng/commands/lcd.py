@@ -4,9 +4,10 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
+import os
+
 from smbclientng.types.Command import Command
 from smbclientng.types.CommandArgumentParser import CommandArgumentParser
-import os
 
 
 class Command_lcd(Command):
@@ -14,17 +15,14 @@ class Command_lcd(Command):
     description = "Changes the current local directory."
 
     HELP = {
-        "description": [
-            description,
-            "Syntax: 'lcd <directory>'"
-        ], 
+        "description": [description, "Syntax: 'lcd <directory>'"],
         "subcommands": [],
-        "autocomplete": ["local_directory"]
+        "autocomplete": ["local_directory"],
     }
 
     def setupParser(self) -> CommandArgumentParser:
         parser = CommandArgumentParser(prog=self.name, description=self.description)
-        parser.add_argument('path', type=str, help='The local directory to change to')
+        parser.add_argument("path", type=str, help="The local directory to change to")
         return parser
 
     def run(self, interactive_shell, arguments: list[str], command: str):
@@ -34,12 +32,16 @@ class Command_lcd(Command):
 
         self.options = self.processArguments(arguments=arguments)
         if self.options is None:
-            return 
+            return
 
         if os.path.exists(path=self.options.path):
             if os.path.isdir(s=self.options.path):
                 os.chdir(path=self.options.path)
             else:
-                interactive_shell.logger.error("Path '%s' is not a directory." % self.options.path)
+                interactive_shell.logger.error(
+                    "Path '%s' is not a directory." % self.options.path
+                )
         else:
-            interactive_shell.logger.error("Directory '%s' does not exists." % self.options.path)
+            interactive_shell.logger.error(
+                "Directory '%s' does not exists." % self.options.path
+            )

@@ -5,12 +5,15 @@
 # Date created       : 17 mar 2025
 
 from __future__ import annotations
+
 import os
 import re
 from enum import Enum
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from typing import Optional
+
     from smbclientng.core.Config import Config
 
 
@@ -39,6 +42,7 @@ class Logger(object):
         debug(message): Logs a message at the DEBUG level if debugging is enabled.
         error(message): Logs a message at the ERROR level.
     """
+
     config: Config
     logfile: Optional[str]
 
@@ -50,13 +54,13 @@ class Logger(object):
         if self.logfile is not None:
             if os.path.exists(self.logfile):
                 k = 1
-                while os.path.exists(self.logfile+(".%d"%k)):
+                while os.path.exists(self.logfile + (".%d" % k)):
                     k += 1
                 self.logfile = self.logfile + (".%d" % k)
             open(self.logfile, "w").close()
             self.debug("Writting logs to logfile: '%s'" % self.logfile)
 
-    def print(self, message: str = "", end: str = '\n'):
+    def print(self, message: str = "", end: str = "\n"):
         """
         Prints a message to stdout and logs it to a file if logging is enabled.
 
@@ -99,8 +103,8 @@ class Logger(object):
         Args:
             message (str): The message to be logged.
         """
-        
-        if self.config.debug == True:
+
+        if self.config.debug:
             nocolor_message = re.sub(r"\x1b[\[]([0-9;]+)m", "", message)
             if self.config.no_colors:
                 print("[debug] %s" % nocolor_message)
@@ -125,7 +129,7 @@ class Logger(object):
             print("[\x1b[1;91merror\x1b[0m] %s" % message)
         self.write_to_logfile("[error] %s" % nocolor_message)
 
-    def write_to_logfile(self, message: str, end: str = '\n'):
+    def write_to_logfile(self, message: str, end: str = "\n"):
         """
         Writes the provided message to the log file specified during Logger instance initialization.
 

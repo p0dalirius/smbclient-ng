@@ -5,10 +5,12 @@
 # Date created       : 23 may 2024
 
 import os
-import pefile
 import shutil
 import tempfile
 import zipfile
+
+import pefile
+
 from smbclientng.types.Module import Module
 from smbclientng.types.ModuleArgumentParser import ModuleArgumentParser
 
@@ -17,16 +19,16 @@ def pe_get_version(pathtopefile):
     data = {"FileVersion": "", "ProductVersion": ""}
     p = pefile.PE(pathtopefile)
     data["FileVersion"] = "%d.%d.%d.%d" % (
-        (p.VS_FIXEDFILEINFO[0].FileVersionMS >> 16) & 0xffff, 
-        (p.VS_FIXEDFILEINFO[0].FileVersionMS >> 0) & 0xffff, 
-        (p.VS_FIXEDFILEINFO[0].FileVersionLS >> 16) & 0xffff, 
-        (p.VS_FIXEDFILEINFO[0].FileVersionLS >> 0) & 0xffff
+        (p.VS_FIXEDFILEINFO[0].FileVersionMS >> 16) & 0xFFFF,
+        (p.VS_FIXEDFILEINFO[0].FileVersionMS >> 0) & 0xFFFF,
+        (p.VS_FIXEDFILEINFO[0].FileVersionLS >> 16) & 0xFFFF,
+        (p.VS_FIXEDFILEINFO[0].FileVersionLS >> 0) & 0xFFFF,
     )
     data["ProductVersion"] = "%d.%d.%d.%d" % (
-        (p.VS_FIXEDFILEINFO[0].ProductVersionMS >> 16) & 0xffff, 
-        (p.VS_FIXEDFILEINFO[0].ProductVersionMS >> 0) & 0xff, 
-        (p.VS_FIXEDFILEINFO[0].ProductVersionLS >> 16) & 0xffff, 
-        (p.VS_FIXEDFILEINFO[0].ProductVersionLS >> 0) & 0xffff
+        (p.VS_FIXEDFILEINFO[0].ProductVersionMS >> 16) & 0xFFFF,
+        (p.VS_FIXEDFILEINFO[0].ProductVersionMS >> 0) & 0xFF,
+        (p.VS_FIXEDFILEINFO[0].ProductVersionLS >> 16) & 0xFFFF,
+        (p.VS_FIXEDFILEINFO[0].ProductVersionLS >> 0) & 0xFFFF,
     )
     return data
 
@@ -51,10 +53,30 @@ class Extract(Module):
 
         parser = ModuleArgumentParser(prog=self.name, description=self.description)
 
-        parser.add_argument("targets", metavar="target", type=str, nargs="*", default=[], help="The path(s) to the file(s) to extract.")
+        parser.add_argument(
+            "targets",
+            metavar="target",
+            type=str,
+            nargs="*",
+            default=[],
+            help="The path(s) to the file(s) to extract.",
+        )
 
-        parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose mode.")
-        parser.add_argument("-o", "--outputdir", dest="outputdir", default=os.getcwd(), help="Output directory.")
+        parser.add_argument(
+            "-v",
+            "--verbose",
+            dest="verbose",
+            action="store_true",
+            default=False,
+            help="Verbose mode.",
+        )
+        parser.add_argument(
+            "-o",
+            "--outputdir",
+            dest="outputdir",
+            default=os.getcwd(),
+            help="Output directory.",
+        )
 
         self.options = self.processArguments(parser, arguments)
 
@@ -71,36 +93,47 @@ class Extract(Module):
         """
 
         files = [
-            r".\spoolss.dll", 
-            r".\spoolsv.exe", 
-            r".\winspool.drv", 
-            r".\en-US\spoolsv.exe.mui", 
-            r".\en-US\winspool.drv.mui" 
+            r".\spoolss.dll",
+            r".\spoolsv.exe",
+            r".\winspool.drv",
+            r".\en-US\spoolsv.exe.mui",
+            r".\en-US\winspool.drv.mui",
         ]
-        
+
         # Save old share
         old_share = self.smbSession.smb_share
         old_pwd = self.smbSession.smb_cwd
 
         temp_dir = tempfile.mkdtemp()
         self.logger.debug("Using temporary local directory '%s'" % temp_dir)
-        self.smbSession.set_share('C$')
+        self.smbSession.set_share("C$")
         if self.smbSession.path_isdir("/Windows/System32/"):
             self.smbSession.set_cwd("/Windows/System32/")
             for f in files:
-                self.smbSession.get_file(path=f, keepRemotePath=True, localDownloadDir=temp_dir)
-            self.smbSession.get_file_recursively(path="spool/", localDownloadDir=temp_dir)
+                self.smbSession.get_file(
+                    path=f, keepRemotePath=True, localDownloadDir=temp_dir
+                )
+            self.smbSession.get_file_recursively(
+                path="spool/", localDownloadDir=temp_dir
+            )
 
         # Create a zipfile of the temp_dir
         pev = pe_get_version(temp_dir + os.path.sep + "spoolsv.exe")
-        outputfile = '%s-spooler.zip' % pev["FileVersion"]
+        outputfile = "%s-spooler.zip" % pev["FileVersion"]
         zip_file_path = os.path.join(self.options.outputdir, outputfile)
         self.logger.info("Zipping files downloaded in '%s'" % temp_dir)
-        with zipfile.ZipFile(zip_file_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        with zipfile.ZipFile(zip_file_path, "w", zipfile.ZIP_DEFLATED) as zipf:
             for root, dirs, files in os.walk(temp_dir):
                 for file in files:
-                    self.logger.print(os.path.join(root, file).replace(temp_dir+os.path.sep, "├──> ", 1))
-                    zipf.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), temp_dir))
+                    self.logger.print(
+                        os.path.join(root, file).replace(
+                            temp_dir + os.path.sep, "├──> ", 1
+                        )
+                    )
+                    zipf.write(
+                        os.path.join(root, file),
+                        os.path.relpath(os.path.join(root, file), temp_dir),
+                    )
         self.logger.info(f"Backup saved to {zip_file_path}")
 
         if os.path.exists(temp_dir):
@@ -110,7 +143,7 @@ class Extract(Module):
         self.smbSession.set_share(old_share)
         self.smbSession.set_cwd(old_pwd)
 
-    #=[Run]====================================================================
+    # =[Run]====================================================================
 
     def run(self, arguments):
         """
@@ -125,10 +158,7 @@ class Extract(Module):
                 for t in self.options.targets:
                     if t == "spooler":
                         self.saveSpooler()
-            except (BrokenPipeError, KeyboardInterrupt) as e:
+            except (BrokenPipeError, KeyboardInterrupt):
                 print("[!] Interrupted.")
                 self.smbSession.close_smb_session()
                 self.smbSession.init_smb_session()
-
-
-

@@ -5,26 +5,27 @@
 # Date created       : 18 mar 2025
 
 import argparse
-from smbclientng.utils.decorator import command_arguments_required, active_smb_connection_needed
+
 from smbclientng.types.Command import Command
 from smbclientng.types.CommandArgumentParser import CommandArgumentParser
+from smbclientng.utils.decorator import active_smb_connection_needed
 
 
 class Command_use(Command):
-    name = "use"    
+    name = "use"
     description = "Use a SMB share."
 
     HELP = {
         "description": [
-            description, 
+            description,
         ],
         "subcommands": [],
-        "autocomplete": ["share"]
+        "autocomplete": ["share"],
     }
 
     def setupParser(self) -> argparse.ArgumentParser:
         parser = CommandArgumentParser(description=self.description)
-        parser.add_argument('sharename', help='The name of the share to use')
+        parser.add_argument("sharename", help="The name of the share to use")
         return parser
 
     @active_smb_connection_needed
@@ -44,4 +45,7 @@ class Command_use(Command):
         if sharename.lower() in shares:
             interactive_shell.sessionsManager.current_session.set_share(sharename)
         else:
-            interactive_shell.logger.error("No share named '%s' on '%s'" % (sharename, interactive_shell.sessionsManager.current_session.host))
+            interactive_shell.logger.error(
+                "No share named '%s' on '%s'"
+                % (sharename, interactive_shell.sessionsManager.current_session.host)
+            )

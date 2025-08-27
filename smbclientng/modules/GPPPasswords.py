@@ -6,21 +6,23 @@
 
 
 import base64
-import charset_normalizer
-from Cryptodome.Cipher import AES
-from Cryptodome.Util.Padding import unpad
-import impacket
 import io
 import ntpath
-from smbclientng.types.Module import Module
-from smbclientng.types.ModuleArgumentParser import ModuleArgumentParser
 import xml
 from xml.dom import minidom
+
+import charset_normalizer
+import impacket
+from Cryptodome.Cipher import AES
+from Cryptodome.Util.Padding import unpad
+
+from smbclientng.types.Module import Module
+from smbclientng.types.ModuleArgumentParser import ModuleArgumentParser
 
 
 class GPPPasswords(Module):
     """
-    GPPPasswords is a module designed to search and retrieve stored Group Policy Preferences (GPP) passwords from specified network shares. 
+    GPPPasswords is a module designed to search and retrieve stored Group Policy Preferences (GPP) passwords from specified network shares.
     It leverages the SMB protocol to access files across the network, parse them, and extract credentials that are often stored within Group Policy Preferences files.
 
     This module is particularly useful in penetration testing scenarios where discovering stored credentials can lead to further system access or reveal poor security practices.
@@ -53,15 +55,40 @@ class GPPPasswords(Module):
         parser = ModuleArgumentParser(prog=self.name, description=self.description)
 
         # Adding positional arguments
-        parser.add_argument("paths", metavar="PATH", type=str, nargs="*", default=[], help="The starting point(s) for the search.")
+        parser.add_argument(
+            "paths",
+            metavar="PATH",
+            type=str,
+            nargs="*",
+            default=[],
+            help="The starting point(s) for the search.",
+        )
 
         # Adding actions
-        parser.add_argument("-ls", action="store_true", default=False, help="List current file in ls -dils format on standard output.")
-        parser.add_argument("-download", action="store_true", default=False, help="List current file in ls -dils format on standard output.")
+        parser.add_argument(
+            "-ls",
+            action="store_true",
+            default=False,
+            help="List current file in ls -dils format on standard output.",
+        )
+        parser.add_argument(
+            "-download",
+            action="store_true",
+            default=False,
+            help="List current file in ls -dils format on standard output.",
+        )
 
         # Other options
-        parser.add_argument("-maxdepth", type=int, help="Descend at most levels (a non-negative integer) levels of directories below the command line arguments.")
-        parser.add_argument("-mindepth", type=int, help="Do not apply any tests or actions at levels less than levels (a non-negative integer).")
+        parser.add_argument(
+            "-maxdepth",
+            type=int,
+            help="Descend at most levels (a non-negative integer) levels of directories below the command line arguments.",
+        )
+        parser.add_argument(
+            "-mindepth",
+            type=int,
+            help="Do not apply any tests or actions at levels less than levels (a non-negative integer).",
+        )
 
         if len(arguments.strip()) == 0:
             parser.print_help()
@@ -89,10 +116,12 @@ class GPPPasswords(Module):
         try:
             # opening the files in streams instead of mounting shares allows for running the script from
             # unprivileged containers
-            self.smbSession.smbClient.getFile(self.smbSession.smb_share, pathtofile, fh.write)
-        except impacket.smbconnection.SessionError as e:
+            self.smbSession.smbClient.getFile(
+                self.smbSession.smb_share, pathtofile, fh.write
+            )
+        except impacket.smbconnection.SessionError:
             return results
-        except Exception as e:
+        except Exception:
             raise
         rawdata = fh.getvalue()
         fh.close()
@@ -105,65 +134,111 @@ class GPPPasswords(Module):
             else:
                 if self.config.debug:
                     print("[debug] No cpassword was found in %s" % pathtofile)
-    
+
         if gppp_found:
             try:
                 root = minidom.parseString(filecontent)
                 xmltype = root.childNodes[0].tagName
+
                 # function to get attribute if it exists, returns "" if empty
-                read_or_empty = lambda element, attribute: (element.getAttribute(attribute) if element.getAttribute(attribute) is not None else "")
+                def read_or_empty(element, attribute):
+                    return (
+                        element.getAttribute(attribute)
+                        if element.getAttribute(attribute) is not None
+                        else ""
+                    )
 
                 # ScheduledTasks
                 if xmltype == "ScheduledTasks":
                     for topnode in root.childNodes:
-                        task_nodes = [c for c in topnode.childNodes if isinstance(c, xml.dom.minidom.Element)]
+                        task_nodes = [
+                            c
+                            for c in topnode.childNodes
+                            if isinstance(c, xml.dom.minidom.Element)
+                        ]
                         for task in task_nodes:
                             for property in task.getElementsByTagName("Properties"):
-                                results.append({
-                                    "tagName": xmltype,
-                                    "attributes": {
-                                        "username": read_or_empty(task, "name"),
-                                        "runAs": read_or_empty(property, "runAs"),
-                                        "cpassword": read_or_empty(property, "cpassword"),
-                                        "password": self.decrypt_password(read_or_empty(property, "cpassword")),
-                                        "changed": read_or_empty(property.parentNode, "changed"),
-                                    },
-                                    "file": pathtofile
-                                })
+                                results.append(
+                                    {
+                                        "tagName": xmltype,
+                                        "attributes": {
+                                            "username": read_or_empty(task, "name"),
+                                            "runAs": read_or_empty(property, "runAs"),
+                                            "cpassword": read_or_empty(
+                                                property, "cpassword"
+                                            ),
+                                            "password": self.decrypt_password(
+                                                read_or_empty(property, "cpassword")
+                                            ),
+                                            "changed": read_or_empty(
+                                                property.parentNode, "changed"
+                                            ),
+                                        },
+                                        "file": pathtofile,
+                                    }
+                                )
                 elif xmltype == "Groups":
                     for topnode in root.childNodes:
-                        task_nodes = [c for c in topnode.childNodes if isinstance(c, xml.dom.minidom.Element)]
+                        task_nodes = [
+                            c
+                            for c in topnode.childNodes
+                            if isinstance(c, xml.dom.minidom.Element)
+                        ]
                         for task in task_nodes:
                             for property in task.getElementsByTagName("Properties"):
-                                results.append({
-                                    "tagName": xmltype,
-                                    "attributes": {
-                                        "username": read_or_empty(property, "newName"),
-                                        # "userName": read_or_empty(property, "userName"),
-                                        "cpassword": read_or_empty(property, "cpassword"),
-                                        "password": self.decrypt_password(read_or_empty(property, "cpassword")),
-                                        "changed": read_or_empty(property.parentNode, "changed"),
-                                    },
-                                    "file": pathtofile
-                                })
+                                results.append(
+                                    {
+                                        "tagName": xmltype,
+                                        "attributes": {
+                                            "username": read_or_empty(
+                                                property, "newName"
+                                            ),
+                                            # "userName": read_or_empty(property, "userName"),
+                                            "cpassword": read_or_empty(
+                                                property, "cpassword"
+                                            ),
+                                            "password": self.decrypt_password(
+                                                read_or_empty(property, "cpassword")
+                                            ),
+                                            "changed": read_or_empty(
+                                                property.parentNode, "changed"
+                                            ),
+                                        },
+                                        "file": pathtofile,
+                                    }
+                                )
                 else:
                     for topnode in root.childNodes:
-                        task_nodes = [c for c in topnode.childNodes if isinstance(c, xml.dom.minidom.Element)]
+                        task_nodes = [
+                            c
+                            for c in topnode.childNodes
+                            if isinstance(c, xml.dom.minidom.Element)
+                        ]
                         for task in task_nodes:
                             for property in task.getElementsByTagName("Properties"):
-                                results.append({
-                                    "tagName": xmltype,
-                                    "attributes": {
-                                        "username": read_or_empty(property, "newName"),
-                                        # "userName": read_or_empty(property, "userName"),
-                                        "cpassword": read_or_empty(property, "cpassword"),
-                                        "password": self.decrypt_password(read_or_empty(property, "cpassword")),
-                                        "changed": read_or_empty(property.parentNode, "changed"),
-                                    },
-                                    "file": pathtofile
-                                })
+                                results.append(
+                                    {
+                                        "tagName": xmltype,
+                                        "attributes": {
+                                            "username": read_or_empty(
+                                                property, "newName"
+                                            ),
+                                            # "userName": read_or_empty(property, "userName"),
+                                            "cpassword": read_or_empty(
+                                                property, "cpassword"
+                                            ),
+                                            "password": self.decrypt_password(
+                                                read_or_empty(property, "cpassword")
+                                            ),
+                                            "changed": read_or_empty(
+                                                property.parentNode, "changed"
+                                            ),
+                                        },
+                                        "file": pathtofile,
+                                    }
+                                )
 
-            except Exception as e:
+            except Exception:
                 raise
 
         return results
@@ -210,7 +285,7 @@ class GPPPasswords(Module):
             entry (SMBEntry): The current file or directory entry being processed.
             fullpath (str): The full path to the current entry.
             depth (int): Depth of the path.
-            
+
         Returns:
             None: This function does not return any value.
         """
@@ -223,20 +298,34 @@ class GPPPasswords(Module):
         if self.options.maxdepth is not None:
             if depth > self.options.maxdepth:
                 do_print_results = False
-        
+
         if do_print_results:
-            if (not entry.is_directory()) and (entry.get_longname().lower().endswith('.xml')):
+            if (not entry.is_directory()) and (
+                entry.get_longname().lower().endswith(".xml")
+            ):
                 data = self.parse_xmlfile_content(fullpath)
                 if data is not None:
                     if len(data) != 0:
                         print("[+] %s" % fullpath)
                         for entry in data:
                             if self.config.no_colors:
-                                print("  | username: '%s'" % entry["attributes"]["username"])
-                                print("  | password: '%s'" % entry["attributes"]["password"])
+                                print(
+                                    "  | username: '%s'"
+                                    % entry["attributes"]["username"]
+                                )
+                                print(
+                                    "  | password: '%s'"
+                                    % entry["attributes"]["password"]
+                                )
                             else:
-                                print("  | \x1b[94musername\x1b[0m: '\x1b[93m%s\x1b[0m'" % entry["attributes"]["username"])
-                                print("  | \x1b[94mpassword\x1b[0m: '\x1b[93m%s\x1b[0m'" % entry["attributes"]["password"])
+                                print(
+                                    "  | \x1b[94musername\x1b[0m: '\x1b[93m%s\x1b[0m'"
+                                    % entry["attributes"]["username"]
+                                )
+                                print(
+                                    "  | \x1b[94mpassword\x1b[0m: '\x1b[93m%s\x1b[0m'"
+                                    % entry["attributes"]["password"]
+                                )
                             if len(data) > 1:
                                 print("|")
         return None
@@ -261,18 +350,18 @@ class GPPPasswords(Module):
             try:
                 next_directories_to_explore = []
                 for path in list(set(self.options.paths)):
-                    next_directories_to_explore.append(ntpath.normpath(path) + ntpath.sep)
-                next_directories_to_explore = sorted(list(set(next_directories_to_explore)))
-                
-                self.smbSession.find(
-                    paths=next_directories_to_explore,
-                    callback=self.__find_callback
+                    next_directories_to_explore.append(
+                        ntpath.normpath(path) + ntpath.sep
+                    )
+                next_directories_to_explore = sorted(
+                    list(set(next_directories_to_explore))
                 )
 
-            except (BrokenPipeError, KeyboardInterrupt) as e:
+                self.smbSession.find(
+                    paths=next_directories_to_explore, callback=self.__find_callback
+                )
+
+            except (BrokenPipeError, KeyboardInterrupt):
                 print("[!] Interrupted.")
                 self.smbSession.close_smb_session()
                 self.smbSession.init_smb_session()
-
-
-

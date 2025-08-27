@@ -7,17 +7,15 @@
 from smbclientng.commands.exit import Command_exit
 from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 
+
 class Command_quit(Command_exit):
     name = "quit"
     description = "Exits the interactive shell."
 
     HELP = {
-        "description": [
-            description,
-            "Syntax: 'quit'"
-        ], 
+        "description": [description, "Syntax: 'quit'"],
         "subcommands": [],
-        "autocomplete": []
+        "autocomplete": [],
     }
 
     def setupParser(self) -> CommandArgumentParser:

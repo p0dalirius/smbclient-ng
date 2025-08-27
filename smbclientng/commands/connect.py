@@ -13,14 +13,11 @@ class Command_connect(Command):
     description = "Connect to the remote machine (useful if connection timed out)."
 
     HELP = {
-        "description": [
-            description, 
-            "Syntax: 'connect'"
-        ], 
+        "description": [description, "Syntax: 'connect'"],
         "subcommands": [],
-        "autocomplete": []
+        "autocomplete": [],
     }
-    
+
     def setupParser(self) -> CommandArgumentParser:
         parser = CommandArgumentParser(prog=self.name, description=self.description)
         return parser
@@ -32,6 +29,6 @@ class Command_connect(Command):
 
         self.options = self.processArguments(arguments=arguments)
         if self.options is None:
-            return 
+            return
 
         interactive_shell.sessionsManager.current_session.ping_smb_session()

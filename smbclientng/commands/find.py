@@ -4,9 +4,10 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.utils.decorator import active_smb_connection_needed, smb_share_is_set
 from smbclientng.types.Command import Command
 from smbclientng.types.CommandArgumentParser import CommandArgumentParser
+from smbclientng.utils.decorator import (active_smb_connection_needed,
+                                         smb_share_is_set)
 
 
 class Command_find(Command):
@@ -18,13 +19,13 @@ class Command_find(Command):
             description,
             "Syntax: find [-h] [-name NAME] [-iname INAME] [-type TYPE] [-size SIZE] [-ls]",
             "             [-download] [-maxdepth MAXDEPTH] [-mindepth MINDEPTH]",
-            "             [--exclude-dir DIRNAME[:DEPTH[:CASE]]] [PATH ...]"
+            "             [--exclude-dir DIRNAME[:DEPTH[:CASE]]] [PATH ...]",
         ],
         "subcommands": [],
-        "autocomplete": []
+        "autocomplete": [],
     }
 
-    def setupParser(self) -> CommandArgumentParser: 
+    def setupParser(self) -> CommandArgumentParser:
         parser = CommandArgumentParser(prog=self.name, description=self.description)
         return parser
 
@@ -38,8 +39,12 @@ class Command_find(Command):
         module_name = "find"
 
         if module_name in interactive_shell.modules.keys():
-            module = interactive_shell.modules[module_name](interactive_shell.sessionsManager.current_session, interactive_shell.config, interactive_shell.logger)
-            arguments_string = ' '.join(arguments)
+            module = interactive_shell.modules[module_name](
+                interactive_shell.sessionsManager.current_session,
+                interactive_shell.config,
+                interactive_shell.logger,
+            )
+            arguments_string = " ".join(arguments)
             module.run(arguments_string)
         else:
             interactive_shell.logger.error("Module '%s' does not exist." % module_name)

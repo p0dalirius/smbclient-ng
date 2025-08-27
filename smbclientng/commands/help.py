@@ -15,14 +15,14 @@ class Command_help(Command):
     HELP = {
         "description": [
             description,
-        ], 
+        ],
         "subcommands": ["format"],
-        "autocomplete": []
+        "autocomplete": [],
     }
 
     def setupParser(self) -> CommandArgumentParser:
         parser = CommandArgumentParser(prog=self.name, description=self.description)
-        parser.add_argument('command', nargs='?', help='The command to get help for')
+        parser.add_argument("command", nargs="?", help="The command to get help for")
         return parser
 
     def run(self, interactive_shell, arguments: list[str], command: str):
@@ -32,4 +32,6 @@ class Command_help(Command):
 
         self.options = self.processArguments(arguments=arguments)
 
-        interactive_shell.commandCompleterObject.print_help(command=self.options.command)
+        interactive_shell.commandCompleterObject.print_help(
+            command=self.options.command
+        )

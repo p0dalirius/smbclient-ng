@@ -6,19 +6,16 @@
 
 from smbclientng.commands.ls import Command_ls
 from smbclientng.types.CommandArgumentParser import CommandArgumentParser
-    
+
 
 class Command_dir(Command_ls):
     name = "dir"
     description = "List the contents of the current working directory."
 
     HELP = {
-        "description": [
-            description,
-            "Syntax: 'dir'"
-        ], 
+        "description": [description, "Syntax: 'dir'"],
         "subcommands": [],
-        "autocomplete": ["remote_directory"]
+        "autocomplete": ["remote_directory"],
     }
 
     def setupParser(self) -> CommandArgumentParser:

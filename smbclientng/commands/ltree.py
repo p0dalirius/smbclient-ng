@@ -4,27 +4,26 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-from smbclientng.utils.utils import local_tree
 from smbclientng.types.Command import Command
 from smbclientng.types.CommandArgumentParser import CommandArgumentParser
+from smbclientng.utils.utils import local_tree
 
 
 class Command_ltree(Command):
     name = "ltree"
-    description = "Displays a tree view of the local directories."  
+    description = "Displays a tree view of the local directories."
 
     HELP = {
-        "description": [
-            description,
-            "Syntax: 'ltree [directory]'"
-        ], 
+        "description": [description, "Syntax: 'ltree [directory]'"],
         "subcommands": [],
-        "autocomplete": ["local_directory"]
+        "autocomplete": ["local_directory"],
     }
-    
+
     def setupParser(self) -> CommandArgumentParser:
         parser = CommandArgumentParser(prog=self.name, description=self.description)
-        parser.add_argument('path', type=str, nargs='*', help='List of local directories to list')
+        parser.add_argument(
+            "path", type=str, nargs="*", help="List of local directories to list"
+        )
         return parser
 
     def run(self, interactive_shell, arguments: list[str], command: str):
@@ -34,10 +33,10 @@ class Command_ltree(Command):
 
         self.options = self.processArguments(arguments=arguments)
         if self.options is None:
-            return 
+            return
 
         if len(self.options.path) == 0:
-            self.options.path = ['.']
+            self.options.path = ["."]
 
         for path in self.options.path:
             local_tree(path=path, config=interactive_shell.config)

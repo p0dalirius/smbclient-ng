@@ -26,39 +26,39 @@ class Users(Module):
                 "Microsoft Edge": "/{users_directory}/{user}/AppData/Local/Microsoft/Edge/",
                 "Mozilla Firefox": "/{users_directory}/{user}/AppData/Local/Mozilla/Firefox/",
                 "Opera": "/{users_directory}/{user}/AppData/Local/Opera Software/",
-                "Safari": "/{users_directory}/{user}/AppData/Local/Apple Computer/Safari/"
-            }
+                "Safari": "/{users_directory}/{user}/AppData/Local/Apple Computer/Safari/",
+            },
         },
         "email": {
             "name": "Email Clients",
             "checks": {
                 "Microsoft Outlook": "/{users_directory}/{user}/AppData/Local/Microsoft/Outlook/",
                 "Mozilla Thunderbird": "/{users_directory}/{user}/AppData/Local/Mozilla/Thunderbird/",
-                "Windows Mail": "/{users_directory}/{user}/AppData/Local/Microsoft/Windows Mail/"
-            }
+                "Windows Mail": "/{users_directory}/{user}/AppData/Local/Microsoft/Windows Mail/",
+            },
         },
         "productivity": {
             "name": "Productivity Software",
             "checks": {
                 "Microsoft Office": "/{users_directory}/{user}/AppData/Local/Microsoft/Office/",
                 "LibreOffice": "/{users_directory}/{user}/AppData/Local/LibreOffice/",
-                "OpenOffice": "/{users_directory}/{user}/AppData/Local/OpenOffice/"
-            }
+                "OpenOffice": "/{users_directory}/{user}/AppData/Local/OpenOffice/",
+            },
         },
         "screenshot_tools": {
             "name": "Screenshot Tools",
             "checks": {
                 "ShareX": "/{users_directory}/{user}/Documents/ShareX/Screenshots/"
-            }
+            },
         },
         "credentials": {
             "name": "Credentials",
             "checks": {
                 "Aws": "/{users_directory}/{user}/.aws/",
                 "GCP": "/{users_directory}/{user}/AppData/Roaming/gcloud",
-                "Ssh": "/{users_directory}/{user}/.ssh/"
-            }
-        }
+                "Ssh": "/{users_directory}/{user}/.ssh/",
+            },
+        },
     }
 
     def parseArgs(self, arguments):
@@ -76,10 +76,29 @@ class Users(Module):
 
         parser = ModuleArgumentParser(prog=self.name, description=self.description)
 
-        parser.add_argument("-s", "--share", dest="share", default="C$", help="Specify the share where user home directories are located.")
-        parser.add_argument("-d", "--users-directory", dest="users_directory", default="/Users", help="Specify the directory where user home directories are located.")
-        parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose mode.")
-    
+        parser.add_argument(
+            "-s",
+            "--share",
+            dest="share",
+            default="C$",
+            help="Specify the share where user home directories are located.",
+        )
+        parser.add_argument(
+            "-d",
+            "--users-directory",
+            dest="users_directory",
+            default="/Users",
+            help="Specify the directory where user home directories are located.",
+        )
+        parser.add_argument(
+            "-v",
+            "--verbose",
+            dest="verbose",
+            action="store_true",
+            default=False,
+            help="Verbose mode.",
+        )
+
         self.options = self.processArguments(parser, arguments)
 
         return self.options
@@ -102,7 +121,7 @@ class Users(Module):
         if self.smbSession.path_isdir(self.users_directory):
             self.smbSession.set_cwd(self.users_directory)
             for entryname, entry in self.smbSession.list_contents("").items():
-                if (entry.get_longname() not in [".",".."]) and (entry.is_directory()):
+                if (entry.get_longname() not in [".", ".."]) and (entry.is_directory()):
                     users.append(entry.get_longname())
 
         self.smbSession.set_share(old_share)
@@ -110,14 +129,16 @@ class Users(Module):
 
         return users
 
-    #=[Browser]====================================================================
+    # =[Browser]====================================================================
 
     def perform_checks(self, user):
         for category_key in self.checks.keys():
             category = self.checks[category_key]
             at_least_one_found = False
             for check_name, check_path in category["checks"].items():
-                check_path = check_path.format(user=user, users_directory=self.users_directory)
+                check_path = check_path.format(
+                    user=user, users_directory=self.users_directory
+                )
                 if self.smbSession.path_isdir(pathFromRoot=check_path):
                     if not at_least_one_found:
                         print("  ├──> %s:" % category["name"])
@@ -126,7 +147,7 @@ class Users(Module):
                 elif self.options.verbose:
                     print("  │  ├──> \x1b[91mdoes not use '%s'\x1b[0m" % (check_name))
 
-    #=[Run]====================================================================
+    # =[Run]====================================================================
 
     def run(self, arguments):
         self.options = self.parseArgs(arguments=arguments)
@@ -142,10 +163,7 @@ class Users(Module):
                     print("[+] Analyzing user: '%s'" % user)
                     self.perform_checks(user=user)
 
-            except (BrokenPipeError, KeyboardInterrupt) as e:
+            except (BrokenPipeError, KeyboardInterrupt):
                 print("[!] Interrupted.")
                 self.smbSession.close_smb_session()
                 self.smbSession.init_smb_session()
-
-
-

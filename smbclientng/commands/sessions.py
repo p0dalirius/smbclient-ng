@@ -14,13 +14,13 @@ class Command_sessions(Command):
 
     HELP = {
         "description": [
-            description, 
-            "Syntax: 'sessions [access|create|delete|execute|list]'"
-        ], 
+            description,
+            "Syntax: 'sessions [access|create|delete|execute|list]'",
+        ],
         "subcommands": ["create", "delete", "execute", "interact", "list"],
-        "autocomplete": []
+        "autocomplete": [],
     }
-  
+
     def setupParser(self) -> CommandArgumentParser:
         parser = CommandArgumentParser(prog=self.name, description=self.description)
         return parser

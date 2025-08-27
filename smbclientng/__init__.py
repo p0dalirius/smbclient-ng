@@ -3,6 +3,3 @@
 # File name          : __init__.py
 # Author             : Podalirius (@podalirius_)
 # Date created       : 23 may 2024
-
-from .core import *
-from .modules import *

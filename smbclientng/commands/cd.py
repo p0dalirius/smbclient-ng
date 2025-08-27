@@ -4,12 +4,15 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 18 mar 2025
 
-import argparse 
-from smbclientng.utils.decorator import command_arguments_required, active_smb_connection_needed, smb_share_is_set
-from impacket.smbconnection import SessionError as SMBConnectionSessionError
+import argparse
+
 from impacket.smb3 import SessionError as SMB3SessionError
+from impacket.smbconnection import SessionError as SMBConnectionSessionError
+
 from smbclientng.types.Command import Command
 from smbclientng.types.CommandArgumentParser import CommandArgumentParser
+from smbclientng.utils.decorator import (active_smb_connection_needed,
+                                         smb_share_is_set)
 
 
 class Command_cd(Command):
@@ -17,18 +20,15 @@ class Command_cd(Command):
     description = "Change the current working directory."
 
     HELP = {
-        "description": [
-            description, 
-            "Syntax: 'cd <directory>'"
-        ], 
+        "description": [description, "Syntax: 'cd <directory>'"],
         "subcommands": [],
-        "autocomplete": ["remote_directory"]
+        "autocomplete": ["remote_directory"],
     }
-    
+
     def setupParser(self) -> argparse.ArgumentParser:
         parser = CommandArgumentParser(prog=self.name, description=self.description)
 
-        parser.add_argument('directory', help='Directory to change to')
+        parser.add_argument("directory", help="Directory to change to")
 
         return parser
 
@@ -41,9 +41,11 @@ class Command_cd(Command):
 
         self.options = self.processArguments(arguments=arguments)
         if self.options is None:
-            return 
+            return
 
         try:
-            interactive_shell.sessionsManager.current_session.set_cwd(path=self.options.directory)
-        except (SMBConnectionSessionError, SMB3SessionError) as e:
-            interactive_shell.logger.error("[!] SMB Error: %s" % e)
+            interactive_shell.sessionsManager.current_session.set_cwd(
+                path=self.options.directory
+            )
+        except (SMBConnectionSessionError, SMB3SessionError) as err:
+            interactive_shell.logger.error("[!] SMB Error: %s" % err)
