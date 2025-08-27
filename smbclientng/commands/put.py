@@ -11,9 +11,9 @@ from impacket.smbconnection import SessionError as SMBConnectionSessionError
 
 from smbclientng.types.Command import Command
 from smbclientng.types.CommandArgumentParser import CommandArgumentParser
-from smbclientng.utils.utils import resolve_local_files
 from smbclientng.utils.decorator import (active_smb_connection_needed,
                                          smb_share_is_set)
+from smbclientng.utils.utils import resolve_local_files
 
 
 class Command_put(Command):
@@ -61,7 +61,9 @@ class Command_put(Command):
 
         # If nothing matched, report it clearly
         if len(files_and_directories) == 0:
-            interactive_shell.logger.error("[!] No local files matched the provided path(s).")
+            interactive_shell.logger.error(
+                "[!] No local files matched the provided path(s)."
+            )
             return
 
         for localpath in files_and_directories:
@@ -81,7 +83,8 @@ class Command_put(Command):
                     )
                 elif os.path.isdir(localpath):
                     interactive_shell.logger.error(
-                        "[!] Local path '%s' is a directory, use the -r option to recursively put directories" % localpath
+                        "[!] Local path '%s' is a directory, use the -r option to recursively put directories"
+                        % localpath
                     )
                 else:
                     # Put this single file
