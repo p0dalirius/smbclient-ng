@@ -13,7 +13,7 @@ from smbclientng.types.Command import Command
 from smbclientng.types.CommandArgumentParser import CommandArgumentParser
 from smbclientng.utils.decorator import (active_smb_connection_needed,
                                          smb_share_is_set)
-from smbclientng.utils.utils import b_filesize, resolve_remote_files
+from smbclientng.utils.utils import filesize, resolve_remote_files
 
 
 class Command_metadata(Command):
@@ -138,7 +138,7 @@ class Command_metadata(Command):
                             "  │    ├─ %-10s: %s (%s)"
                             % (
                                 "Size",
-                                b_filesize(entry.get_filesize()),
+                                filesize(entry.get_filesize()),
                                 entry.get_filesize(),
                             )
                         )
@@ -151,7 +151,7 @@ class Command_metadata(Command):
                             "  │    ├─ \x1b[94m%-10s\x1b[0m: \x1b[93m%s (%s)\x1b[0m"
                             % (
                                 "Size",
-                                b_filesize(entry.get_filesize()),
+                                filesize(entry.get_filesize()),
                                 entry.get_filesize(),
                             )
                         )
@@ -261,7 +261,7 @@ class Command_metadata(Command):
                                 i + 1,
                                 entry.get_shortname(),
                                 ad["Name"],
-                                b_filesize(ad["Size"]),
+                                filesize(ad["Size"]),
                             )
                         )
                     else:
@@ -271,7 +271,7 @@ class Command_metadata(Command):
                                 i + 1,
                                 entry.get_shortname(),
                                 ad["Name"],
-                                b_filesize(ad["Size"]),
+                                filesize(ad["Size"]),
                             )
                         )
                 interactive_shell.logger.print("  │    └───")

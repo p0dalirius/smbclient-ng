@@ -11,7 +11,7 @@ from impacket.smbconnection import SessionError as SMBConnectionSessionError
 
 from smbclientng.types.Command import Command
 from smbclientng.types.CommandArgumentParser import CommandArgumentParser
-from smbclientng.utils import b_filesize, smb_entry_iterator
+from smbclientng.utils import filesize, smb_entry_iterator
 from smbclientng.utils.decorator import (active_smb_connection_needed,
                                          smb_share_is_set)
 
@@ -95,7 +95,7 @@ class Command_sizeof(Command):
                     if not entry.is_directory():
                         path_size += entry.get_filesize()
                         # Update the size display each time path_size is incremented
-                        size_str = b_filesize(path_size)
+                        size_str = filesize(path_size)
                         output_line = f"\r{size_str}\t{path_display}"
                         # Clear the line after the cursor
                         print(output_line, end="\r")
@@ -116,4 +116,4 @@ class Command_sizeof(Command):
         # If multiple paths, print the total size
         if len(self.options.path) > 1:
             interactive_shell.logger.print("──────────────────────")
-            interactive_shell.logger.print(f"Total size: {b_filesize(total_size)}")
+            interactive_shell.logger.print(f"Total size: {filesize(total_size)}")

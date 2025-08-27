@@ -9,7 +9,7 @@ import os
 
 from smbclientng.types.Command import Command
 from smbclientng.types.CommandArgumentParser import CommandArgumentParser
-from smbclientng.utils.utils import (b_filesize, resolve_local_files,
+from smbclientng.utils.utils import (filesize, resolve_local_files,
                                      unix_permissions)
 
 
@@ -52,7 +52,7 @@ class Command_lls(Command):
                 for entryname in sorted(directory_contents):
                     path_to_file = path + os.path.sep + entryname
                     rights_str = unix_permissions(path_to_file)
-                    size_str = b_filesize(os.path.getsize(filename=path_to_file))
+                    size_str = filesize(os.path.getsize(filename=path_to_file))
                     date_str = datetime.datetime.fromtimestamp(
                         os.path.getmtime(filename=path_to_file)
                     ).strftime("%Y-%m-%d %H:%M")
@@ -94,7 +94,7 @@ class Command_lls(Command):
             # lls <file>
             elif os.path.isfile(path):
                 rights_str = unix_permissions(path)
-                size_str = b_filesize(os.path.getsize(filename=path))
+                size_str = filesize(os.path.getsize(filename=path))
                 date_str = datetime.datetime.fromtimestamp(
                     os.path.getmtime(filename=path)
                 ).strftime("%Y-%m-%d %H:%M")
