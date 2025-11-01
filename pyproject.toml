@@ -1,25 +1,28 @@
-[tool.poetry]
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
 name = "smbclientng"
 version = "3.0.0"
 description = "smbclient-ng, a fast and user-friendly way to interact with SMB shares."
+authors = [
+    {name = "p0dalirius"}
+]
+license = {text = "GPL-3.0-or-later"}
 readme = "README.md"
-authors = ["p0dalirius"]
-license = "MIT"
+requires-python = ">=3.9,<4.0"
+dependencies = [
+    "impacket>=0.10.0",
+    "rich>=13.0.0",
+    "charset-normalizer>=3.3.2",
+    "pefile>=2023.2.7"
+]
 
-[tool.poetry.dependencies]
-python = ">=3.7,<3.14"
-impacket = "0.10.0"
-rich = "13.0.0"
-charset-normalizer = "3.3.2"
-pefile = "2023.2.7"
+[project.urls]
+repository  = "https://github.com/p0dalirius/smbclient-ng"
 
-[tool.poetry.scripts]
+[project.scripts]
 smbclientng = "smbclientng.console:run"
 smbng = "smbclientng.console:run"
 
-[tool.poetry.extras]
-dev = ["flake8"]
-
-[build-system]
-requires = ["poetry-core>=1.7.0"]
-build-backend = "poetry.core.masonry.api"
