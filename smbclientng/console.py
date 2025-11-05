@@ -5,6 +5,7 @@ import sys
 from smbclientng.core.InteractiveShell import InteractiveShell
 from smbclientng.core.Logger import Logger
 from smbclientng.core.SessionsManager import SessionsManager
+
 # Local library imports
 from smbclientng.types.Config import Config
 from smbclientng.types.Credentials import Credentials
@@ -90,7 +91,7 @@ def parseArgs():
         "-d", "--domain", default=".", type=str, help="Authentication domain."
     )
     group_auth.add_argument(
-        "-u", "--user", type=str, help="Username for authentication."
+        "-u", "--user", type=str, default="", help="Username for authentication."
     )
     group_auth.add_argument(
         "-k", "--kerberos", action="store_true", help="Use Kerberos authentication."
@@ -104,7 +105,7 @@ def parseArgs():
     # Password & Hashes
     group_secrets = parser.add_argument_group("Secrets")
     group_creds = group_secrets.add_mutually_exclusive_group()
-    group_creds.add_argument("-p", "--password", type=str, nargs="?", help="Password.")
+    group_creds.add_argument("-p", "--password", type=str, default="", nargs="?", help="Password.")
     group_creds.add_argument(
         "--no-pass", action="store_true", help="Do not prompt for a password."
     )
@@ -161,6 +162,9 @@ def run():
         None
     """
 
+    import time
+    total_start = time.time()
+
     options = parseArgs()
 
     config = Config()
@@ -171,9 +175,10 @@ def run():
     config.commands = options.command
 
     logger = Logger(config=config, logfile=options.logfile)
+
     sessions_manager = SessionsManager(config=config, logger=logger)
 
-    if any([options.domain != ".", options.user, options.password, options.hashes]):
+    if any([options.domain != ".", options.user, options.password, options.hashes, options.no_pass]):
         credentials = Credentials(
             domain=options.domain,
             username=options.user,
