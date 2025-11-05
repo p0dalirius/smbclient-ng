@@ -922,9 +922,14 @@ class SMBSession(object):
         path = ntpath.normpath(ntpath.sep.join(dest_path))
 
         contents = {}
-        entries = self.smbClient.listPath(shareName=self.smb_share, path=path)
-        for entry in entries:
-            contents[entry.get_longname()] = entry
+        try:
+            entries = self.smbClient.listPath(shareName=self.smb_share, path=path)
+            for entry in entries:
+                contents[entry.get_longname()] = entry
+        except SessionError as err:
+            if self.config.debug:
+                traceback.print_exc()
+            self.logger.error(str(err))
 
         return contents
 
