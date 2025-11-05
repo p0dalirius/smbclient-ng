@@ -1899,13 +1899,13 @@ class SMBSession(object):
                 try:
                     self.smb_tree_id = self.smbClient.connectTree(self.smb_share)
                 except SessionError as err:
+                    if self.config.debug:
+                        traceback.print_exc()
+                    self.logger.error("Could not access share '%s': %s" % (shareName, err))
                     self.smb_share = None
                     self.smb_cwd = ""
-                    raise Exception(
-                        "Could not access share '%s': %s" % (shareName, err)
-                    )
             else:
-                raise Exception(
+                self.logger.error(
                     "Could not set share '%s', it does not exist remotely." % shareName
                 )
         else:
