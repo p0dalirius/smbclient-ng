@@ -143,7 +143,7 @@ def parseArgs():
     return options
 
 
-def run():
+def run() -> int:
     """
     Main function to run the SMB client console.
 
@@ -161,10 +161,6 @@ def run():
     Returns:
         None
     """
-
-    import time
-    total_start = time.time()
-
     options = parseArgs()
 
     config = Config()
@@ -198,10 +194,11 @@ def run():
 
     if sessions_manager is None:
         print("[!] No session found. Please authenticate first.")
-        sys.exit(1)
-    else:
-        shell = InteractiveShell(
-            sessionsManager=sessions_manager, config=config, logger=logger
-        )
-        shell.run()
-        logger.debug("Exiting the console.")
+        return 1
+
+    shell = InteractiveShell(
+        sessionsManager=sessions_manager, config=config, logger=logger
+    )
+    shell.run()
+
+    logger.debug("Exiting the console.")
