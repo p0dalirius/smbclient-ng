@@ -5,7 +5,6 @@ import sys
 from smbclientng.core.InteractiveShell import InteractiveShell
 from smbclientng.core.Logger import Logger
 from smbclientng.core.SessionsManager import SessionsManager
-
 # Local library imports
 from smbclientng.types.Config import Config
 from smbclientng.types.Credentials import Credentials
