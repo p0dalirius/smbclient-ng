@@ -4,6 +4,7 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 23 may 2024
 
+# Built-in imports
 from __future__ import annotations
 
 import ntpath
@@ -16,6 +17,7 @@ from datetime import datetime
 from importlib import import_module
 from typing import TYPE_CHECKING
 
+# Local library imports
 import smbclientng.commands as commands
 from smbclientng.core.CommandCompleter import CommandCompleter
 

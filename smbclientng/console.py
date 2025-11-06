@@ -90,7 +90,7 @@ def parseArgs():
         "-d", "--domain", default=".", type=str, help="Authentication domain."
     )
     group_auth.add_argument(
-        "-u", "--user", type=str, help="Username for authentication."
+        "-u", "--user", type=str, default="", help="Username for authentication."
     )
     group_auth.add_argument(
         "-k", "--kerberos", action="store_true", help="Use Kerberos authentication."
@@ -104,7 +104,7 @@ def parseArgs():
     # Password & Hashes
     group_secrets = parser.add_argument_group("Secrets")
     group_creds = group_secrets.add_mutually_exclusive_group()
-    group_creds.add_argument("-p", "--password", type=str, nargs="?", help="Password.")
+    group_creds.add_argument("-p", "--password", type=str, default="", nargs="?", help="Password.")
     group_creds.add_argument(
         "--no-pass", action="store_true", help="Do not prompt for a password."
     )
@@ -142,7 +142,7 @@ def parseArgs():
     return options
 
 
-def run():
+def run() -> int:
     """
     Main function to run the SMB client console.
 
@@ -160,7 +160,6 @@ def run():
     Returns:
         None
     """
-
     options = parseArgs()
 
     config = Config()
@@ -171,9 +170,10 @@ def run():
     config.commands = options.command
 
     logger = Logger(config=config, logfile=options.logfile)
+
     sessions_manager = SessionsManager(config=config, logger=logger)
 
-    if any([options.domain != ".", options.user, options.password, options.hashes]):
+    if any([options.domain != ".", options.user, options.password, options.hashes, options.no_pass]):
         credentials = Credentials(
             domain=options.domain,
             username=options.user,
@@ -193,10 +193,11 @@ def run():
 
     if sessions_manager is None:
         print("[!] No session found. Please authenticate first.")
-        sys.exit(1)
-    else:
-        shell = InteractiveShell(
-            sessionsManager=sessions_manager, config=config, logger=logger
-        )
-        shell.run()
-        logger.debug("Exiting the console.")
+        return 1
+
+    shell = InteractiveShell(
+        sessionsManager=sessions_manager, config=config, logger=logger
+    )
+    shell.run()
+
+    logger.debug("Exiting the console.")

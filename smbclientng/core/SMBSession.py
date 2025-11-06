@@ -922,9 +922,14 @@ class SMBSession(object):
         path = ntpath.normpath(ntpath.sep.join(dest_path))
 
         contents = {}
-        entries = self.smbClient.listPath(shareName=self.smb_share, path=path)
-        for entry in entries:
-            contents[entry.get_longname()] = entry
+        try:
+            entries = self.smbClient.listPath(shareName=self.smb_share, path=path)
+            for entry in entries:
+                contents[entry.get_longname()] = entry
+        except SessionError as err:
+            if self.config.debug:
+                traceback.print_exc()
+            self.logger.error(str(err))
 
         return contents
 
@@ -1894,13 +1899,13 @@ class SMBSession(object):
                 try:
                     self.smb_tree_id = self.smbClient.connectTree(self.smb_share)
                 except SessionError as err:
+                    if self.config.debug:
+                        traceback.print_exc()
+                    self.logger.error("Could not access share '%s': %s" % (shareName, err))
                     self.smb_share = None
                     self.smb_cwd = ""
-                    raise Exception(
-                        "Could not access share '%s': %s" % (shareName, err)
-                    )
             else:
-                raise Exception(
+                self.logger.error(
                     "Could not set share '%s', it does not exist remotely." % shareName
                 )
         else:
