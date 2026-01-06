@@ -4,9 +4,9 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 23 may 2024
 
+import fnmatch
 import ntpath
 import os
-import fnmatch
 
 from smbclientng.types.Module import Module
 from smbclientng.types.ModuleArgumentParser import ModuleArgumentParser
@@ -279,7 +279,7 @@ class Find(Module):
                     # Actions on matches
                     if self.options.download:
                         if not entry.is_directory():
-                            # Fix: Calculate relative path to prevent directory duplication
+                            # Calculate relative path to prevent directory duplication
                             path_to_download = fullpath
                             cwd = self.smbSession.smb_cwd
 
