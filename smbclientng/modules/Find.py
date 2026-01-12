@@ -4,6 +4,7 @@
 # Author             : Podalirius (@podalirius_)
 # Date created       : 23 may 2024
 
+import fnmatch
 import ntpath
 import os
 
@@ -58,12 +59,18 @@ class Find(Module):
         parser.add_argument(
             "-name",
             action="append",
-            help="Base of file name (the path with the leading directories removed).",
+            help="Base of file name. Supports multiple patterns separated by '|' (e.g. '*.txt|*.log').",
         )
         parser.add_argument(
             "-iname",
             action="append",
-            help="Like -name, but the match is case insensitive.",
+            help="Like -name, but the match is case insensitive. Supports '|' operator.",
+        )
+        parser.add_argument(
+            "--exclude",
+            action="append",
+            dest="exclude_name",
+            help="Exclude files matching the pattern. Supports multiple patterns separated by '|' (e.g. '*.dll|*.exe').",
         )
         parser.add_argument(
             "-type",
@@ -84,9 +91,6 @@ class Find(Module):
                 "Format: DIRNAME[:DEPTH[:CASE]]"
             ),
         )
-        # parser.add_argument("-mtime", type=str, help="File's data was last modified n*24 hours ago")
-        # parser.add_argument("-ctime", type=str, help="File's status was last changed n*24 hours ago")
-        # parser.add_argument("-atime", type=str, help="File was last accessed n*24 hours ago")
 
         # Adding actions
         parser.add_argument(
@@ -99,7 +103,7 @@ class Find(Module):
             "-download",
             action="store_true",
             default=False,
-            help="List current file in ls -dils format on standard output.",
+            help="Download the file locally.",
         )
         parser.add_argument(
             "-o",
@@ -153,7 +157,7 @@ class Find(Module):
         for item in exclude_dirs:
             parts = item.split(":")
             dirname = parts[0]
-            depth = 0  # Default depth
+            depth = 0 # Default depth
             case_sensitive = False  # Default to case-insensitive
 
             # Parse depth if provided
@@ -161,7 +165,7 @@ class Find(Module):
                 try:
                     depth = int(parts[1])
                 except ValueError:
-                    depth = 0  # Default if depth is invalid
+                    depth = 0 # Default if depth is invalid
 
             # Parse case sensitivity if provided
             if len(parts) > 2 and parts[2]:
@@ -179,11 +183,39 @@ class Find(Module):
             )
         return exclusion_rules
 
+    def _match_pattern(self, filename, patterns, case_sensitive=True):
+        """
+        Helper to match a filename against a list of patterns (supporting '|' splitting).
+        """
+        if not patterns:
+            return False
+
+        # Normalize patterns: flatten list and split by '|'
+        flat_patterns = []
+        if isinstance(patterns, list):
+            for p in patterns:
+                flat_patterns.extend(p.split('|'))
+        else:
+            flat_patterns = patterns.split('|')
+
+        if not case_sensitive:
+            filename = filename.lower()
+        
+        for pattern in flat_patterns:
+            pattern = pattern.strip()
+            if not pattern:
+                continue
+            if not case_sensitive:
+                pattern = pattern.lower()
+            
+            if fnmatch.fnmatch(filename, pattern):
+                return True
+        return False
+
     def run(self, arguments):
         """
         Runs the module.
         """
-
         self.options = self.parseArgs(arguments=arguments)
 
         if self.options is not None:
@@ -208,14 +240,10 @@ class Find(Module):
                                 )
                             )
 
-                # Prepare filters
+                # Prepare filters (We handle name/iname/exclude manually to support '|' and exclusions)
                 filters = {}
                 if self.options.type:
                     filters["type"] = self.options.type
-                if self.options.name:
-                    filters["name"] = self.options.name
-                if self.options.iname:
-                    filters["iname"] = self.options.iname
                 if self.options.size:
                     filters["size"] = self.options.size
 
@@ -230,10 +258,40 @@ class Find(Module):
                 )
 
                 for entry, fullpath, depth, is_last_entry in generator:
+                    # Use get_longname() for SharedFile objects from impacket
+                    filename = entry.get_longname()
+
+                    # 1. Check Exclusions (--exclude)
+                    if self.options.exclude_name:
+                        if self._match_pattern(filename, self.options.exclude_name, case_sensitive=True):
+                            continue # Skip excluded file
+
+                    # 2. Check Inclusions (-name)
+                    if self.options.name:
+                        if not self._match_pattern(filename, self.options.name, case_sensitive=True):
+                            continue # Skip if it doesn't match name pattern
+
+                    # 3. Check Case-Insensitive Inclusions (-iname)
+                    if self.options.iname:
+                        if not self._match_pattern(filename, self.options.iname, case_sensitive=False):
+                            continue # Skip if it doesn't match iname pattern
+
                     # Actions on matches
                     if self.options.download:
                         if not entry.is_directory():
-                            self.smbSession.get_file(path=fullpath, keepRemotePath=True)
+                            # Calculate relative path to prevent directory duplication
+                            path_to_download = fullpath
+                            cwd = self.smbSession.smb_cwd
+
+                            # Clean up the paths to ensure reliable matching
+                            if path_to_download.startswith(cwd):
+                                rel_path = path_to_download[len(cwd):]
+                                rel_path = rel_path.lstrip(ntpath.sep).lstrip('/')
+                                if rel_path:
+                                    path_to_download = rel_path
+                            
+                            self.smbSession.get_file(path=path_to_download, keepRemotePath=True)
+                    
                     # Output formats
                     output_str = ""
                     if self.options.ls:
