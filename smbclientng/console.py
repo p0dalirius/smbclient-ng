@@ -129,17 +129,14 @@ def parseArgs():
         print("[+] Option --not-interactive requires --startup-script or --command.")
         sys.exit(1)
 
-    if options.user and not (options.password or options.no_pass or options.hashes):
+    if options.user and not (options.password or options.no_pass or options.hashes or options.ccache_file or options.kerberos):
         from getpass import getpass
 
         options.password = getpass(
             f"  | Provide a password for '{options.domain}\\{options.user}': "
         )
 
-    if options.aes_key:
-        options.kerberos = True
-
-    if options.ccache_file:
+    if options.aes_key or options.ccache_file:
         options.kerberos = True
 
     if options.hashes and ":" not in options.hashes:
