@@ -205,19 +205,30 @@ class SMBSession(object):
                 os.environ["KRB5CCNAME"] = self.credentials.ccacheFile
                 self.logger.debug(f"  | Using CCache file: {self.credentials.ccacheFile}")
             try:
-                kerberos_login_kwargs = {
-                    "user": self.credentials.username,
-                    "password": self.credentials.password,
-                    "domain": self.credentials.domain,
-                    "lmhash": self.credentials.lm_hex,
-                    "nthash": self.credentials.nt_hex,
-                    "aesKey": self.credentials.aesKey,
-                    "kdcHost": self.credentials.kdcHost,
-                }
-                # Pass ccacheFile if the method supports it
+                # When using CCache file, don't pass password/hashes to avoid TGT request
+                # Let impacket use the tickets from the CCache file directly
                 if self.credentials.ccacheFile:
-                    kerberos_login_kwargs["ccacheFile"] = self.credentials.ccacheFile
-                self.connected = self.smbClient.kerberosLogin(**kerberos_login_kwargs)
+                    self.connected = self.smbClient.kerberosLogin(
+                        user=self.credentials.username,
+                        password="",
+                        domain=self.credentials.domain,
+                        lmhash="",
+                        nthash="",
+                        aesKey=None,
+                        kdcHost=self.credentials.kdcHost,
+                        useCache=True,
+                    )
+                else:
+                    self.connected = self.smbClient.kerberosLogin(
+                        user=self.credentials.username,
+                        password=self.credentials.password,
+                        domain=self.credentials.domain,
+                        lmhash=self.credentials.lm_hex,
+                        nthash=self.credentials.nt_hex,
+                        aesKey=self.credentials.aesKey,
+                        kdcHost=self.credentials.kdcHost,
+                        useCache=False,
+                    )
             except SessionError as err:
                 if self.config.debug:
                     traceback.print_exc()
