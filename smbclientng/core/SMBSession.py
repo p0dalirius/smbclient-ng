@@ -198,21 +198,37 @@ class SMBSession(object):
                 "[>] Authenticating as '%s\\%s' with kerberos ... "
                 % (self.credentials.domain, self.credentials.username)
             )
+            # Set KRB5CCNAME environment variable if ccacheFile is provided
+            original_krb5ccname = None
+            if self.credentials.ccacheFile:
+                original_krb5ccname = os.environ.get("KRB5CCNAME")
+                os.environ["KRB5CCNAME"] = self.credentials.ccacheFile
+                self.logger.debug(f"  | Using CCache file: {self.credentials.ccacheFile}")
             try:
-                self.connected = self.smbClient.kerberosLogin(
-                    user=self.credentials.username,
-                    password=self.credentials.password,
-                    domain=self.credentials.domain,
-                    lmhash=self.credentials.lm_hex,
-                    nthash=self.credentials.nt_hex,
-                    aesKey=self.credentials.aesKey,
-                    kdcHost=self.credentials.kdcHost,
-                )
+                kerberos_login_kwargs = {
+                    "user": self.credentials.username,
+                    "password": self.credentials.password,
+                    "domain": self.credentials.domain,
+                    "lmhash": self.credentials.lm_hex,
+                    "nthash": self.credentials.nt_hex,
+                    "aesKey": self.credentials.aesKey,
+                    "kdcHost": self.credentials.kdcHost,
+                }
+                # Pass ccacheFile if the method supports it
+                if self.credentials.ccacheFile:
+                    kerberos_login_kwargs["ccacheFile"] = self.credentials.ccacheFile
+                self.connected = self.smbClient.kerberosLogin(**kerberos_login_kwargs)
             except SessionError as err:
                 if self.config.debug:
                     traceback.print_exc()
                 self.logger.error("Could not login: %s" % err)
                 self.connected = False
+            finally:
+                # Restore original KRB5CCNAME if it was set
+                if original_krb5ccname is not None:
+                    os.environ["KRB5CCNAME"] = original_krb5ccname
+                elif self.credentials.ccacheFile and "KRB5CCNAME" in os.environ:
+                    del os.environ["KRB5CCNAME"]
 
         else:
             if len(self.credentials.lm_hex) != 0 and len(self.credentials.nt_hex) != 0:

@@ -96,6 +96,9 @@ def parseArgs():
         "-k", "--kerberos", action="store_true", help="Use Kerberos authentication."
     )
     group_auth.add_argument(
+        "--ccache-file", type=str, help="CCache file path for Kerberos authentication."
+    )
+    group_auth.add_argument(
         "--kdcHost",
         type=str,
         help="Fully qualified domain name (FQDN) of key distribution center (KDC) for Kerberos.",
@@ -136,6 +139,9 @@ def parseArgs():
     if options.aes_key:
         options.kerberos = True
 
+    if options.ccache_file:
+        options.kerberos = True
+
     if options.hashes and ":" not in options.hashes:
         options.hashes = ":" + options.hashes
 
@@ -173,7 +179,7 @@ def run() -> int:
 
     sessions_manager = SessionsManager(config=config, logger=logger)
 
-    if any([options.domain != ".", options.user, options.password, options.hashes, options.no_pass]):
+    if any([options.domain != ".", options.user, options.password, options.hashes, options.no_pass, options.ccache_file, options.kerberos]):
         credentials = Credentials(
             domain=options.domain,
             username=options.user,
@@ -182,6 +188,7 @@ def run() -> int:
             use_kerberos=options.kerberos,
             aesKey=options.aes_key,
             kdcHost=options.kdcHost,
+            ccacheFile=options.ccache_file,
         )
         sessions_manager.create_new_session(
             credentials=credentials,

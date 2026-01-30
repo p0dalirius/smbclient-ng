@@ -30,6 +30,7 @@ class Credentials(object):
         use_kerberos (bool): Whether to use Kerberos for authentication.
         aesKey (str): The AES key for Kerberos authentication.
         kdcHost (str): The KDC host for Kerberos authentication.
+        ccacheFile (str): Path to CCache file for Kerberos authentication.
     """
 
     # Identity
@@ -45,6 +46,7 @@ class Credentials(object):
     use_kerberos: bool = False
     aesKey: Optional[str]
     kdcHost: Optional[str]
+    ccacheFile: Optional[str]
 
     def __init__(
         self,
@@ -55,6 +57,7 @@ class Credentials(object):
         use_kerberos: bool = False,
         aesKey: Optional[str] = None,
         kdcHost: Optional[str] = None,
+        ccacheFile: Optional[str] = None,
     ):
         super(Credentials, self).__init__()
         # Identity
@@ -69,6 +72,7 @@ class Credentials(object):
         self.use_kerberos = use_kerberos
         self.kdcHost = kdcHost
         self.aesKey = aesKey
+        self.ccacheFile = ccacheFile
 
     def set_hashes(self, hashes: Optional[str]):
         """
@@ -140,6 +144,7 @@ class Credentials(object):
             "use_kerberos": self.use_kerberos,
             "aesKey": self.aesKey,
             "kdcHost": self.kdcHost,
+            "ccacheFile": self.ccacheFile,
         }
 
     def __repr__(self):
