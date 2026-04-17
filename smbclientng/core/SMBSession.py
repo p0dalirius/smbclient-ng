@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import fnmatch
 import io
 import ntpath
 import os
@@ -1454,9 +1455,8 @@ class SMBSession(object):
         for entry in matches:
             if entry == filename:
                 matching_entries.append(entry)
-            elif "*" in filename:
-                regexp = filename.replace(".", "\\.").replace("*", ".*")
-                if re.match(regexp, entry):
+            elif "*" in filename or "?" in filename or "[" in filename:
+                if fnmatch.fnmatchcase(entry, filename):
                     matching_entries.append(entry)
 
         matching_entries = sorted(list(set(matching_entries)))
@@ -1668,9 +1668,8 @@ class SMBSession(object):
                 continue
             if entry.get_longname() == filename:
                 matching_entries.append(entry)
-            elif "*" in filename:
-                regexp = filename.replace(".", "\\.").replace("*", ".*")
-                if re.match(regexp, entry.get_longname()):
+            elif "*" in filename or "?" in filename or "[" in filename:
+                if fnmatch.fnmatchcase(entry.get_longname(), filename):
                     matching_entries.append(entry)
 
         matching_entries = sorted(
