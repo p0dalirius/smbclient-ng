@@ -26,6 +26,12 @@ class Command_module(Command):
         # Active SMB connection needed : No
         # SMB share needed             : No
 
+        if len(arguments) == 0:
+            interactive_shell.logger.error(
+                "Usage: module <name> [module-arguments...]"
+            )
+            return
+
         module_name = arguments[0]
 
         if module_name in interactive_shell.modules.keys():
