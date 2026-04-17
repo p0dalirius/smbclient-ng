@@ -1974,9 +1974,35 @@ class SMBSession(object):
             if path in ["", ".", ".."]:
                 self.smb_cwd = ""
             else:
-                if self.path_isdir(pathFromRoot=path.strip(ntpath.sep)):
-                    # Path exists on the remote
+                path_from_root = path.strip(ntpath.sep)
+                if self.path_isdir(pathFromRoot=path_from_root):
+                    # Parent listing confirmed the target is a directory.
+                    self.smb_cwd = ntpath.normpath(path)
+                elif self._is_listable_directory(pathFromRoot=path_from_root):
+                    # Parent listing is not permitted, but the target itself is
+                    # listable (i.e. it exists and is a directory the user can
+                    # access). Fall back to the direct check so users can cd
+                    # into subdirectories whose parent denies listing.
                     self.smb_cwd = ntpath.normpath(path)
                 else:
                     # Path does not exists or is not a directory on the remote
                     self.logger.error("Remote directory '%s' does not exist." % path)
+
+    def _is_listable_directory(self, pathFromRoot: str) -> bool:
+        """
+        Returns True when the given remote path can be enumerated directly
+        (i.e. `listPath(path + \\*)` succeeds), without requiring the parent to
+        be listable. Used as a fallback for `path_isdir` on shares that deny
+        listing the parent of an accessible subdirectory.
+        """
+        path = pathFromRoot.replace("*", "").replace("/", ntpath.sep)
+        path = ntpath.normpath(path).lstrip(ntpath.sep)
+        if not path or path in [".", ".."]:
+            return True
+        try:
+            self.smbClient.listPath(
+                shareName=self.smb_share, path=path + ntpath.sep + "*"
+            )
+            return True
+        except Exception:
+            return False
