@@ -35,17 +35,16 @@ class SessionsManager(object):
         sessions (dict): A dictionary of all active sessions, keyed by their session ID.
     """
 
-    sessions = {}
-    next_session_id: int = 1
-    current_session: Optional[SMBSession] = None
-    current_session_id: Optional[int]
-
     config: Config
     logger: Logger
 
     def __init__(self, config: Config, logger: Logger):
         self.config = config
         self.logger = logger
+        self.sessions: dict = {}
+        self.next_session_id: int = 1
+        self.current_session: Optional[SMBSession] = None
+        self.current_session_id: Optional[int] = None
 
     def create_new_session(
         self,
