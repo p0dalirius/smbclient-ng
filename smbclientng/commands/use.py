@@ -35,8 +35,10 @@ class Command_use(Command):
         # SMB share needed             : No
 
         self.options = self.processArguments(arguments=arguments)
+        if self.options is None:
+            return
 
-        sharename = arguments[0]
+        sharename = self.options.sharename
 
         # Reload the list of shares
         shares = interactive_shell.sessionsManager.current_session.list_shares()
