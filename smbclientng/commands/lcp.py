@@ -18,7 +18,7 @@ class Command_lcp(Command):
     HELP = {
         "description": [description, "Syntax: 'lcp <srcfile> <dstfile>'"],
         "subcommands": [],
-        "autocomplete": ["remote_file"],
+        "autocomplete": ["local_file"],
     }
 
     def setupParser(self) -> CommandArgumentParser:
