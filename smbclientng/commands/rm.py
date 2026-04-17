@@ -67,9 +67,9 @@ class Command_rm(Command):
                         interactive_shell.sessionsManager.current_session.rm(
                             path=path_to_file
                         )
-                    except Exception:
+                    except Exception as err:
                         interactive_shell.logger.error(
-                            "Error removing file '%s' : %s" % path_to_file
+                            "Error removing file '%s': %s" % (path_to_file, err)
                         )
                 else:
                     interactive_shell.logger.error(
