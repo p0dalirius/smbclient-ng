@@ -409,7 +409,7 @@ class SMBSession(object):
                 try:
                     if entry.is_directory():
                         if keepRemotePath:
-                            base_path = "./"  # Use root as base
+                            base_path = ntpath.sep  # Use remote share root as base
                             relative_path = ntpath.relpath(fullpath, base_path)
                             relative_path = relative_path.replace(
                                 ntpath.sep, os.path.sep
@@ -424,7 +424,7 @@ class SMBSession(object):
                             pass
                     else:
                         if keepRemotePath:
-                            base_path = "./"  # Use root as base
+                            base_path = ntpath.sep  # Use remote share root as base
                             relative_path = ntpath.relpath(fullpath, base_path)
                             relative_path = relative_path.replace(
                                 ntpath.sep, os.path.sep
@@ -460,7 +460,7 @@ class SMBSession(object):
                     )
                     return
                 if keepRemotePath:
-                    base_path = "./"  # Use root as base
+                    base_path = ntpath.sep  # Use remote share root as base
                     relative_path = ntpath.relpath(path, base_path)
                     relative_path = relative_path.replace(ntpath.sep, os.path.sep)
                     output_filepath = os.path.normpath(
