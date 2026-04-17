@@ -1281,9 +1281,8 @@ class SMBSession(object):
                     "Executing '%s' with arguments: %s" % (executable, args)
                 )
             process = subprocess.Popen(
-                executable=executable,
-                args=args,
-                shell=True,
+                args=[executable, *args],
+                shell=False,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
