@@ -70,12 +70,15 @@ class LocalFileIO(object):
                 "Openning local '%s' with mode '%s'" % (self.path, self.mode)
             )
 
+            local_path = self.dir + os.path.sep + os.path.basename(self.path)
             try:
-                self.fd = open(
-                    self.dir + os.path.sep + os.path.basename(self.path), self.mode
-                )
-            except PermissionError:
+                self.fd = open(local_path, self.mode)
+            except (PermissionError, OSError) as err:
                 self.fd = None
+                self.logger.error(
+                    "Cannot open local file '%s' for writing: %s"
+                    % (local_path, err)
+                )
 
         # Write to remote (read local)
         elif self.mode in ["rb"]:
@@ -88,15 +91,19 @@ class LocalFileIO(object):
 
             try:
                 self.fd = open(self.path, self.mode)
-            except PermissionError:
+            except (PermissionError, OSError) as err:
                 self.fd = None
+                self.logger.error(
+                    "Cannot open local file '%s' for reading: %s"
+                    % (self.path, err)
+                )
 
             if self.fd is not None:
                 if self.expected_size is None:
                     self.expected_size = os.path.getsize(filename=self.path)
 
-        # Create progress bar
-        if self.expected_size is not None:
+        # Create progress bar only if the file descriptor was opened successfully
+        if self.expected_size is not None and self.fd is not None:
             self.__progress = Progress(
                 TextColumn("[bold blue]{task.description}", justify="right"),
                 BarColumn(bar_width=None),
@@ -177,7 +184,7 @@ class LocalFileIO(object):
             except (PermissionError, FileNotFoundError):
                 pass
 
-        if self.expected_size is not None:
+        if self.expected_size is not None and self.fd is not None:
             self.__progress.stop()
 
         del self
