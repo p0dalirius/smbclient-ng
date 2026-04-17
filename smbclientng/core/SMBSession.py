@@ -498,6 +498,11 @@ class SMBSession(object):
                     expected_size=entry.get_filesize(),
                     keepRemotePath=keepRemotePath,
                 )
+                if f.fd is None:
+                    # The local file could not be opened (already logged by LocalFileIO).
+                    # Skip the remote transfer to avoid discarding data silently.
+                    f.close()
+                    return
                 try:
                     self.smbClient.getFile(
                         shareName=self.smb_share, pathName=full_path, callback=f.write
