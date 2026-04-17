@@ -1440,7 +1440,7 @@ class SMBSession(object):
         if os.path.sep in localpath:
             if localpath.startswith(os.path.sep):
                 # Absolute path
-                tmp_search_path = os.path.normpath(localpath)
+                tmp_search_path = os.path.normpath(os.path.dirname(localpath))
             else:
                 # Relative path
                 tmp_search_path = os.path.normpath(
