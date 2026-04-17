@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import ntpath
 import os
-import shlex
+import re
 from typing import TYPE_CHECKING
 
 from smbclientng.commands import (Command_acls, Command_bat, Command_bhead,
@@ -33,6 +33,18 @@ if TYPE_CHECKING:
     from smbclientng.core.Config import Config
     from smbclientng.core.Logger import Logger
     from smbclientng.core.SMBSession import SMBSession
+
+
+# Characters that must be escaped so readline can still find a common prefix
+# when some candidates contain spaces or quoting-significant characters.
+# Using backslash escaping (rather than wrapping with quotes) keeps the entry
+# name visible to readline's prefix-matching logic, so TAB completion works
+# when the user has only typed part of an entry's name.
+_SHELL_ESCAPE_PATTERN = re.compile(r"([\s\\\"'])")
+
+
+def _shell_escape(value: str) -> str:
+    return _SHELL_ESCAPE_PATTERN.sub(r"\\\1", value)
 
 
 class CommandCompleter(object):
@@ -156,7 +168,7 @@ class CommandCompleter(object):
                                     matching_entries.append(shares[sharename]["name"])
                             # Final matches
                             for m in matching_entries:
-                                self.matches.append(command + " " + shlex.quote(m))
+                                self.matches.append(command + " " + _shell_escape(m))
 
                         # Autocomplete directory
                         if "remote_directory" in self.commands[command]["autocomplete"]:
@@ -186,12 +198,11 @@ class CommandCompleter(object):
                                         )
                             #
                             for m in matching_entries:
+                                escaped = _shell_escape(m)
                                 if m.lower().startswith(
                                     remainder.lower()
-                                ) or shlex.quote(m).lower().startswith(
-                                    remainder.lower()
-                                ):
-                                    self.matches.append(command + " " + shlex.quote(m))
+                                ) or escaped.lower().startswith(remainder.lower()):
+                                    self.matches.append(command + " " + escaped)
 
                         # Autocomplete file
                         if "remote_file" in self.commands[command]["autocomplete"]:
@@ -218,12 +229,11 @@ class CommandCompleter(object):
                                         matching_entries.append(entry.get_longname())
                             #
                             for m in matching_entries:
+                                escaped = _shell_escape(m)
                                 if m.lower().startswith(
                                     remainder.lower()
-                                ) or shlex.quote(m).lower().startswith(
-                                    remainder.lower()
-                                ):
-                                    self.matches.append(command + " " + shlex.quote(m))
+                                ) or escaped.lower().startswith(remainder.lower()):
+                                    self.matches.append(command + " " + escaped)
 
                         # Autocomplete local_directory
                         if "local_directory" in self.commands[command]["autocomplete"]:
@@ -247,12 +257,11 @@ class CommandCompleter(object):
                                         )
                             #
                             for m in matching_entries:
+                                escaped = _shell_escape(m)
                                 if m.lower().startswith(
                                     remainder.lower()
-                                ) or shlex.quote(m).lower().startswith(
-                                    remainder.lower()
-                                ):
-                                    self.matches.append(command + " " + shlex.quote(m))
+                                ) or escaped.lower().startswith(remainder.lower()):
+                                    self.matches.append(command + " " + escaped)
 
                         # Autocomplete local_file
                         if "local_file" in self.commands[command]["autocomplete"]:
@@ -274,12 +283,11 @@ class CommandCompleter(object):
                                         matching_entries.append(entry_path)
                             #
                             for m in matching_entries:
+                                escaped = _shell_escape(m)
                                 if m.lower().startswith(
                                     remainder.lower()
-                                ) or shlex.quote(m).lower().startswith(
-                                    remainder.lower()
-                                ):
-                                    self.matches.append(command + " " + shlex.quote(m))
+                                ) or escaped.lower().startswith(remainder.lower()):
+                                    self.matches.append(command + " " + escaped)
 
                         else:
                             # Generic case for subcommands
