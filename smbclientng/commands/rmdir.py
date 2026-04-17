@@ -45,9 +45,10 @@ class Command_rmdir(Command):
                         interactive_shell.sessionsManager.current_session.rmdir(
                             path=path_to_directory
                         )
-                    except Exception:
+                    except Exception as err:
                         interactive_shell.logger.error(
-                            "Error removing directory '%s' : %s" % path_to_directory
+                            "Error removing directory '%s': %s"
+                            % (path_to_directory, err)
                         )
                 else:
                     interactive_shell.logger.error(
