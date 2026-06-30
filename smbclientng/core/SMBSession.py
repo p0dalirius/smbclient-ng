@@ -23,7 +23,7 @@ from impacket.nt_errors import STATUS_OBJECT_NAME_COLLISION
 from impacket.smb import SMBFileStreamInformation
 from impacket.smb3structs import (DACL_SECURITY_INFORMATION,
                                   FILE_DIRECTORY_FILE, FILE_NON_DIRECTORY_FILE,
-                                  FILE_OPEN, FILE_READ_ATTRIBUTES,
+                                  FILE_OPEN, FILE_READ_ATTRIBUTES, FILE_TRAVERSE,
                                   GROUP_SECURITY_INFORMATION,
                                   OWNER_SECURITY_INFORMATION, READ_CONTROL,
                                   SMB2_0_INFO_FILE, SMB2_FILE_STREAM_INFO)
@@ -1337,8 +1337,8 @@ class SMBSession(object):
         """
         Checks if the specified path is a directory on the SMB share.
 
-        This method determines if a given path corresponds to a directory on the SMB share. It does this by listing the
-        contents of the path and filtering for entries that match the basename of the path and are marked as directories.
+        This method determines if a given path corresponds to a directory on the SMB share. It first tries to resolve it
+        through a directory listing, then falls back to opening the target path directly as a directory.
 
         Args:
             path (str, optional): The path to check on the SMB share. Defaults to None.
@@ -1371,9 +1371,9 @@ class SMBSession(object):
                         if c.get_longname() == ntpath.basename(path)
                         and c.is_directory()
                     ]
-                    return len(contents) != 0
+                    return len(contents) != 0 or self._can_open_directory(path)
                 except Exception:
-                    return False
+                    return self._can_open_directory(path)
         else:
             return False
 
@@ -1979,33 +1979,35 @@ class SMBSession(object):
             else:
                 path_from_root = path.strip(ntpath.sep)
                 if self.path_isdir(pathFromRoot=path_from_root):
-                    # Parent listing confirmed the target is a directory.
-                    self.smb_cwd = ntpath.normpath(path)
-                elif self._is_listable_directory(pathFromRoot=path_from_root):
-                    # Parent listing is not permitted, but the target itself is
-                    # listable (i.e. it exists and is a directory the user can
-                    # access). Fall back to the direct check so users can cd
-                    # into subdirectories whose parent denies listing.
                     self.smb_cwd = ntpath.normpath(path)
                 else:
                     # Path does not exists or is not a directory on the remote
                     self.logger.error("Remote directory '%s' does not exist." % path)
 
-    def _is_listable_directory(self, pathFromRoot: str) -> bool:
+    def _can_open_directory(self, pathFromRoot: str) -> bool:
         """
-        Returns True when the given remote path can be enumerated directly
-        (i.e. `listPath(path + \\*)` succeeds), without requiring the parent to
-        be listable. Used as a fallback for `path_isdir` on shares that deny
-        listing the parent of an accessible subdirectory.
+        Returns True when the given remote path can be opened as a directory,
+        without requiring the parent or target directory to be listable.
         """
         path = pathFromRoot.replace("*", "").replace("/", ntpath.sep)
         path = ntpath.normpath(path).lstrip(ntpath.sep)
         if not path or path in [".", ".."]:
             return True
+        file_id = None
         try:
-            self.smbClient.listPath(
-                shareName=self.smb_share, path=path + ntpath.sep + "*"
+            file_id = self.smbClient.createFile(
+                treeId=self.smb_tree_id,
+                pathName=path,
+                desiredAccess=FILE_TRAVERSE,
+                creationOption=FILE_DIRECTORY_FILE,
+                creationDisposition=FILE_OPEN,
             )
             return True
         except Exception:
             return False
+        finally:
+            if file_id is not None:
+                try:
+                    self.smbClient.closeFile(self.smb_tree_id, file_id)
+                except Exception:
+                    pass
