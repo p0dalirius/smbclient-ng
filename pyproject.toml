@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "smbclientng"
-version = "3.0.0"
+version = "3.1.0"
 description = "smbclient-ng, a fast and user-friendly way to interact with SMB shares."
 authors = [
     {name = "p0dalirius"}

@@ -9,7 +9,7 @@ from smbclientng.core.SessionsManager import SessionsManager
 from smbclientng.types.Config import Config
 from smbclientng.types.Credentials import Credentials
 
-VERSION = "3.0.0"
+VERSION = "3.1.0"
 
 
 def parseArgs():
