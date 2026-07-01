@@ -23,8 +23,8 @@ from impacket.nt_errors import STATUS_OBJECT_NAME_COLLISION
 from impacket.smb import SMBFileStreamInformation
 from impacket.smb3structs import (DACL_SECURITY_INFORMATION,
                                   FILE_DIRECTORY_FILE, FILE_NON_DIRECTORY_FILE,
-                                  FILE_OPEN, FILE_READ_ATTRIBUTES, FILE_TRAVERSE,
-                                  GROUP_SECURITY_INFORMATION,
+                                  FILE_OPEN, FILE_READ_ATTRIBUTES,
+                                  FILE_TRAVERSE, GROUP_SECURITY_INFORMATION,
                                   OWNER_SECURITY_INFORMATION, READ_CONTROL,
                                   SMB2_0_INFO_FILE, SMB2_FILE_STREAM_INFO)
 from impacket.smbconnection import SessionError, SMBConnection

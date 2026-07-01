@@ -157,7 +157,7 @@ class Find(Module):
         for item in exclude_dirs:
             parts = item.split(":")
             dirname = parts[0]
-            depth = 0 # Default depth
+            depth = 0  # Default depth
             case_sensitive = False  # Default to case-insensitive
 
             # Parse depth if provided
@@ -165,7 +165,7 @@ class Find(Module):
                 try:
                     depth = int(parts[1])
                 except ValueError:
-                    depth = 0 # Default if depth is invalid
+                    depth = 0  # Default if depth is invalid
 
             # Parse case sensitivity if provided
             if len(parts) > 2 and parts[2]:
@@ -200,14 +200,14 @@ class Find(Module):
 
         if not case_sensitive:
             filename = filename.lower()
-        
+
         for pattern in flat_patterns:
             pattern = pattern.strip()
             if not pattern:
                 continue
             if not case_sensitive:
                 pattern = pattern.lower()
-            
+
             if fnmatch.fnmatch(filename, pattern):
                 return True
         return False
@@ -264,17 +264,17 @@ class Find(Module):
                     # 1. Check Exclusions (--exclude)
                     if self.options.exclude_name:
                         if self._match_pattern(filename, self.options.exclude_name, case_sensitive=True):
-                            continue # Skip excluded file
+                            continue  # Skip excluded file
 
                     # 2. Check Inclusions (-name)
                     if self.options.name:
                         if not self._match_pattern(filename, self.options.name, case_sensitive=True):
-                            continue # Skip if it doesn't match name pattern
+                            continue  # Skip if it doesn't match name pattern
 
                     # 3. Check Case-Insensitive Inclusions (-iname)
                     if self.options.iname:
                         if not self._match_pattern(filename, self.options.iname, case_sensitive=False):
-                            continue # Skip if it doesn't match iname pattern
+                            continue  # Skip if it doesn't match iname pattern
 
                     # Actions on matches
                     if self.options.download:
@@ -289,9 +289,9 @@ class Find(Module):
                                 rel_path = rel_path.lstrip(ntpath.sep).lstrip('/')
                                 if rel_path:
                                     path_to_download = rel_path
-                            
+
                             self.smbSession.get_file(path=path_to_download, keepRemotePath=True)
-                    
+
                     # Output formats
                     output_str = ""
                     if self.options.ls:

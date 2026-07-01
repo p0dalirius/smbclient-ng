@@ -4,8 +4,6 @@
 # Author: Podalirius (@podalirius_)
 # Date created: 24 May 2024
 
-#!/usr/bin/env python3
-
 import sys
 
 # Local library imports
