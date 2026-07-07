@@ -61,6 +61,10 @@ def parse_lm_nt_hashes(lm_nt_hashes_string: str) -> tuple[str, str]:
         elif m_lm_hash is not None and m_nt_hash is None:
             lm_hash_value = m_lm_hash
             nt_hash_value = "31d6cfe0d16ae931b73c59d7e0c089c0"
+        else:
+            lm_hash_value = m_lm_hash
+            nt_hash_value = m_nt_hash
+
     return lm_hash_value, nt_hash_value
 
 
