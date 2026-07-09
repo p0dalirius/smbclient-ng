@@ -213,7 +213,7 @@ class SessionsManager(object):
             dest="auth_username",
             metavar="USER",
             action="store",
-            help="User to authenticate with.",
+            help=r"User to authenticate with. Supports DOMAIN\user.",
         )
         secret = mode_create.add_argument_group()
         cred = secret.add_mutually_exclusive_group()

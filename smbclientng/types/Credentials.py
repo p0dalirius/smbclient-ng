@@ -61,8 +61,9 @@ class Credentials(object):
     ):
         super(Credentials, self).__init__()
         # Identity
-        self.domain = domain
-        self.username = username
+        self.domain, self.username = self.parse_domain_username(
+            domain=domain, username=username
+        )
         self.password = password
 
         # Hashes
@@ -73,6 +74,21 @@ class Credentials(object):
         self.kdcHost = kdcHost
         self.aesKey = aesKey
         self.ccacheFile = ccacheFile
+
+    @staticmethod
+    def parse_domain_username(
+        domain: str, username: Optional[str]
+    ) -> tuple[str, Optional[str]]:
+        if username is None:
+            return domain, username
+
+        for separator in ("\\", "/"):
+            if separator in username:
+                user_domain, user_name = username.split(separator, 1)
+                if user_domain and user_name:
+                    return user_domain, user_name
+
+        return domain, username
 
     def set_hashes(self, hashes: Optional[str]):
         """
