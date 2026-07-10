@@ -90,7 +90,11 @@ def parseArgs():
         "-d", "--domain", default=".", type=str, help="Authentication domain."
     )
     group_auth.add_argument(
-        "-u", "--user", type=str, default="", help="Username for authentication."
+        "-u",
+        "--user",
+        type=str,
+        default="",
+        help=r"Username for authentication. Supports DOMAIN\user.",
     )
     group_auth.add_argument(
         "-k", "--kerberos", action="store_true", help="Use Kerberos authentication."
@@ -132,8 +136,11 @@ def parseArgs():
     if options.user and not (options.password or options.no_pass or options.hashes or options.ccache_file or options.kerberos):
         from getpass import getpass
 
+        prompt_domain, prompt_username = Credentials.parse_domain_username(
+            domain=options.domain, username=options.user
+        )
         options.password = getpass(
-            f"  | Provide a password for '{options.domain}\\{options.user}': "
+            f"  | Provide a password for '{prompt_domain}\\{prompt_username}': "
         )
 
     if options.aes_key or options.ccache_file:
