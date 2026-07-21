@@ -10,6 +10,11 @@
     <br>
 </p>
 
+> [!NOTE]
+> Check out the new smbclient-ng written in Go, faster and cross platform by default!
+> 
+> https://github.com/TheManticoreProject/smbclient-ng
+
 ## Features
 
 - [x] `acls`: List ACLs of files and folders in cwd. Syntax: `acls`
