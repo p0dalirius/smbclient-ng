@@ -979,6 +979,55 @@ class SMBSession(object):
             )
         )
 
+    # Access rights (winnt.h) used to decode an ACE access mask into its
+    # constituent rights. 
+    _ACCESS_RIGHTS = (
+        # Standard access rights
+        ("DELETE", 0x00010000),
+        ("READ_CONTROL", 0x00020000),
+        ("WRITE_DAC", 0x00040000),
+        ("WRITE_OWNER", 0x00080000),
+        ("SYNCHRONIZE", 0x00100000),
+        # Specific file / directory access rights
+        ("FILE_READ_DATA", 0x00000001),
+        ("FILE_WRITE_DATA", 0x00000002),
+        ("FILE_APPEND_DATA", 0x00000004),
+        ("FILE_READ_EA", 0x00000008),
+        ("FILE_WRITE_EA", 0x00000010),
+        ("FILE_EXECUTE", 0x00000020),
+        ("FILE_DELETE_CHILD", 0x00000040),
+        ("FILE_READ_ATTRIBUTES", 0x00000080),
+        ("FILE_WRITE_ATTRIBUTES", 0x00000100),
+        # Generic access rights
+        ("GENERIC_ALL", 0x10000000),
+        ("GENERIC_EXECUTE", 0x20000000),
+        ("GENERIC_WRITE", 0x40000000),
+        ("GENERIC_READ", 0x80000000),
+        # Other
+        ("MAXIMUM_ALLOWED", 0x02000000),
+        ("ACCESS_SYSTEM_SECURITY", 0x01000000),
+    )
+
+    def _decode_access_mask(self, acl) -> list:
+        """Decode an ACE access mask into a list of named rights.
+
+        Every bit of the mask is accounted for: bits that do not map to a
+        known right are reported as a raw hex value so nothing is silently
+        dropped.
+        """
+        mask_struct = acl["Ace"].fields.get("Mask")
+        mask = mask_struct["Mask"] if mask_struct is not None else 0
+        if not mask:
+            return []
+        names = [name for name, value in self._ACCESS_RIGHTS if mask & value == value]
+        covered = 0
+        for _, value in self._ACCESS_RIGHTS:
+            covered |= value
+        leftover = mask & ~covered
+        if leftover:
+            names.append(f"0x{leftover:08X}")
+        return names
+
     def securityDescriptorTable(
         self,
         security_descriptor: str,
@@ -1046,24 +1095,7 @@ class SMBSession(object):
             if resolved_sid in ["S-1-5-32-544", "S-1-5-18"]:
                 continue
 
-            flags = []
-            for flag in [
-                "GENERIC_READ",
-                "GENERIC_WRITE",
-                "GENERIC_EXECUTE",
-                "GENERIC_ALL",
-                "MAXIMUM_ALLOWED",
-                "ACCESS_SYSTEM_SECURITY",
-                "WRITE_OWNER",
-                "WRITE_DACL",
-                "DELETE",
-                "READ_CONTROL",
-                "SYNCHRONIZE",
-            ]:
-                if len(acl["Ace"]["Mask"]) != 0 and acl["Ace"]["Mask"].hasPriv(
-                    getattr(ldaptypes.ACCESS_MASK, flag)
-                ):
-                    flags.append(flag)
+            flags = self._decode_access_mask(acl)
             if len(flags) == 0:
                 continue
             try:
@@ -1075,13 +1107,20 @@ class SMBSession(object):
                     f"Could not resolve SID {resolved_sid} for {subject}: {str(err)}"
                 )
 
+            # Distinguish ACEs that were inherited from a parent object
+            # (INHERITED_ACE flag) from the ones explicitly set on it, so
+            # inherited ACLs are visible alongside the direct ones.
+            inherited_suffix = ""
+            if acl.hasFlag(ldaptypes.ACE.INHERITED_ACE):
+                inherited_suffix = "(I)"
+
             acl_string = prefix
             inbetween = ""
             if len(resolved_sid) < max_resolved_sid_length + 1:
                 inbetween = " " * (max_resolved_sid_length + 1 - len(resolved_sid))
 
             if self.config.no_colors:
-                acl_string += f"{resolved_sid}" + " | ".join(flags)
+                acl_string += f"{resolved_sid}" + " | ".join(flags) + inherited_suffix
             else:
                 acl_string += (
                     "Allowed: "
@@ -1093,7 +1132,7 @@ class SMBSession(object):
                 else:
                     acl_string += f"\x1b[1m{resolved_sid}\x1b[0m"
                 acl_string += inbetween
-                acl_string += " | ".join(flags)
+                acl_string += " | ".join(flags) + inherited_suffix
             out_sd += "\n" + acl_string
         return out_sd.lstrip("\n")
 
