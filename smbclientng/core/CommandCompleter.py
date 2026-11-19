@@ -47,6 +47,36 @@ def _shell_escape(value: str) -> str:
     return _SHELL_ESCAPE_PATTERN.sub(r"\\\1", value)
 
 
+# Inverse of _shell_escape(). The command line is parsed with shlex.split()
+# (POSIX mode), where a backslash escapes the next character, so the typed
+# text must be unescaped the same way before being used as a path. Otherwise
+# "My\ Docs" is read as the Windows path "My/ Docs". A dangling trailing
+# backslash (readline's common prefix can stop right after an escape, e.g.
+# between "Foo\ Bar" and "Foo\'s") is dropped.
+_SHELL_UNESCAPE_PATTERN = re.compile(r"\\(.)|\\$", re.DOTALL)
+
+
+def _shell_unescape(value: str) -> str:
+    return _SHELL_UNESCAPE_PATTERN.sub(lambda m: m.group(1) or "", value)
+
+
+def _filter_matches(text: str, matches: list[str]) -> list[str]:
+    """
+    Prefers case-sensitive matches over case-insensitive ones.
+
+    Readline replaces the line with the (case-sensitive) common prefix of the
+    matches. With case-insensitive matches only, this prefix can be shorter
+    than the typed text (e.g. "cd DOCU" with "Documents" and "documents_tmp"),
+    which would erase the user input, so no match is returned in that case.
+    """
+    exact = [m for m in matches if m.startswith(text)]
+    if len(exact) != 0:
+        return exact
+    if len(matches) > 1 and len(os.path.commonprefix(matches)) < len(text):
+        return []
+    return matches
+
+
 class CommandCompleter(object):
     """
     A class to handle command completion for the smbclient-ng shell.
@@ -154,6 +184,7 @@ class CommandCompleter(object):
                 # This is for subcommands
                 elif text.count(" ") >= 1:
                     command, remainder = text.split(" ", 1)
+                    typed = _shell_unescape(remainder)
 
                     if command in self.commands.keys():
                         self.matches = []
@@ -164,7 +195,7 @@ class CommandCompleter(object):
                             shares = self.smbSession.list_shares()
                             matching_entries = []
                             for sharename in shares.keys():
-                                if sharename.lower().startswith(remainder.lower()):
+                                if sharename.lower().startswith(typed.lower()):
                                     matching_entries.append(shares[sharename]["name"])
                             # Final matches
                             for m in matching_entries:
@@ -174,8 +205,8 @@ class CommandCompleter(object):
                         if "remote_directory" in self.commands[command]["autocomplete"]:
                             # Choose remote directory
                             path = ""
-                            if "\\" in remainder.strip() or "/" in remainder.strip():
-                                path = remainder.strip().replace(ntpath.sep, "/")
+                            if "\\" in typed.strip() or "/" in typed.strip():
+                                path = typed.strip().replace(ntpath.sep, "/")
                                 path = "/".join(path.split("/")[:-1])
                             # Get remote directory contents
                             directory_contents = self.smbSession.list_contents(
@@ -198,18 +229,15 @@ class CommandCompleter(object):
                                         )
                             #
                             for m in matching_entries:
-                                escaped = _shell_escape(m)
-                                if m.lower().startswith(
-                                    remainder.lower()
-                                ) or escaped.lower().startswith(remainder.lower()):
-                                    self.matches.append(command + " " + escaped)
+                                if m.lower().startswith(typed.lower()):
+                                    self.matches.append(command + " " + _shell_escape(m))
 
                         # Autocomplete file
                         if "remote_file" in self.commands[command]["autocomplete"]:
                             # Choose remote file
                             path = ""
-                            if "\\" in remainder.strip() or "/" in remainder.strip():
-                                path = remainder.strip().replace(ntpath.sep, "/")
+                            if "\\" in typed.strip() or "/" in typed.strip():
+                                path = typed.strip().replace(ntpath.sep, "/")
                                 path = "/".join(path.split("/")[:-1])
                             # Get remote directory contents
                             directory_contents = self.smbSession.list_contents(
@@ -229,11 +257,8 @@ class CommandCompleter(object):
                                         matching_entries.append(entry.get_longname())
                             #
                             for m in matching_entries:
-                                escaped = _shell_escape(m)
-                                if m.lower().startswith(
-                                    remainder.lower()
-                                ) or escaped.lower().startswith(remainder.lower()):
-                                    self.matches.append(command + " " + escaped)
+                                if m.lower().startswith(typed.lower()):
+                                    self.matches.append(command + " " + _shell_escape(m))
 
                         # Autocomplete local_directory
                         if "local_directory" in self.commands[command]["autocomplete"]:
@@ -257,11 +282,8 @@ class CommandCompleter(object):
                                         )
                             #
                             for m in matching_entries:
-                                escaped = _shell_escape(m)
-                                if m.lower().startswith(
-                                    remainder.lower()
-                                ) or escaped.lower().startswith(remainder.lower()):
-                                    self.matches.append(command + " " + escaped)
+                                if m.lower().startswith(typed.lower()):
+                                    self.matches.append(command + " " + _shell_escape(m))
 
                         # Autocomplete local_file
                         if "local_file" in self.commands[command]["autocomplete"]:
@@ -283,17 +305,16 @@ class CommandCompleter(object):
                                         matching_entries.append(entry_path)
                             #
                             for m in matching_entries:
-                                escaped = _shell_escape(m)
-                                if m.lower().startswith(
-                                    remainder.lower()
-                                ) or escaped.lower().startswith(remainder.lower()):
-                                    self.matches.append(command + " " + escaped)
+                                if m.lower().startswith(typed.lower()):
+                                    self.matches.append(command + " " + _shell_escape(m))
 
                         else:
                             # Generic case for subcommands
                             for m in self.commands[command]["subcommands"]:
                                 if m.startswith(remainder):
                                     self.matches.append(command + " " + m)
+                        self.matches = _filter_matches(text, self.matches)
+
                     else:
                         # Unknown subcommand, skipping autocomplete
                         pass
