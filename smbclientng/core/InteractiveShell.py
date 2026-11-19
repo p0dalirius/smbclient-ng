@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import ntpath
 import os
+import re
 import readline
 import shlex
 import sys
@@ -25,6 +26,39 @@ if TYPE_CHECKING:
     from smbclientng.core.Logger import Logger
     from smbclientng.core.SessionsManager import SessionsManager
     from smbclientng.types.Config import Config
+
+
+# Matches ANSI escape sequences (colors, cursor movements, ...)
+ANSI_ESCAPE_RE = re.compile(r"(\x1b\[[0-9;]*[A-Za-z])")
+
+# Python's readline module can be linked against GNU readline or libedit
+# (e.g. macOS, or the python-build-standalone builds used by uv/pipx).
+# Python >= 3.13 exposes readline.backend, older versions only the docstring.
+READLINE_IS_LIBEDIT = getattr(readline, "backend", None) == "editline" or (
+    "libedit" in (readline.__doc__ or "")
+)
+
+
+def readline_safe_prompt(prompt: str) -> str:
+    """
+    Wraps ANSI escape sequences of a prompt between RL_PROMPT_START_IGNORE (\\001)
+    and RL_PROMPT_END_IGNORE (\\002) markers.
+
+    Without these markers, libedit strips the ESC character and displays the raw
+    color codes, and GNU readline miscomputes the prompt width (broken line wrapping
+    and history navigation on long lines).
+
+    Args:
+        prompt (str): The prompt containing ANSI escape sequences.
+
+    Returns:
+        str: The prompt safe to pass to input() when readline is active.
+    """
+    # input() only goes through readline when attached to a terminal, otherwise
+    # the markers would be printed as-is.
+    if not (sys.stdin.isatty() and sys.stdout.isatty()):
+        return prompt
+    return ANSI_ESCAPE_RE.sub("\x01\\1\x02", prompt)
 
 
 class InteractiveShell(object):
@@ -115,7 +149,10 @@ class InteractiveShell(object):
             logger=self.logger,
         )
         readline.set_completer(self.commandCompleterObject.complete)
-        readline.parse_and_bind("tab: complete")
+        if READLINE_IS_LIBEDIT:
+            readline.parse_and_bind("bind ^I rl_complete")
+        else:
+            readline.parse_and_bind("tab: complete")
         readline.set_completer_delims("\n")
         # History with timestamps: list of tuples (datetime, command_line)
         self.history: list[tuple[datetime, str]] = []
@@ -158,11 +195,12 @@ class InteractiveShell(object):
         if not self.config.not_interactive:
             while self.running:
                 try:
-                    user_input = input(self.__prompt()).strip()
+                    prompt = self.__prompt()
+                    user_input = input(readline_safe_prompt(prompt)).strip()
                     # Record history and write to logfile
                     if len(user_input) > 0:
                         self.__record_history_entry(user_input)
-                    self.logger.write_to_logfile(self.__prompt() + user_input)
+                    self.logger.write_to_logfile(prompt + user_input)
                     self.process_line(commandLine=user_input)
                 except KeyboardInterrupt:
                     self.logger.print()
